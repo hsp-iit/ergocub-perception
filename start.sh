@@ -10,7 +10,7 @@ docker run --gpus=all -v $(pwd):/home/ecub -itd --rm --network host --name ergoc
 # Create tmux session
 tmux new-session -d -s ecub-tmux
 
-# Souce
+# Source
 
 # 0
 tmux send-keys -t ecub-tmux "/home/ergocub/miniconda3/envs/ecub/bin/python scripts/source.py" Enter
@@ -23,9 +23,9 @@ tmux split-window -v -t ecub-tmux
 
 #4
 tmux send-keys -t ecub-tmux "/home/ergocub/miniconda3/envs/ecub/bin/yarpserver --write" Enter
+tmux split-window -h -t ecub-tmux
 
 # 5
-tmux split-window -h -t ecub-tmux
 tmux send-keys -t ecub-tmux "docker exec -it ergocub_container bash" Enter
 tmux send-keys -t ecub-tmux "python scripts/manager.py" Enter
 
