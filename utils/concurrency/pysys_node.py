@@ -77,7 +77,6 @@ class PySysNode(Process):
         msg = b""
 
         for k, v in data.items():
-            print(k)
             if isinstance(v, int):
                 out_v = struct.pack("h", v)
             elif isinstance(v, float):
