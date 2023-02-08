@@ -1,0 +1,1 @@
+from .fcn.fcn_segmentator_trt import FcnSegmentatorTRT
