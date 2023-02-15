@@ -29,5 +29,5 @@ class Input(BaseConfig):
         fps = 30
         # depth_format = rs.format.z16  # TODO MAY CAUSE PROBLEM
         # color_format = rs.format.rgb8  # TODO MAY CAUSE PROBLEM
-        from_file = 'assets/robot_arena_videos/test.bag'
+        from_file = 'assets/robo_arena_hole_filling_640.bag'
         skip_frames = True

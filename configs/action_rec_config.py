@@ -52,7 +52,7 @@ class Network(BaseConfig):
 
         out_config = {'visualizer': {k: None for k in
                                      ['fps_ar', 'human_distance', 'focus', 'pose', 'bbox', 'face_bbox', 'actions',
-                                      'is_true', 'requires_focus', 'edges', 'log', 'rgb', 'requires_os']},
+                                      'is_true', 'requires_focus', 'edges', 'log', 'requires_os']},
                       'action_recognition_rpc': {'action': -1, 'human_distance': -1., 'focus': False,
                                                  "filtered_action": -1}}
         # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
