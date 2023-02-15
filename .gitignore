@@ -148,11 +148,7 @@ dmypy.json
 .python_history
 *.engine
 *.mp4
-*ERASEME*
-grasping/grasp_detection/ransac_gd/trt/assets/ransac200_5000.onnx
-SUPPORT_SET.png
 action_rec/focus/gaze_estimation/weights/raw/
-action_rec/hpe/weights/onnxs
 *.pkl
 *.onnx
 assets
