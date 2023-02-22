@@ -27,8 +27,8 @@ class Source(Network.node):
         while True:
             try:
                 rgb, depth = self.camera.read()
-                # cv2.imshow("", rgb)
-                # cv2.waitKey(1)
+                # cv2.imshow("DEBUG IN SOURCE.py", rgb)  # TODO REMOVE DEBUG
+                # cv2.waitKey(1)  # TODO REMOVE DEBUG
                 data = {'rgb': copy.deepcopy(rgb), 'depth': copy.deepcopy(depth)}
 
                 return {k: data for k in Network.Args.out_queues}

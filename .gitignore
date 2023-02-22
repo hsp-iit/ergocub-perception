@@ -152,3 +152,5 @@ action_rec/focus/gaze_estimation/weights/raw/
 *.pkl
 *.onnx
 assets
+
+.sudo_as_admin_successful

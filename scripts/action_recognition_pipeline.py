@@ -2,15 +2,16 @@ import sys
 from multiprocessing.managers import BaseManager
 from pathlib import Path
 import tensorrt  # TODO NEEDED IN ERGOCUB, NOT NEEDED IN ISBFSAR
-
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-from configs.action_rec_config import Network, HPE, FOCUS, AR, MAIN
+print("SI scripts/action_recognition_pipeline.py")
+from configs.action_rec_config import Network
+print("NO scripts/action_recognition_pipeline.py")
+from configs.action_rec_config import HPE, FOCUS, AR, MAIN
 import os
 import numpy as np
 import time
 import cv2
 from multiprocessing import Process, Queue
-
 docker = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 
 

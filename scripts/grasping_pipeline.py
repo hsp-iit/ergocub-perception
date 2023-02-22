@@ -1,15 +1,15 @@
 import copy
 import sys
 from pathlib import Path
-
 import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation
 from loguru import logger
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-
+print("SI scripts/grasping_pipeline.py")
 from grasping.utils.input import RealSense
+print("NO scripts/grasping_pipeline.py")
 from grasping.utils.misc import compose_transformations, reload_package
 from grasping.utils.avg_timer import Timer
 from utils.logging import setup_logger

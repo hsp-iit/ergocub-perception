@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+print("SI grasping/utils/input.py")
 import open3d as o3d
+print("NO grasping/utils/input.py")
 import pyrealsense2 as rs
 
 

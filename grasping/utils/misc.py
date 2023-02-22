@@ -6,9 +6,10 @@ from functools import reduce
 
 import cv2
 import numpy as np
-
 try:
+    print("SI grasping/utils/misc.py")
     from open3d.cuda.pybind.geometry import PointCloud
+    print("NO grasping/utils/misc.py")
     from open3d.cuda.pybind.utility import Vector3dVector
     from open3d.cuda.pybind.visualization import draw_geometries
 except ImportError:

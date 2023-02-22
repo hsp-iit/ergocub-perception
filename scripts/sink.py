@@ -4,13 +4,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 from loguru import logger
-
 sys.path.insert(0,  Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
 from configs.sink_config import Logging, Network
+print("SI scripts/sink.py")
 from grasping.utils.misc import draw_mask, project_pc, project_hands
+print("NO scripts/sink.py")
 setup_logger(level=Logging.level)
-
 @logger.catch(reraise=True)
 class Sink(Network.node):
     def __init__(self):

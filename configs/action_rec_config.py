@@ -1,13 +1,14 @@
 import os
 from logging import INFO
+print("SI configs/action_rec_config.py")
 from action_rec.ar.ar import ActionRecognizer
+print("NO configs/action_rec_config.py")
 from action_rec.focus.gaze_estimation.focus import FocusDetector
 from action_rec.hpe.hpe import HumanPoseEstimator
 from utils.concurrency import YarpSysNode  # TODO THIS CAUSES TROUBLES
 from utils.concurrency.yarppy_node import YarpPyNode
 from utils.confort import BaseConfig
 import platform
-
 
 input_type = "skeleton"  # rgb, skeleton or hybrid
 docker = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
