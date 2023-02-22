@@ -66,14 +66,14 @@ class YarpSysNode(Process, ABC):
                     p.open(f'/{in_q}/{port}_{port_id}_in')
                     self._in_queues[f'/{in_q}/{port}'] = p
 
-                    yarp.Network.connect(f'/{in_q}/{port}_out', f'/{in_q}/{port}_{port_id}_in')
-                    print(f"Connecting /{in_q}/{port}_out to /{in_q}/{port}_{port_id}_in")
+                    yarp.Network.connect(f'/{in_q}/{port}:o', f'/{in_q}/{port}_{port_id}_in')
+                    print(f"Connecting /{in_q}/{port}:o to /{in_q}/{port}_{port_id}_in")
 
         self._out_queues = {}
         for out_q in out_queues:
             for port in out_queues[out_q]:
                 p = yarp.Port()
-                p.open(f'/{out_q}/{port}_out')
+                p.open(f'/{out_q}/{port}:o')
                 self._out_queues[f'/{out_q}/{port}'] = p
 
         logger.info(f'Input queue: {", ".join(in_queues) if in_queues is not None else "None"}'

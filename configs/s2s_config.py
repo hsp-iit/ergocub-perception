@@ -24,7 +24,7 @@ class Network(BaseConfig):
         ip = "localhost"
         port = 50000
 
-        in_config = {'realsense': ['rgb', 'depth']}
+        in_config = {'depthCamera': ['rgbImage', 'depthImage']}
         out_config = {'visualizer': {k: None for k in ['rgb', 'depth']}}
         # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
         blocking = False

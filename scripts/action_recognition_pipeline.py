@@ -73,7 +73,7 @@ class ISBFSAR(Network.node):
 
         # If img is not given (not a video), try to get img
         if img is None:
-            img = self._recv()["rgb"]
+            img = self._recv()["rgbImage"]
         elements["rgb"] = img
 
         # Msg
@@ -178,7 +178,7 @@ class ISBFSAR(Network.node):
 
     def loop(self, data):
         log = None
-        if "rgb" in data.keys():  # Save last data with image
+        if "rgbImage" in data.keys():  # Save last data with image
             self.last_data = data
         else:  # It arrives just a message, but we need all
             data.update(self.last_data)
@@ -216,7 +216,7 @@ class ISBFSAR(Network.node):
 
             else:
                 log = "Not a valid command!"
-        d = self.get_frame(img=data["rgb"], log=log)
+        d = self.get_frame(img=data["rgbImage"], log=log)
         return d
 
     def forget_command(self, flag):

@@ -48,7 +48,7 @@ class Network(BaseConfig):
         ip = "localhost"
         port = 50000
 
-        in_config = {'realsense': ['rgb', 'depth']}
+        in_config = {'depthCamera': ['rgbImage', 'depthImage']}
 
         out_config = {'visualizer': {k: None for k in
                                      ['fps_ar', 'human_distance', 'focus', 'pose', 'bbox', 'face_bbox', 'actions',

@@ -14,7 +14,7 @@ class Network(BaseConfig):
     node = SrcYarpNode
 
     class Args:
-        out_queues = {'realsense': ['rgb', 'depth']}
+        out_queues = {'depthCamera': ['rgbImage', 'depthImage']}
 
         # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
         blocking = False
@@ -29,5 +29,5 @@ class Input(BaseConfig):
         fps = 30
         # depth_format = rs.format.z16  # TODO MAY CAUSE PROBLEM
         # color_format = rs.format.rgb8  # TODO MAY CAUSE PROBLEM
-        from_file = 'assets/robo_arena_hole_filling_640.bag'
+        from_file = 'assets/robot_arena_videos/tilting_camera.bag'
         skip_frames = True

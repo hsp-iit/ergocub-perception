@@ -29,7 +29,7 @@ class Source(Network.node):
                 rgb, depth = self.camera.read()
                 # cv2.imshow("", rgb)
                 # cv2.waitKey(1)
-                data = {'rgb': copy.deepcopy(rgb), 'depth': copy.deepcopy(depth)}
+                data = {'rgbImage': copy.deepcopy(rgb), 'depthImage': copy.deepcopy(depth)}
 
                 return {k: data for k in Network.Args.out_queues}
 
