@@ -64,7 +64,7 @@ class YarpPyNode(Process, ABC):
         if in_config is not None:
             for in_q in in_config:
                 for port in in_config[in_q]:
-                    if port == "depth":
+                    if port == "depthImage":
                         p = yarp.BufferedPortImageFloat()
 
                         depth_buffer = bytearray(
@@ -76,7 +76,7 @@ class YarpPyNode(Process, ABC):
                         self.yarp_data[f'/{in_q}/{port}'] = depth_image
                         self.np_buffer[f'/{in_q}/{port}'] = depth_buffer
 
-                    if port == "rgb":
+                    if port == "rgbImage":
                         p = yarp.BufferedPortImageRgb()
 
                         rgb_buffer = bytearray(np.zeros((480, 640, 3), dtype=np.uint8))
@@ -91,9 +91,8 @@ class YarpPyNode(Process, ABC):
                     p.open(f'/{in_q}/{port}_{port_id:04}_in')
                     self._in_queues[f'/{in_q}/{port}'] = p
 
-                    yarp.Network.connect(f'/{in_q}/{port}_out', f'/{in_q}/{port}_{port_id:04}_in')
-                    print(f"Connecting /{in_q}/{port}_out to /{in_q}/{port}_{port_id:04}_in")
-
+                    yarp.Network.connect(f'/{in_q}/{port}:o', f'/{in_q}/{port}_{port_id:04}_in')
+                    print(f"Connecting /{in_q}/{port}:o to /{in_q}/{port}_{port_id:04}_in")
 
         self._out_queues = {k: manager.get_queue(k) for k in out_config}
 
@@ -117,11 +116,11 @@ class YarpPyNode(Process, ABC):
 
             data_type = name.split('/')[-1]
 
-            if data_type == 'rgb':
+            if data_type == 'rgbImage':
                 self.yarp_data[name].copy(data)
                 data = (np.frombuffer(self.np_buffer[name], dtype=np.uint8).reshape(480, 640, 3))
 
-            if data_type == 'depth':
+            if data_type == 'depthImage':
                 self.yarp_data[name].copy(data)
                 data = (np.frombuffer(self.np_buffer[name], dtype=np.float32).reshape(480, 640) * 1000).astype(np.uint16)
 

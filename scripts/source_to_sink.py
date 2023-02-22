@@ -27,8 +27,8 @@ class SourceToSink(Network.node):
 
         logger.info("Read camera input", recurring=True)
 
-        rgb = data['rgb']
-        depth = data['depth']
+        rgb = data['rgbImage']
+        depth = data['depthImage']
 
         output['rgb'] = rgb
         output['depth'] = depth
