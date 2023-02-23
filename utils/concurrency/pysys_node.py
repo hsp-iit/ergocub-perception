@@ -99,7 +99,10 @@ class PySysNode(Process):
 
         if not blocking:
             while self.ipc.current_messages > 0:
-                self.ipc.receive(block=False)
+                try:
+                    self.ipc.receive(block=False)
+                except sysv_ipc.BusyError:
+                    logger.error('Catched BusyError: pysys_node: 105')
 
         self.ipc.send(msg, blocking, type=1)
 

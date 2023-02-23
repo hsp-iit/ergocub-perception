@@ -1,6 +1,8 @@
 import copy
 import os
 import sys
+sys.path.append('/robotology-superbuild/build/install/lib/python3.8/site-packages')
+
 from pathlib import Path
 
 import cv2
@@ -17,7 +19,6 @@ from configs.od3dviz_config import Logging, Network
 from grasping.utils.misc import draw_mask, project_pc, project_hands
 
 setup_logger(level=Logging.level)
-
 
 @logger.catch(reraise=True)
 class ObjectDetection3DVisualizer(Network.node):

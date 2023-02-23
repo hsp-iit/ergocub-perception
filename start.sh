@@ -19,19 +19,20 @@ tmux new-session -d -s perception-tmux
 
 # 0
 tmux send-keys -t perception-tmux "docker exec -it ergocub_perception_container bash" Enter
-tmux send-keys -t perception-tmux "yarp detect --write" Enter
+
 #tmux send-keys -t perception-tmux "yarp conf 10.0.0.150 10000" Enter
 tmux send-keys -t perception-tmux "python scripts/source.py" Enter
 tmux split-window -v -t perception-tmux
 
 # 2
 tmux send-keys -t perception-tmux "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t perception-tmux "yarp detect --write" Enter
 tmux send-keys -t perception-tmux "python scripts/action_recognition_pipeline.py" Enter
 tmux split-window -v -t perception-tmux
 
 #4
 tmux send-keys -t perception-tmux "docker exec -it ergocub_perception_container bash" Enter
-#tmux send-keys -t perception-tmux "yarpserver --write" Enter
+tmux send-keys -t perception-tmux "yarpserver --write" Enter
 tmux split-window -h -t perception-tmux
 
 # 5
