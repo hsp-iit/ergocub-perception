@@ -2,7 +2,7 @@
 
 # Change name also in stop.sh
 TMUX_NAME=perception-tmux
-DOCKER_IMAGE_NAME=ergocub_perception_container
+DOCKER_CONTAINER_NAME=ergocub_perception_container
 
 echo "Start this script inside the ergoCub visual perception rooot folder"
 usage() { echo "Usage: $0 [-i ip_address] [-y (to start yarp server] [-s (to start source)]" 1>&2; exit 1; }
@@ -25,13 +25,13 @@ docker run --gpus=all -v "$(pwd)":/home/ecub -itd --rm \
 --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
 --volume="/etc/resolv.conf:/etc/resolv.conf" \
 --ipc=host \
---network=host --name $DOCKER_IMAGE_NAME andrewr96/ecub-env:yarp bash
+--network=host --name $DOCKER_CONTAINER_NAME andrewr96/ecub-env:yarp bash
 
 # Create tmux session
 tmux new-session -d -s $TMUX_NAME
 
 # Set server
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_IMAGE_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 if [ -n "$SERVER_IP" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarp conf $SERVER_IP 10000" Enter
@@ -48,12 +48,12 @@ fi
 tmux split-window -v -t $TMUX_NAME
 
 # Action Recognition Pipeline
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_pipeline.py" Enter
 tmux split-window -v -t $TMUX_NAME
 
 # Yarp Server
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 if [ -n "$START_YARP_SERVER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarpserver --write" Enter
@@ -61,37 +61,37 @@ fi
 tmux split-window -h -t $TMUX_NAME
 
 # Manager
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/manager.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Action Recognition RPC
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
 tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_rpc.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Object Detection RPC
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
 tmux send-keys -t $TMUX_NAME "python scripts/object_detection_rpc.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Source to Sink
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
 tmux send-keys -t $TMUX_NAME "python scripts/source_to_sink.py" Enter
 tmux select-pane -t $TMUX_NAME:0.0
 tmux split-window -h -t $TMUX_NAME
 
 # Sink
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/sink.py" Enter
 tmux select-pane -t $TMUX_NAME:0.2
 tmux split-window -h -t $TMUX_NAME
 
 # Grasping Pipeline
-tmux send-keys -t $TMUX_NAME "docker exec -it ergocub_perception_container bash" Enter
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/grasping_pipeline.py" Enter
 
 # Attach
