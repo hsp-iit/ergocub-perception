@@ -13,6 +13,12 @@ HIGH_ACCURACY = 3
 HIGH_DENSITY = 4
 MEDIUM_DENSITY = 5
 
+ecub_intrinsics = {'fx': 386.7283935546875, 'fy': 386.7283935546875, 'ppx': 319.5572509765625,
+              'ppy': 236.9881744384765625, 'width': 640, 'height': 480}
+
+d435_intrinsics = {'fx': 612.7910766601562, 'fy': 611.8779296875, 'ppx': 321.7364196777344,
+                          'ppy': 245.0658416748047, 'width': 640, 'height': 480}
+
 class RealSense:
     """" rgb_res = (width, height)"""
     def __init__(self, rgb_res=(640, 480), depth_res=(640, 480), fps=60,
@@ -80,8 +86,7 @@ class RealSense:
                                                                     depth_scale=1000)
 
         if intrinsics is None:
-            intrinsics = {'fx': 612.7910766601562, 'fy': 611.8779296875, 'ppx': 321.7364196777344,
-                          'ppy': 245.0658416748047, 'width': 640, 'height': 480}
+            intrinsics = ecub_intrinsics
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])
@@ -99,8 +104,7 @@ class RealSense:
         depth_image = o3d.geometry.Image(depth_image)
 
         if intrinsics is None:
-            intrinsics = {'fx': 612.7910766601562, 'fy': 611.8779296875, 'ppx': 321.7364196777344,
-                          'ppy': 245.0658416748047, 'width': 640, 'height': 480}
+            intrinsics = ecub_intrinsics
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])
