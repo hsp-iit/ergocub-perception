@@ -15,7 +15,7 @@ docker = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 
 
 class ISBFSAR(Network.node):
-    def __init__(self, input_type, cam_width, cam_height, window_size, skeleton_scale, acquisition_time, fps):
+    def __init__(self, input_type, cam_width, cam_height, window_size, skeleton_scale, acquisition_time, fps, consistency_window_length):
         super().__init__(**Network.Args.to_dict())
         self.input_type = input_type
         self.cam_width = cam_width
@@ -23,9 +23,10 @@ class ISBFSAR(Network.node):
         self.window_size = window_size
         self.fps_s = []
         self.last_poses = []
-        self.last_n_filtered_actions = []
+        self.last_n_actions = []
         self.skeleton_scale = skeleton_scale
         self.acquisition_time = acquisition_time
+        self.consistency_window_length = consistency_window_length
         self.fps = fps
         self.last_time = None
         self.edges = None
@@ -145,35 +146,28 @@ class ISBFSAR(Network.node):
         elements["requires_os"] = requires_os
 
         # FOCUS #######################################################
-        focus_ret = self.focus_out.get()
         elements["focus"] = False
         elements["face_bbox"] = None
+        focus_ret = self.focus_out.get()
         if focus_ret is not None:
             focus, face = focus_ret
             elements["focus"] = focus
             elements["face_bbox"] = face.bbox.reshape(-1)
 
-        # set action (for BT) and filtered action (for direct activation)
+        # Filter action with os and consistency window
         elements["action"] = -1
-        elements["filtered_action"] = -1
         if len(elements["actions"]) > 0:
             best_action = max(elements["actions"], key=elements["actions"].get)
             best_index = list(elements["actions"].keys()).index(best_action)
-            elements["action"] = best_index
-            filtered_action = best_index
-            if elements["requires_os"][best_index]:
-                if is_true < 0.66:
-                    filtered_action = -1
-            if elements["requires_focus"][best_index]:
-                if not elements["focus"]:
-                    filtered_action = -1
-            if len(self.last_n_filtered_actions) > 16:
-                self.last_n_filtered_actions = self.last_n_filtered_actions[1:]
-            self.last_n_filtered_actions.append(best_index)
-            if not all([elem == self.last_n_filtered_actions[-1] for elem in self.last_n_filtered_actions]):
-                filtered_action = -1
-            elements["filtered_action"] = filtered_action
-
+            if len(self.last_n_actions) > 16:
+                self.last_n_actions = self.last_n_actions[1:]
+            self.last_n_actions.append(best_index)
+            if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
+                if elements["requires_os"][best_index]:
+                    if is_true > 0.66:
+                        elements["action"] = best_index
+                else:
+                    elements["action"] = best_index
         return elements
 
     def loop(self, data):

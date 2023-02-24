@@ -1,8 +1,9 @@
 import os
 import cv2
 
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH")
+# os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH")
 from vispy import app, scene, visuals
+app.use_app('glfw') # Set backend
 from vispy.scene.visuals import Text, Image
 import numpy as np
 import math
@@ -37,11 +38,11 @@ def get_color(value):
 class VISPYVisualizer(Network.node):
 
     def printer(self, x):
-        if x.text == '\b':
+        if x.text == '-':
             if len(self.input_text) > 1:
                 self.input_text = self.input_text[:-1]
             self.log_text.text = ''
-        elif x.text == '\r':
+        elif x.text == '+':
             self._send_all({"human_console_commands": {"msg": self.input_text[1:]}}, blocking=False)
             # self.output_queue.put(self.input_text[1:])  # Do not send '>'
             self.input_text = '>'
@@ -233,22 +234,22 @@ class VISPYVisualizer(Network.node):
             self.distance_text.text = "DIST: {:.2f}m".format(self.dist) if self.dist is not None else "DIST:"
 
         # POSE
-        if "pose" in elements.keys():
-            self.pose = elements["pose"]
-            if "edges" in elements.keys():
-                self.edges = elements["edges"]  # THIS SHOULD NEVER BE NONE
-            if self.pose is not None:
-                pose = self.pose @ np.matrix([[1, 0, 0],
-                                              [0, math.cos(90), -math.sin(90)],
-                                              [0, math.sin(90), math.cos(90)]])
-                for i, edge in enumerate(self.edges):
-                    self.lines[i].set_data((pose[[edge[0], edge[1]]]),
-                                           color="purple",
-                                           edge_color="white")
-            else:
-                for i in range(len(self.lines)):
-                    self.lines[i].set_data(color="grey",
-                                           edge_color="white")
+        # if "pose" in elements.keys():
+        #     self.pose = elements["pose"]
+        #     if "edges" in elements.keys():
+        #         self.edges = elements["edges"]  # THIS SHOULD NEVER BE NONE
+        #     if self.pose is not None:
+        #         pose = self.pose @ np.matrix([[1, 0, 0],
+        #                                       [0, math.cos(90), -math.sin(90)],
+        #                                       [0, math.sin(90), math.cos(90)]])
+        #         for i, edge in enumerate(self.edges):
+        #             self.lines[i].set_data((pose[[edge[0], edge[1]]]),
+        #                                    color="purple",
+        #                                    edge_color="white")
+        #     else:
+        #         for i in range(len(self.lines)):
+        #             self.lines[i].set_data(color="grey",
+        #                                    edge_color="white")
 
         # ACTIONS
         if "actions" in elements.keys():
