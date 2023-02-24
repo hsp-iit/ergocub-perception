@@ -47,7 +47,7 @@ class WinRealSense(RealSense):
         ip = get_ip()
 
         BaseManager.register('get_queue')
-        manager = BaseManager(address=(ip, 4000), authkey=b'abracadabra')
+        manager = BaseManager(address=(ip, 5000), authkey=b'abracadabra')
         connect(manager)
 
         self.in_queue = manager.get_queue('windows_out')

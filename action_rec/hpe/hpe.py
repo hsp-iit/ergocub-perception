@@ -152,7 +152,7 @@ class HumanPoseEstimator:
 
         # If less than 1/3 of the joints is visible, then the resulting pose will be weird
         # n < 30
-        if is_predicted_to_be_in_fov.sum() > is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
+        if is_predicted_to_be_in_fov.sum() < is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
             return None
 
         # Move the skeleton into estimated absolute position if necessary
