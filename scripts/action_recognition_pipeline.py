@@ -95,7 +95,7 @@ class ISBFSAR(Network.node):
         ar_input = {}
 
         # Start independent modules
-        # self.focus_in.put(img)
+        self.focus_in.put(img)
         self.hpe_in.put(img)
 
         # RGB CASE
@@ -148,11 +148,11 @@ class ISBFSAR(Network.node):
         # FOCUS #######################################################
         elements["focus"] = False
         elements["face_bbox"] = None
-        # focus_ret = self.focus_out.get()
-        # if focus_ret is not None:
-        #     focus, face = focus_ret
-        #     elements["focus"] = focus
-        #     elements["face_bbox"] = face.bbox.reshape(-1)
+        focus_ret = self.focus_out.get()
+        if focus_ret is not None:
+            focus, face = focus_ret
+            elements["focus"] = focus
+            elements["face_bbox"] = face.bbox.reshape(-1)
 
         # Filter action with os and consistency window
         elements["action"] = -1
