@@ -2,8 +2,8 @@ from logging import INFO
 
 from utils.concurrency import SrcYarpNode
 from utils.confort import BaseConfig
-# from utils.input import RealSense
-from utils.winrealsesnse import WinRealSense as RealSense
+from utils.input import RealSense
+from utils.winrealsesnse import WinRealSense
 import pyrealsense2 as rs
 
 
@@ -30,5 +30,5 @@ class Input(BaseConfig):
         fps = 30
         # depth_format = rs.format.z16  # TODO MAY CAUSE PROBLEM
         # color_format = rs.format.rgb8  # TODO MAY CAUSE PROBLEM
-        # from_file = 'assets/robot_arena_videos/tilting_camera.bag'
+        from_file = 'assets/robot_arena_videos/tilting_camera.bag'
         skip_frames = True
