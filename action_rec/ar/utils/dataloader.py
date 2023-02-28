@@ -171,11 +171,11 @@ if __name__ == "__main__":
     from action_rec.hpe.utils.matplotlib_visualizer import MPLPosePrinter
     from action_rec.ar.utils.configuration import TRXTrainConfig
 
-    input_type = "rgb"
-    data_path = TRXTrainConfig().data_path
-    data_path = "/media/sberti/Data/datasets/NTURGBD_to_YOLO_METRO_122"
+    input_type = "hybrid"
+    # data_path = TRXTrainConfig().data_path
+    data_path = "/mnt/d/datasets/NTURGBD_to_YOLO_METRO_122"
 
-    loader = MyLoader(TRXTrainConfig().data_path, input_type=input_type, given_122=not ubuntu,
+    loader = MyLoader(data_path, input_type=input_type, given_122=True,
                       do_augmentation=False, support_classes=['cross_toe_touch', 'cutting_paper_(using_scissors)', 'drink_water', 'eat_meal-snack', 'drop'],
                       query_class='apply_cream_on_face',
                       unknown_class='apply_cream_on_face')
@@ -183,21 +183,24 @@ if __name__ == "__main__":
         vis = MPLPosePrinter()
 
     for asd in loader:
-        sup = asd['support_set']
-        trg = asd['target_set']
-        unk = asd['unknown_set']
-        lab = asd["support_classes"]
+        while True:
+            sup = asd['support_set']
+            trg = asd['target_set']
+            unk = asd['unknown_set']
+            lab = asd["support_classes"]
 
-        print(asd['support_classes'])
-        n_classes, n_examples, n_frames = sup[list(sup.keys())[0]].shape[:3]
-        for c in range(n_classes):
-            for n in range(n_examples):
-                for k in range(n_frames):
-                    if input_type in ["rgb", "hybrid"]:
-                        cv2.imshow("sup", sup["rgb"][c][n][k].swapaxes(0, 1).swapaxes(1, 2))
-                        cv2.waitKey(1)
-                    if input_type in ["skeleton", "hybrid"]:
-                        vis.set_title(f"{loader.all_classes[lab[c]]}, {n}, {k}")
-                        vis.clear()
-                        vis.print_pose(sup["sk"][c][n][k], loader.edges)
-                        vis.sleep(0.001)
+            print(asd['support_classes'])
+            n_classes, n_examples, n_frames = sup[list(sup.keys())[0]].shape[:3]
+            for c in range(n_classes):
+                for n in range(n_examples):
+                    for k in range(n_frames):
+                        if input_type in ["rgb", "hybrid"]:
+                            img = sup["rgb"][c][n][k].swapaxes(0, 1).swapaxes(1, 2)
+                            img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+                            cv2.imshow("sup", img)
+                            cv2.waitKey(1)
+                        if input_type in ["skeleton", "hybrid"]:
+                            vis.set_title(f"{loader.all_classes[lab[c]]}, {n}, {k}")
+                            vis.clear()
+                            vis.print_pose(sup["sk"][c][n][k], loader.edges)
+                            vis.sleep(0.1)

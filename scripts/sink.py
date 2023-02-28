@@ -18,7 +18,7 @@ class Sink(Network.node):
         self.mask = None
         self.center = None
         self.hands = None
-        self.fps = None
+        self.fps_ar = None
         self.distance = None
         self.focus = None
         self.pose = None
@@ -62,10 +62,10 @@ class Sink(Network.node):
             img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
 
         # HUMAN ########################################################################################################
-        if 'fps' in data.keys():
-            self.fps = data['fps']
-        if self.fps is not None:
-            img = cv2.putText(img, f'FPS: {int(self.fps)}', (10, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+        if 'fps_ar' in data.keys():
+            self.fps_ar = data['fps_ar']
+        if self.fps_ar is not None:
+            img = cv2.putText(img, f'FPS: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
                               cv2.LINE_AA)
 
         if 'human_distance' in data.keys():
