@@ -23,9 +23,8 @@ docker run --gpus=all -v "$(pwd)":/home/ecub -itd --rm \
 --gpus=all \
 --env DISPLAY=:0 \
 --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
---volume="/etc/resolv.conf:/etc/resolv.conf" \
 --ipc=host \
---network=host --name $DOCKER_CONTAINER_NAME andrewr96/ecub-env:yarp bash
+--network=host --name $DOCKER_CONTAINER_NAME ar0s/ergocub-perception bash
 
 # Create tmux session
 tmux new-session -d -s $TMUX_NAME

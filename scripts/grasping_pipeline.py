@@ -170,7 +170,11 @@ class Grasping(Network.node):
         if Logging.debug:
             output['center'] = center
 
-        poses = self.grasp_detector(reconstruction @ flip_z)
+        try:
+            poses = self.grasp_detector(reconstruction @ flip_z)
+        except ValueError as e:
+            poses = None
+            logger.warning(repr(e))
 
         logger.info("Hand poses computed", recurring=True)
 
