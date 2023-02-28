@@ -33,6 +33,7 @@ tmux new-session -d -s $TMUX_NAME
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 if [ -n "$SERVER_IP" ] # Variable is non-null
 then
+  tmux send-keys -t $TMUX_NAME "yarp namespace ergocub00" Enter
   tmux send-keys -t $TMUX_NAME "yarp conf $SERVER_IP 10000" Enter
 else
   tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
