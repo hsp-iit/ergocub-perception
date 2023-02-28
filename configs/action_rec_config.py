@@ -38,8 +38,10 @@ class MAIN(BaseConfig):
         window_size = seq_len
         skeleton_scale = 2200.
         acquisition_time = 3  # Seconds
-        fps = seq_len/2.5 # Fps car for action recognition
-        consistency_window_length = 8
+        fps = 12  # /2.5 # Fps car for action recognition
+        consistency_window_length = 4
+        os_score_thr = 0.5
+        detect_focus = True
 
 
 class Network(BaseConfig):
