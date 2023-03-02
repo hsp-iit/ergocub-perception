@@ -65,13 +65,13 @@ class Sink(Network.node):
         if 'fps_ar' in data.keys():
             self.fps_ar = data['fps_ar']
         if self.fps_ar is not None:
-            img = cv2.putText(img, f'FPS: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
                               cv2.LINE_AA)
 
         if 'human_distance' in data.keys():
             self.distance = data['human_distance']
         if self.distance is not None:
-            img = cv2.putText(img, f'DIST: {int(self.distance)}', (200, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+            img = cv2.putText(img, f'DIST: {self.distance:.2f}', (200, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
                               cv2.LINE_AA)
 
         if 'focus' in data.keys():

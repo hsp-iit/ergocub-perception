@@ -78,7 +78,10 @@ class PySysNode(Process):
 
         for k, v in data.items():
             if isinstance(v, int):
-                out_v = struct.pack("h", v)
+                try:
+                    out_v = struct.pack("h", v)
+                except struct.error as e:
+                    logger.warning(f'struct_error in pysys_node - line: 84. Value not in range: {v}')
             elif isinstance(v, float):
                 out_v = struct.pack("d", v)
             elif isinstance(v, np.ndarray):

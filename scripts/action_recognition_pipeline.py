@@ -88,7 +88,7 @@ class ISBFSAR(Network.node):
 
         # Cap fps
         if self.last_time is not None:
-            if (time.time() - self.last_time) < 1 / self.fps and cap_fps:
+            while (time.time() - self.last_time) < 1 / self.fps and cap_fps:
                 time.sleep(0.01)
             self.fps_s.append(1. / (time.time() - self.last_time))
             fps_s = self.fps_s[-10:]
@@ -173,8 +173,18 @@ class ISBFSAR(Network.node):
             if len(self.last_n_actions) > self.consistency_window_length:
                 self.last_n_actions = self.last_n_actions[1:]
             self.last_n_actions.append(best_index)
-            if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
-                elements["action"] = best_index
+
+            # BEFORE it was considering an action only all the n detected action was that action
+            # if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
+            #     elements["action"] = best_index
+            # NOW it takes the action higher frequency in last n frames
+            max_f = 0
+            for i in self.last_n_actions:
+                freq = self.last_n_actions.count(i)
+                if freq > max_f:
+                    max_f = freq
+                    best_index = i
+            elements["action"] = best_index
         return elements
 
     def loop(self, data):

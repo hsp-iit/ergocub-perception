@@ -18,18 +18,24 @@ class Source(Network.node):
     def __init__(self):
         super().__init__(**Network.Args.to_dict())
         self.camera = None
+        
 
     def startup(self):
         self.camera = Input.camera(**Input.Params.to_dict())
+        for i in range(500):
+            rgb, depth = self.camera.read()
+        self.rgb, self.depth = rgb, depth
 
     def loop(self):
 
         while True:
             try:
-                rgb, depth = self.camera.read()
+                
+                    
+                    
                 # cv2.imshow("", rgb)
                 # cv2.waitKey(1)
-                data = {'rgbImage': copy.deepcopy(rgb), 'depthImage': copy.deepcopy(depth)}
+                data = {'rgbImage': copy.deepcopy(self.rgb), 'depthImage': copy.deepcopy(self.depth)}
 
                 return {k: data for k in Network.Args.out_queues}
 
