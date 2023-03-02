@@ -5,12 +5,13 @@ TMUX_NAME=perception-tmux
 DOCKER_CONTAINER_NAME=ergocub_perception_container
 
 echo "Start this script inside the ergoCub visual perception rooot folder"
-usage() { echo "Usage: $0 [-i ip_address] [-y (to start yarp server] [-s (to start source)]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)]" 1>&2; exit 1; }
 
-while getopts i:ysh flag
+while getopts i:yshn: flag
 do
     case "${flag}" in
         i) SERVER_IP=${OPTARG};;
+        n) YARP_NAMESERVER=${OPTARG};;
         y) START_YARP_SERVER='1';;
         s) START_SOURCE='1';;
         h) usage;;
@@ -31,9 +32,14 @@ tmux new-session -d -s $TMUX_NAME
 
 # Set server
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+
+if [ -n "$YARP_NAMESERVER" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "yarp namespace $YARP_NAMESERVER" Enter
+fi
+
 if [ -n "$SERVER_IP" ] # Variable is non-null
 then
-  tmux send-keys -t $TMUX_NAME "yarp namespace ergocub00" Enter
   tmux send-keys -t $TMUX_NAME "yarp conf $SERVER_IP 10000" Enter
 else
   tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
