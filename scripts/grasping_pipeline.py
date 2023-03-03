@@ -18,6 +18,9 @@ import tensorrt as trt
 import torch
 import pycuda.autoinit
 
+import yarp
+from pyquaternion import Quaternion
+
 from configs.grasping_config import Segmentation, Denoiser, ShapeCompletion, GraspDetection, Network, Logging
 
 setup_logger(**Logging.Logger.Params.to_dict())
@@ -56,6 +59,15 @@ class Grasping(Network.node):
         self.action = {"action": "none"}
 
         self.timer = Timer(window=10)
+
+        camera_local_port_name = '/Components/VisualPerception/camera_pose:i'
+        camera_remote_port_name = '/ergocub-rs-pose/pose:o'
+        yarp.Network.init()
+        self.camera_pose_in = yarp.BufferedPortVector()
+        self.camera_pose_in.open(camera_local_port_name)
+        # FIXME: It would be better to connect not inside the module
+        yarp.Network.connect(camera_remote_port_name, camera_local_port_name)
+
         # self.watch = Watch()
 
     def startup(self):
@@ -78,6 +90,15 @@ class Grasping(Network.node):
 
         rgb = data['rgbImage']
         depth = data['depthImage']
+
+        # Blocking should be fine as the camera pose streamer is much faster than this module
+        blocking_read = True
+        camera_pose = self.camera_pose_in.read(blocking)
+        camera_position = numpy.array([camera_pose[0], camera_pose[1], camera_pose[2]])
+        camera_axis = numpy.array([camera_pose[3], camera_pose[4], camera_pose[5]])
+        camera_angle = camera_pose[6]
+        camera_pose = Quaternion(axis = camera_axis, angle = camera_angle).transformation_matrix
+        camera_pose[0:3, 3] = camera_position
 
         output['rgb'] = rgb
         output['depth'] = depth
@@ -186,11 +207,15 @@ class Grasping(Network.node):
         hands = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
                           compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
 
+        hands_root_frame = np.stack([camera_pose @ compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
+                                     camera_pose @ compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
+
         hands_normalized = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis]]),
                                      compose_transformations([poses[3].T, poses[2][np.newaxis]])], axis=-1)
 
         if Logging.debug:
             output['hands'] = hands
+            output['hands_root_frame'] = hands_root_frame
             output['planes'] = poses[4]
             output['lines'] = poses[5]
             output['vertices'] = poses[6] * (var * 2) + mean  # de-normalized
