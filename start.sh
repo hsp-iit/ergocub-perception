@@ -5,14 +5,15 @@ TMUX_NAME=perception-tmux
 DOCKER_CONTAINER_NAME=ergocub_perception_container
 
 echo "Start this script inside the ergoCub visual perception rooot folder"
-usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)] [-r repeater]" 1>&2; exit 1; }
 
-while getopts i:yshn: flag
+while getopts i:yshn:r flag
 do
     case "${flag}" in
         i) SERVER_IP=${OPTARG};;
         n) YARP_NAMESERVER=${OPTARG};;
         y) START_YARP_SERVER='1';;
+        r) REPEATER='1';;
         s) START_SOURCE='1';;
         h) usage;;
         *) usage;;
@@ -45,6 +46,11 @@ else
   tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
 fi
 
+if [ -n "$REPEATER" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/rgbImage:r" Enter
+fi
+
 # Source
 echo $START_SOURCE
 if [ -n "$START_SOURCE" ] # Variable is non-null
@@ -64,6 +70,12 @@ if [ -n "$START_YARP_SERVER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarpserver --write" Enter
 fi
+
+if [ -n "$REPEATER" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
+fi
+
 tmux split-window -h -t $TMUX_NAME
 
 # Manager

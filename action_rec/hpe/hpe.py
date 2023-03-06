@@ -69,7 +69,8 @@ class HumanPoseEstimator:
             if e[5] == 0:  # If it is a human
                 humans.append(e)
         if len(humans) > 0:
-            humans.sort(key=lambda x: x[4], reverse=True)  # Sort with decreasing probability
+            # humans.sort(key=lambda x: x[4], reverse=True)  # Sort with decreasing probability
+            humans.sort(key=lambda x: (x[2]-x[0])*(x[3]-x[1]), reverse=True)  # Sort with decreasing area  # TODO TEST
             human = humans[0]
         else:
             return None

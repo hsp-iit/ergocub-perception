@@ -175,16 +175,16 @@ class ISBFSAR(Network.node):
             self.last_n_actions.append(best_index)
 
             # BEFORE it was considering an action only all the n detected action was that action
-            # if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
-            #     elements["action"] = best_index
+            if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
+                elements["action"] = best_index
             # NOW it takes the action higher frequency in last n frames
-            max_f = 0
-            for i in self.last_n_actions:
-                freq = self.last_n_actions.count(i)
-                if freq > max_f:
-                    max_f = freq
-                    best_index = i
-            elements["action"] = best_index
+            # max_f = 0
+            # for i in self.last_n_actions:
+            #     freq = self.last_n_actions.count(i)
+            #     if freq > max_f:
+            #         max_f = freq
+            #         best_index = i
+            # elements["action"] = best_index
         return elements
 
     def loop(self, data):

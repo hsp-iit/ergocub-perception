@@ -32,7 +32,7 @@ class Network(BaseConfig):
 
         in_config = {'depthCamera': ['rgbImage', 'depthImage']}
 
-        out_config = {'visualizer': {k: None for k in ['hands', 'mask', 'fps']},
+        out_config = {'visualizer': {k: None for k in ['hands', 'mask', 'fps', 'distance']},
                       '3d_visualizer': {k: None for k in ['reconstruction', 'partial', 'transform', 'scene', 'hands',
                                                           'planes', 'lines', 'vertices']},
                       'object_detection_rpc': {'distance': -1,

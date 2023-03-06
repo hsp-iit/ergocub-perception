@@ -14,6 +14,8 @@ from loguru import logger
 import yarp
 import sysv_ipc
 import struct
+
+
 # print("WHA CI ARRIVO SENZA UN SENSO AHAHAHAHAH :D")
 
 def _exception_handler(function):
@@ -26,6 +28,7 @@ def _exception_handler(function):
             exit(1)
 
     return wrapper
+
 
 def connect(manager):
     logger.info('Connecting to manager...')
@@ -41,6 +44,7 @@ def connect(manager):
                 raise e
             time.sleep(1)
     logger.success('Connected to manager.')
+
 
 class YarpPyNode(Process, ABC):
 
@@ -76,6 +80,14 @@ class YarpPyNode(Process, ABC):
                         self.yarp_data[f'/{in_q}/{port}'] = depth_image
                         self.np_buffer[f'/{in_q}/{port}'] = depth_buffer
 
+                        port_id = random.randint(0, 9999)
+                        p.open(f'/{in_q}/{port}_{port_id:04}_in')
+                        self._in_queues[f'/{in_q}/{port}'] = p
+
+                        yarp.Network.connect(f'/{in_q}/{port}:r', f'/{in_q}/{port}_{port_id:04}_in')
+                        # 'tcp+send.portmonitor+file.depthimage_compression_zlib+recv.portmonitor+'
+                        # 'file.depthimage_compression_zlib+type.dll'
+
                     if port == "rgbImage":
                         p = yarp.BufferedPortImageRgb()
 
@@ -87,11 +99,11 @@ class YarpPyNode(Process, ABC):
                         self.yarp_data[f'/{in_q}/{port}'] = rgb_image
                         self.np_buffer[f'/{in_q}/{port}'] = rgb_buffer
 
-                    port_id = random.randint(0, 9999)
-                    p.open(f'/{in_q}/{port}_{port_id:04}_in')
-                    self._in_queues[f'/{in_q}/{port}'] = p
+                        port_id = random.randint(0, 9999)
+                        p.open(f'/{in_q}/{port}_{port_id:04}_in')
+                        self._in_queues[f'/{in_q}/{port}'] = p
 
-                    yarp.Network.connect(f'/{in_q}/{port}:o', f'/{in_q}/{port}_{port_id:04}_in')
+                        yarp.Network.connect(f'/{in_q}/{port}:r', f'/{in_q}/{port}_{port_id:04}_in')  # 'mjpeg'
                     print(f"Connecting /{in_q}/{port}:o to /{in_q}/{port}_{port_id:04}_in")
 
         self._out_queues = {k: manager.get_queue(k) for k in out_config}
@@ -122,7 +134,8 @@ class YarpPyNode(Process, ABC):
 
             if data_type == 'depthImage':
                 self.yarp_data[name].copy(data)
-                data = (np.frombuffer(self.np_buffer[name], dtype=np.float32).reshape(480, 640) * 1000).astype(np.uint16)
+                data = (np.frombuffer(self.np_buffer[name], dtype=np.float32).reshape(480, 640) * 1000).astype(
+                    np.uint16)
 
             msg[data_type] = data
 
@@ -164,5 +177,3 @@ class YarpPyNode(Process, ABC):
                 self._out_queues[dest].put(msg, block=blocking)
             except Full:
                 pass
-
-
