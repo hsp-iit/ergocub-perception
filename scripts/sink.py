@@ -137,10 +137,11 @@ class Sink(Network.node):
             self.action = data["action"]
         if self.action is not None:
             label = self.id_to_action[self.action] if self.action != -1 else 'none'
-            textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
-            textX = int((img.shape[1] - textsize[0]) / 2)
-            text_color = (0, 255, 0)
-            img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
+            if label is not 'none':
+                textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
+                textX = int((img.shape[1] - textsize[0]) / 2)
+                text_color = (0, 255, 0)
+                img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
 
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
