@@ -91,14 +91,11 @@ tmux split-window -h -t $TMUX_NAME
 
 # Object Detection RPC
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
-tmux send-keys -t $TMUX_NAME "python scripts/object_detection_rpc.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Source to Sink
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
-tmux send-keys -t $TMUX_NAME "python scripts/source_to_sink.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
 tmux select-pane -t $TMUX_NAME:0.0
 tmux split-window -h -t $TMUX_NAME
 
