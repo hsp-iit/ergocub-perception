@@ -8,10 +8,11 @@ from scipy.spatial.transform import Rotation
 
 sys.path.insert(0,  Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
-from configs.sink_config import Logging, Network
-from grasping.utils.misc import draw_mask, project_pc, project_hands
-setup_logger(level=Logging.level)
 
+from grasping.utils.misc import draw_mask, project_pc, project_hands
+from configs.sink_config import Logging, Network
+
+setup_logger(level=Logging.level)
 @logger.catch(reraise=True)
 class Sink(Network.node):
     def __init__(self):
@@ -137,7 +138,7 @@ class Sink(Network.node):
             self.action = data["action"]
         if self.action is not None:
             label = self.id_to_action[self.action] if self.action != -1 else 'none'
-            if label is not 'none':
+            if label != 'none':
                 textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
                 textX = int((img.shape[1] - textsize[0]) / 2)
                 text_color = (0, 255, 0)
