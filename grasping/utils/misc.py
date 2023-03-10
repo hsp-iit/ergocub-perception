@@ -6,6 +6,7 @@ from functools import reduce
 
 import cv2
 import numpy as np
+from pyquaternion import Quaternion
 
 try:
     from open3d.cuda.pybind.geometry import PointCloud
@@ -158,3 +159,13 @@ def project_hands(rgb, right_t, left_t):
     # res = cv2.cvtColor(res, cv2.COLOR_RGB2BGR)
 
     return res
+
+
+def pose_to_matrix(pose):
+    position = np.array([pose[0], pose[1], pose[2]])
+    axis = np.array([pose[3], pose[4], pose[5]])
+    angle = pose[6]
+    mat = Quaternion(axis=axis, angle=angle).transformation_matrix
+    mat[0:3, 3] = position
+
+    return mat
