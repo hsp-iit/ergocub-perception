@@ -104,7 +104,7 @@ class YarpPyNode(Process, ABC):
                         self._in_queues[f'/{in_q}/{port}'] = p
 
                         yarp.Network.connect(f'/{in_q}/{port}:r', f'/{in_q}/{port}_{port_id:04}_in')  # 'mjpeg'
-                    print(f"Connecting /{in_q}/{port}:o to /{in_q}/{port}_{port_id:04}_in")
+                    print(f"Connecting /{in_q}/{port}:r to /{in_q}/{port}_{port_id:04}_in")
 
         self._out_queues = {k: manager.get_queue(k) for k in out_config}
 
