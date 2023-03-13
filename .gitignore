@@ -140,7 +140,8 @@ dmypy.json
 ###########################################
 .idea
 */__pycache__
-/assets/
+/action_rec/focus/gaze_estimation/assets
+/assets
 /test/
 /.dgl/
 .bash_history
@@ -149,8 +150,6 @@ dmypy.json
 *.engine
 *.mp4
 action_rec/focus/gaze_estimation/weights/raw/
-*.pkl
 *.onnx
-assets
 .gitconfig
 SUPPORT_SET.png
