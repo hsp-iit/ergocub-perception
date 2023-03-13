@@ -23,10 +23,11 @@ def connect(manager):
 
 class PyQueue:
 
-    def __init__(self, ip, port, queue_name, write_format=None, blocking=False):
+    def __init__(self, ip, port, queue_name, write_format=None, read_format=None, blocking=False):
 
         self.blocking = blocking
         self.write_format = write_format
+        self.read_format = read_format
 
         BaseManager.register('get_queue')
         manager = BaseManager(address=(ip, port), authkey=b'abracadabra')
@@ -60,10 +61,19 @@ class PyQueue:
             blocking = self.blocking
 
         if blocking:
-            return self.queue.get()
+            msg = self.queue.get()
         else:
             if not self.queue.empty():
-                return self.queue.get()
+                msg = self.queue.get()
             else:
-                return None
+                msg = {}
+
+        if self.read_format is not None:
+            template = copy.deepcopy(self.read_format)
+            template.update(msg)  # add computed values while keeping default ones
+            msg = {k: v for k, v, in template.items() if k in self.read_format}  # remove unnecessary keys
+
+        return msg
+
+
 
