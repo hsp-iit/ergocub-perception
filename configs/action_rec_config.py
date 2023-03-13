@@ -56,8 +56,7 @@ class Network(BaseConfig):
         out_config = {'visualizer': {k: None for k in
                                      ['fps_ar', 'human_distance', 'focus', 'pose', 'bbox', 'face_bbox', 'actions',
                                       'is_true', 'requires_focus', 'edges', 'log', 'requires_os', 'action']},
-                      'action_recognition_rpc': {'action': -1, 'human_distance': -1., 'focus': False,
-                                                 "filtered_action": -1}}
+                      'action_recognition_rpc': {'action': -1, 'human_distance': -1., 'focus': False}}
         # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
         blocking = False
 
@@ -83,6 +82,12 @@ class HPE(BaseConfig):
         fy = 384.025146484375
         ppx = 319.09661865234375
         ppy = 237.75723266601562
+
+        # fx = 613.011
+        # fy = 612.094
+        # ppx = 326.097
+        # ppy = 252.924
+
         width = 640
         height = 480
 
