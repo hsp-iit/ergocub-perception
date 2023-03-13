@@ -1,11 +1,13 @@
 import copy
 import os
 import sys
+
+from grasping.utils.input import RealSense
+
 sys.path.append('/robotology-superbuild/build/install/lib/python3.8/site-packages')
 
 from pathlib import Path
 
-import cv2
 import numpy as np
 from loguru import logger
 from scipy.spatial.transform import Rotation
@@ -16,7 +18,6 @@ from vispy.scene import ViewBox, Markers, SurfacePlot
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
 from configs.od3dviz_config import Logging, Network
-from grasping.utils.misc import draw_mask, project_pc, project_hands
 
 setup_logger(level=Logging.level)
 
@@ -36,10 +37,10 @@ class ObjectDetection3DVisualizer(Network.node):
         self.canvas = canvas
 
         vb1 = ViewBox(name='pc')
-        vb1 = self.grid.add_widget(vb1)
+        self.vb1 = self.grid.add_widget(vb1)
 
         vb2 = ViewBox(name='pc2')
-        vb2 = self.grid.add_widget(vb2)
+        self.vb2 = self.grid.add_widget(vb2)
 
         vb1.camera = scene.TurntableCamera(elevation=0, azimuth=0, distance=1, name='pc')
         vb2.camera = scene.TurntableCamera(elevation=0, azimuth=0, distance=1, name='pc2')
@@ -65,64 +66,94 @@ class ObjectDetection3DVisualizer(Network.node):
         vis_R1 = Rotation.from_euler('x', -90, degrees=True).as_matrix()
         vis_R2 = Rotation.from_euler('x', 90, degrees=True).as_matrix()
 
-        if data['partial'] is not None:
+        if data['rgb'] is not None and data['depth'] is not None:
+            rgb, depth = data['rgb'], data['depth']
+            scene = RealSense.rgb_pointcloud(depth, rgb)
+            scene = np.concatenate([np.array(scene.points), np.array(scene.colors)], axis=1)
+
+            idx = np.random.choice(scene.shape[0], 10000, replace=False)
+            scene = scene[idx]
+
+            offset = np.array([0, 0.5, 0])
+
+            self.scatter3.set_data(scene[..., :3] @ vis_R1 - offset, edge_color=scene[..., 3:],
+                                   face_color=scene[..., 3:])
+
+        # if data['partial'] is not None:
             # self.scatter1.set_data((data['partial'] @ vis_R1) * np.array([1, -1, 1]), edge_color='orange',
             #                        face_color='orange', size=5)
 
-            if data['reconstruction'] is not None:
+        reconstruction = data['reconstruction']
+        if reconstruction is not None:
+            if isinstance(reconstruction, int) and reconstruction == -1:
+                self.scatter4.parent = None
+            else:
+                self.vb1.add(self.scatter4)
 
-                # self.scatter2.set_data((data['reconstruction'] @ vis_R1) * np.array([1, -1, 1]), edge_color='blue',
-                #                        face_color='blue', size=5)
+                idx = np.random.choice(reconstruction.shape[0], 1000, replace=False)
+                reconstruction = reconstruction[idx]
 
-                denormalized_pc = (np.block([data['reconstruction'], np.ones([data['reconstruction'].shape[0], 1])]) @
+                denormalized_pc = (np.block([reconstruction, np.ones([reconstruction.shape[0], 1])]) @
                                    data['transform'])[..., :3]
 
-                center = denormalized_pc.mean(axis=0)
+                self.scatter4.set_data(denormalized_pc @ vis_R2 - offset, edge_color='blue', face_color='blue', size=5)
 
-                self.scatter3.set_data(data['scene'][..., :3] @ vis_R2 - center, edge_color=data['scene'][..., 3:],
-                                       face_color=data['scene'][..., 3:])
-                self.scatter4.set_data(denormalized_pc @ vis_R2 - center, edge_color='blue', face_color='blue', size=5)
+        hands = data['hands']
+        if hands is not None:
+            if isinstance(hands, int) and hands == -1:
+                self.r_hand.parent = None
+                self.l_hand.parent = None
+                self.r_hand_2.parent = None
+                self.l_hand_2.parent = None
+            else:
+                self.vb1.add(self.r_hand)
+                self.vb1.add(self.l_hand)
+                self.vb2.add(self.r_hand_2)
+                self.vb2.add(self.l_hand_2)
 
-                hands = data['hands']
-                if hands is not None:
-                    right_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
-                    left_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
+                right_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
+                left_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
 
-                    right_hand = (np.block([right_hand, np.ones([4, 1])]) @ hands[..., 0])[:, :3]
-                    left_hand = (np.block([left_hand, np.ones([4, 1])]) @ hands[..., 1])[:, :3]
+                right_hand = (np.block([right_hand, np.ones([4, 1])]) @ hands[..., 0])[:, :3]
+                left_hand = (np.block([left_hand, np.ones([4, 1])]) @ hands[..., 1])[:, :3]
 
-                    right_hand = right_hand @ vis_R2
-                    left_hand = left_hand @ vis_R2
+                right_hand = right_hand @ vis_R2
+                left_hand = left_hand @ vis_R2
 
-                    self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - center)
-                    self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - center)
+                self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
+                self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
 
-                    self.r_hand_2.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - center)
-                    self.l_hand_2.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - center)
+                self.r_hand_2.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
+                self.l_hand_2.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
 
-                    points = data['vertices']
-                    points = points @ vis_R1 - center
+        points = data['vertices']
+        if points is not None:
+            if isinstance(points, int) and points == -1:
+                for b in self.box: b.parent = None
+            else:
+                for b in self.box: self.vb2.add(b)
 
-                    for i in range(4):
-                        points = np.concatenate([points, points[(0 + i) % 8][None],
-                                                 points[(1 + i) % 8][None],
-                                                 points[(4 + i) % 8][None],
-                                                 points[(5 + i) % 8][None], ])
+                points = points @ vis_R1 - offset
+                for i in range(4):
+                    points = np.concatenate([points, points[(0 + i) % 8][None],
+                                             points[(1 + i) % 8][None],
+                                             points[(4 + i) % 8][None],
+                                             points[(5 + i) % 8][None], ])
 
-                    planes = points.reshape(6, 4, 3)
+                planes = points.reshape(6, 4, 3)
 
-                    for i, points in enumerate(planes):
-                        if i in [0, 1]:
-                            aux = copy.deepcopy(points)
-                            points[1], points[3], points[0] = aux[0], aux[1], aux[3]
-                        if i == 5:
-                            aux = copy.deepcopy(points)
-                            points[3], points[0], points[1] = aux[0], aux[1], aux[3]
+                for i, points in enumerate(planes):
+                    if i in [0, 1]:
+                        aux = copy.deepcopy(points)
+                        points[1], points[3], points[0] = aux[0], aux[1], aux[3]
+                    if i == 5:
+                        aux = copy.deepcopy(points)
+                        points[3], points[0], points[1] = aux[0], aux[1], aux[3]
 
-                        x, y, z = points.T
-                        x, y, z = x.reshape((2, 2)), y.reshape((2, 2)), z.reshape((2, 2))
+                    x, y, z = points.T
+                    x, y, z = x.reshape((2, 2)), y.reshape((2, 2)), z.reshape((2, 2))
 
-                        self.box[i].set_data(x=x, y=y, z=z)
+                    self.box[i].set_data(x=x, y=y, z=z)
 
         app.process_events()
         return {}

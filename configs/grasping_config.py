@@ -30,7 +30,6 @@ class Network(BaseConfig):
     node = GenericNode
 
     class Args:
-
         in_queues = {
             # in_port_name, out_port_name, data_type, out_name
             'segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc', blocking=True),
@@ -43,10 +42,11 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={k: None for k in ['hands', 'fps_od', 'distance']}),
             '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
-                                     write_format={k: None for k in ['reconstruction', 'partial', 'transform', 'scene',
+                                     write_format={k: -1 for k in ['reconstruction', 'partial', 'transform', 'scene',
                                                                      'hands', 'planes', 'lines', 'vertices']}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'distance': -1, 'hands': np.full([4, 4, 2], -1.)})
         }
+
 
 class Segmentation(BaseConfig):
     model = FcnSegmentatorTRT
