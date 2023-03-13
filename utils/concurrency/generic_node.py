@@ -18,6 +18,7 @@ class GenericNode(Process, ABC):
         logger.info('Starting up...')
         self.startup()
         logger.info('Waiting for source startup...')
+        # TODO maybe we don't wanna wait for every queue to be online?
         data = self._recv(blocking=True)
         logger.success('Start up complete.')
         return data
