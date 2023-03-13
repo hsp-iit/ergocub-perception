@@ -10,8 +10,6 @@ from grasping.shape_completion.confidence_pcr.encoder import ConfidencePCRDecode
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
-from utils.concurrency.yarp_queue import YarpQueue
-from utils.concurrency.yarppy_node import YarpPyNode
 from utils.confort import BaseConfig
 
 
