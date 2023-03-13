@@ -7,6 +7,10 @@ from grasping.grasp_detection import RansacGraspDetectorTRT
 from grasping.segmentation.fcn.fcn_segmentator_trt import FcnSegmentatorTRT
 from grasping.shape_completion.confidence_pcr.decoder import ConfidencePCRDecoder
 from grasping.shape_completion.confidence_pcr.encoder import ConfidencePCRDecoderTRT
+from utils.concurrency.generic_node import GenericNode
+from utils.concurrency.ipc_queue import IPCQueue
+from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.yarp_queue import YarpQueue
 from utils.concurrency.yarppy_node import YarpPyNode
 from utils.confort import BaseConfig
 
@@ -23,22 +27,26 @@ class Logging(BaseConfig):
 
 
 class Network(BaseConfig):
-
-    node = YarpPyNode
+    node = GenericNode
 
     class Args:
-        ip = "localhost"
-        port = 50000
 
-        in_config = {'depthCamera': ['rgbImage', 'depthImage']}
+        in_queues = {
+            # in_port_name, out_port_name, data_type, out_name
+            'segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc', blocking=True),
+            # 'camera_pose': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',
+            #                          local_port_name='/VisualPerception/ShapeCompletion/camera_pose:i',
+            #                          data_type='list', read_format='camera_pose'),
+        }
 
-        out_config = {'visualizer': {k: None for k in ['hands', 'mask', 'fps']},
-                      '3d_visualizer': {k: None for k in ['reconstruction', 'partial', 'transform', 'scene', 'hands',
-                                                          'planes', 'lines', 'vertices']},
-                      'object_detection_rpc': {'distance': -1,
-                                               'hands': np.full([4, 4, 2], -1.)}}
-        # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
-        blocking = False
+        out_queues = {
+            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                  write_format={k: None for k in ['hands', 'fps_od', 'distance']}),
+            '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
+                                     write_format={k: None for k in ['reconstruction', 'partial', 'transform', 'scene',
+                                                                     'hands', 'planes', 'lines', 'vertices']}),
+            'rpc': IPCQueue(ipc_key=1234, write_format={'distance': -1, 'hands': np.full([4, 4, 2], -1.)})
+        }
 
 class Segmentation(BaseConfig):
     model = FcnSegmentatorTRT

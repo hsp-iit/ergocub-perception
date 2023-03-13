@@ -4,13 +4,15 @@ from pathlib import Path
 import cv2
 import numpy as np
 from loguru import logger
+from scipy.spatial.transform import Rotation
 
 sys.path.insert(0,  Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
-from configs.sink_config import Logging, Network
-from grasping.utils.misc import draw_mask, project_pc, project_hands
-setup_logger(level=Logging.level)
 
+from grasping.utils.misc import draw_mask, project_pc, project_hands
+from configs.sink_config import Logging, Network
+
+setup_logger(level=Logging.level)
 @logger.catch(reraise=True)
 class Sink(Network.node):
     def __init__(self):
@@ -20,6 +22,7 @@ class Sink(Network.node):
         self.hands = None
         self.fps_ar = None
         self.distance = None
+        self.box_distance = None
         self.focus = None
         self.pose = None
         self.bbox = None
@@ -59,7 +62,10 @@ class Sink(Network.node):
         if 'hands' in data.keys():
             self.hands = data['hands']
         if self.hands is not None:
-            img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
+            rot = Rotation.from_matrix(self.hands[..., 0][:-1, :-1]).as_euler('xyz', degrees=True)
+            # print(f'x: {rot[0]}, y: {rot[1]}, z: {rot[2]}' )
+            if 80 < rot[1] < 100:
+                img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
 
         # HUMAN ########################################################################################################
         if 'fps_ar' in data.keys():
@@ -72,6 +78,12 @@ class Sink(Network.node):
             self.distance = data['human_distance']
         if self.distance is not None:
             img = cv2.putText(img, f'DIST: {self.distance:.2f}', (200, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+                              cv2.LINE_AA)
+
+        if 'distance' in data.keys():
+            self.box_distance = data['distance']
+        if self.box_distance is not None:
+            img = cv2.putText(img, f'OBJ DIST: {self.box_distance/1000.:.2f}', (450, 470), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
                               cv2.LINE_AA)
 
         if 'focus' in data.keys():
@@ -126,10 +138,11 @@ class Sink(Network.node):
             self.action = data["action"]
         if self.action is not None:
             label = self.id_to_action[self.action] if self.action != -1 else 'none'
-            textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
-            textX = int((img.shape[1] - textsize[0]) / 2)
-            text_color = (0, 255, 0)
-            img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
+            if label != 'none':
+                textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
+                textX = int((img.shape[1] - textsize[0]) / 2)
+                text_color = (0, 255, 0)
+                img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
 
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 

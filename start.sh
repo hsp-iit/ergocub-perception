@@ -5,14 +5,15 @@ TMUX_NAME=perception-tmux
 DOCKER_CONTAINER_NAME=ergocub_perception_container
 
 echo "Start this script inside the ergoCub visual perception rooot folder"
-usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)] [-r repeater]" 1>&2; exit 1; }
 
-while getopts i:yshn: flag
+while getopts i:yshn:r flag
 do
     case "${flag}" in
         i) SERVER_IP=${OPTARG};;
         n) YARP_NAMESERVER=${OPTARG};;
         y) START_YARP_SERVER='1';;
+        r) REPEATER='1';;
         s) START_SOURCE='1';;
         h) usage;;
         *) usage;;
@@ -45,6 +46,11 @@ else
   tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
 fi
 
+if [ -n "$REPEATER" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/rgbImage:r" Enter
+fi
+
 # Source
 echo $START_SOURCE
 if [ -n "$START_SOURCE" ] # Variable is non-null
@@ -64,6 +70,12 @@ if [ -n "$START_YARP_SERVER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarpserver --write" Enter
 fi
+
+if [ -n "$REPEATER" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
+fi
+
 tmux split-window -h -t $TMUX_NAME
 
 # Manager
@@ -79,14 +91,11 @@ tmux split-window -h -t $TMUX_NAME
 
 # Object Detection RPC
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
-tmux send-keys -t $TMUX_NAME "python scripts/object_detection_rpc.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Source to Sink
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
-tmux send-keys -t $TMUX_NAME "python scripts/source_to_sink.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
 tmux select-pane -t $TMUX_NAME:0.0
 tmux split-window -h -t $TMUX_NAME
 

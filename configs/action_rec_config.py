@@ -39,7 +39,7 @@ class MAIN(BaseConfig):
         skeleton_scale = 2200.
         acquisition_time = 3  # Seconds
         fps = 12  # /2.5 # Fps car for action recognition
-        consistency_window_length = 4
+        consistency_window_length = 12
         os_score_thr = 0.5
         detect_focus = True
 

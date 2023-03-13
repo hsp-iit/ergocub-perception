@@ -12,6 +12,7 @@ class FocusModelConfig:
 class FaceDetectorConfig:
     def __init__(self):
         self.mode = 'mediapipe'
+        self.dlib_model_path = "action_rec/focus/gaze_estimation/assets/shape_predictor_68_face_landmarks.dat"
         self.mediapipe_max_num_faces = 1
         self.mediapipe_static_image_mode = False
 

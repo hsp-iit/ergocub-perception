@@ -10,7 +10,7 @@ from loguru import logger
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 
 from grasping.utils.input import RealSense
-from grasping.utils.misc import compose_transformations, reload_package
+from grasping.utils.misc import compose_transformations, reload_package, pose_to_matrix
 from grasping.utils.avg_timer import Timer
 from utils.logging import setup_logger
 import tensorrt as trt
@@ -18,7 +18,7 @@ import tensorrt as trt
 import torch
 import pycuda.autoinit
 
-from configs.grasping_config import Segmentation, Denoiser, ShapeCompletion, GraspDetection, Network, Logging
+from configs.grasping_config import Denoiser, ShapeCompletion, GraspDetection, Network, Logging
 
 setup_logger(**Logging.Logger.Params.to_dict())
 
@@ -56,19 +56,16 @@ class Grasping(Network.node):
         self.action = {"action": "none"}
 
         self.timer = Timer(window=10)
+
         # self.watch = Watch()
 
     def startup(self):
-
-        self.seg_model = Segmentation.model(**Segmentation.Args.to_dict())
         self.denoiser = Denoiser.model(**Denoiser.Args.to_dict())
         self.pcr_encoder = ShapeCompletion.Encoder.model(**ShapeCompletion.Encoder.Args.to_dict())
         self.pcr_decoder = ShapeCompletion.Decoder.model(**ShapeCompletion.Decoder.Args.to_dict())
         self.grasp_detector = GraspDetection.model(**GraspDetection.Args.to_dict())
 
     def loop(self, data):
-        # self.watch.check()
-
         output = {}
 
         self.timer.start()
@@ -76,8 +73,14 @@ class Grasping(Network.node):
 
         logger.info("Read camera input", recurring=True)
 
-        rgb = data['rgbImage']
-        depth = data['depthImage']
+        rgb = data['rgb']
+        depth = data['depth']
+
+        # Blocking should be fine as the camera pose streamer is much faster than this module
+
+        if 'camera_pose' in data:
+            camera_pose = data['camera_pose']
+            camera_pose = pose_to_matrix(camera_pose)
 
         output['rgb'] = rgb
         output['depth'] = depth
@@ -87,11 +90,7 @@ class Grasping(Network.node):
         flip_z = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]])
 
         # Segment the rgb and extract the object depth
-        mask = self.seg_model(rgb)
-        mask = cv2.resize(mask, dsize=(640, 480), interpolation=cv2.INTER_NEAREST)
-
-        logger.info("RGB segmented", recurring=True)
-
+        mask = data['mask']
         output['mask'] = mask
 
         segmented_depth = copy.deepcopy(depth)
@@ -114,9 +113,7 @@ class Grasping(Network.node):
             return output
 
         logger.info("Depth segmented", recurring=True)
-
         segmented_pc = RealSense.depth_pointcloud(segmented_depth)
-
         logger.info("Depth to point cloud", recurring=True)
 
         # Downsample
@@ -183,14 +180,21 @@ class Grasping(Network.node):
             output['fps_od'] = 1 / self.timer.compute(stop=True)
             return output
 
-        hands = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
+        hands_camera_frame = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
                           compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
 
-        hands_normalized = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis]]),
-                                     compose_transformations([poses[3].T, poses[2][np.newaxis]])], axis=-1)
+        output['hands'] = hands_camera_frame
+
+        if 'camera_pose' in data:
+            hands_root_frame = np.stack([camera_pose @ compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
+                                         camera_pose @ compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
+
+        if 'camera_pose' in data:
+            output['hands_root_frame'] = hands_root_frame
+        # hands_normalized = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis]]),
+        #                              compose_transformations([poses[3].T, poses[2][np.newaxis]])], axis=-1)
 
         if Logging.debug:
-            output['hands'] = hands
             output['planes'] = poses[4]
             output['lines'] = poses[5]
             output['vertices'] = poses[6] * (var * 2) + mean  # de-normalized
