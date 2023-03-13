@@ -1,6 +1,8 @@
 from logging import INFO
 
 from utils.concurrency import SrcYarpNode
+from utils.concurrency.generic_node import GenericNode
+from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
 from utils.input import RealSense
 from utils.winrealsesnse import WinRealSense
@@ -11,14 +13,23 @@ class Logging(BaseConfig):
     level = INFO
 
 
+# class Network(BaseConfig):
+#     node = SrcYarpNode
+#
+#     class Args:
+#         out_queues = {'depthCamera': ['rgbImage', 'depthImage']}
+
 class Network(BaseConfig):
-    node = SrcYarpNode
+    node = GenericNode
 
     class Args:
-        out_queues = {'depthCamera': ['rgbImage', 'depthImage']}
-
-        # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
-        blocking = False
+        out_queues = {
+            # in_port_name, out_port_name, data_type, out_name
+            'rgb': YarpQueue(local_port_name='/depthCamera/rgbImage:r',
+                             data_type='rgb', write_format='rgb', blocking=False),
+            'depth': YarpQueue(local_port_name='/depthCamera/depthImage:r',
+                             data_type='depth', write_format='depth', blocking=False)
+        }
 
 
 class Input(BaseConfig):
@@ -32,3 +43,4 @@ class Input(BaseConfig):
         # color_format = rs.format.rgb8  # TODO MAY CAUSE PROBLEM
         from_file = 'assets/robot_arena_videos/tilting_camera.bag'
         skip_frames = True
+
