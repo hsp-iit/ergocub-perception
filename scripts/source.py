@@ -1,13 +1,11 @@
 import copy
 import sys
 from pathlib import Path
-import cv2
 from loguru import logger
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 
 from configs.source_config import Logging, Network, Input
-from utils.concurrency import SrcYarpNode
 from utils.logging import setup_logger
 
 setup_logger(level=Logging.level)
