@@ -98,7 +98,7 @@ class Grasping(Network.node):
 
         if len(segmented_depth.nonzero()[0]) > 4096:
             distance = segmented_depth[segmented_depth != 0].min()
-            output['distance'] = int(distance)
+            output['obj_distance'] = int(distance)
 
             if distance < 700:
                 self.action = 'give'
