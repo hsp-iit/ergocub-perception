@@ -3,8 +3,10 @@ from logging import INFO
 from action_rec.ar.ar import ActionRecognizer
 from action_rec.focus.gaze_estimation.focus import FocusDetector
 from action_rec.hpe.hpe import HumanPoseEstimator
-from utils.concurrency import YarpSysNode  # TODO THIS CAUSES TROUBLES
-from utils.concurrency.yarppy_node import YarpPyNode
+from utils.concurrency.generic_node import GenericNode
+from utils.concurrency.ipc_queue import IPCQueue
+from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
 import platform
 
@@ -38,27 +40,30 @@ class MAIN(BaseConfig):
         window_size = seq_len
         skeleton_scale = 2200.
         acquisition_time = 3  # Seconds
-        fps = 12  # /2.5 # Fps car for action recognition
-        consistency_window_length = 12
+        fps = 100  # /2.5 # Fps car for action recognition
+        consistency_window_length = 8  # 12
         os_score_thr = 0.5
         detect_focus = True
 
 
 class Network(BaseConfig):
-    node = YarpPyNode
+    node = GenericNode
 
     class Args:
-        ip = "localhost"
-        port = 50000
+        in_queues = {
+            # in_port_name, out_port_name, data_type, out_name
+            'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
+                             data_type='rgb', read_format='rgb'),
+        }
 
-        in_config = {'depthCamera': ['rgbImage', 'depthImage']}
+        out_queues = {
+            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                  write_format={'fps_ar': None, 'human_distance': None, 'focus': None, 'pose': None,
+                                                'bbox': None, 'face_bbox': None, 'actions': None, 'is_true': None,
+                                                'requires_focus': None, 'edges': None, 'log': None,
+                                                'requires_os': None, 'action': None}),
 
-        out_config = {'visualizer': {k: None for k in
-                                     ['fps_ar', 'human_distance', 'focus', 'pose', 'bbox', 'face_bbox', 'actions',
-                                      'is_true', 'requires_focus', 'edges', 'log', 'requires_os', 'action']},
-                      'action_recognition_rpc': {'action': -1, 'human_distance': -1., 'focus': False}}
-        # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
-        blocking = False
+            'rpc': IPCQueue(ipc_key=1234, write_format={'action': -1, 'human_distance': -1, 'focus': False})}
 
 
 class HPE(BaseConfig):
@@ -78,15 +83,11 @@ class HPE(BaseConfig):
         num_aug = 0  # if zero, disables test time augmentation
         just_box = input_type == "rgb"
 
-        fx = 384.025146484375
-        fy = 384.025146484375
-        ppx = 319.09661865234375
-        ppy = 237.75723266601562
-
-        # fx = 613.011
-        # fy = 612.094
-        # ppx = 326.097
-        # ppy = 252.924
+        # D435i (got from andrea)
+        fx = 612.7910766601562
+        fy = 611.8779296875
+        ppx = 321.7364196777344
+        ppy = 245.0658416748047
 
         width = 640
         height = 480

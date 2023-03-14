@@ -39,4 +39,4 @@ class FocusConfig:
         self.dist_thr = 0.3  # when distant, roll under this thr is considered focus
         self.foc_rot_thr = 0.7  # when close, roll above this thr is considered not focus
         self.patience = 3  # result is based on the majority of previous observations
-        self.sample_params_path = os.path.join(base_dir, "assets", "sample_params.yaml")
+        self.sample_params_path = os.path.join(base_dir, "focus", "gaze_estimation", "assets", "sample_params.yaml")
