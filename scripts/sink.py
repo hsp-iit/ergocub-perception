@@ -6,23 +6,28 @@ import numpy as np
 from loguru import logger
 from scipy.spatial.transform import Rotation
 
-sys.path.insert(0,  Path(__file__).parent.parent.as_posix())
+from utils.concurrency.utils.signals import Signals
+
+sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
 
 from grasping.utils.misc import draw_mask, project_pc, project_hands
 from configs.sink_config import Logging, Network
 
 setup_logger(level=Logging.level)
+
+
 @logger.catch(reraise=True)
 class Sink(Network.node):
     def __init__(self):
         self.img = np.zeros([480, 640, 3], dtype=np.uint8)
-        self.mask = None
-        self.center = None
-        self.hands = None
+        self.mask = Signals.NOT_OBSERVED
+        self.center = Signals.NOT_OBSERVED
+        self.hands = Signals.NOT_OBSERVED
+        self.obj_distance = Signals.NOT_OBSERVED
+
         self.fps_ar = None
         self.distance = None
-        self.box_distance = None
         self.focus = None
         self.pose = None
         self.bbox = None
@@ -33,14 +38,10 @@ class Sink(Network.node):
         self.requires_focus = None
         self.requires_os = None
         self.action = None
-        self.id_to_action = ['stand', 'hello', 'handshake', 'lift' ,'get']
+        self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get']
         super().__init__(**Network.Args.to_dict())
 
     def startup(self):
-        # logo = cv2.imread('assets/logo.jpg')
-        # logo = cv2.resize(logo, (640, 480))
-        # cv2.imshow('Ergocub-Visual-Perception', np.array(logo, dtype=np.uint8))
-        # cv2.waitKey(1)
         pass
 
     def loop(self, data: dict) -> dict:
@@ -50,22 +51,33 @@ class Sink(Network.node):
         img = self.img
 
         # GRASPING #####################################################################################################
-        if 'mask' in data.keys():
-            self.mask = data['mask']
+        mask = data.get('mask', Signals.MISSING_VALUE)
+        if mask not in Signals:
+            self.mask = mask
         img = draw_mask(img, self.mask)
 
-        if 'center' in data.keys():
-            self.center = data['center']
-        if self.center is not None:
+        center = data.get('center', Signals.MISSING_VALUE)
+        if center is not Signals.MISSING_VALUE:
+            self.center = center
+        if self.center not in Signals:
             img = cv2.circle(img, project_pc(self.center)[0], 5, (0, 255, 0)).astype(np.uint8)
 
-        if 'hands' in data.keys():
-            self.hands = data['hands']
-        if self.hands is not None:
+        hands = data.get('hands', Signals.MISSING_VALUE)
+        if hands is not Signals.MISSING_VALUE:
+            self.hands = hands
+        if self.hands not in Signals:
             rot = Rotation.from_matrix(self.hands[..., 0][:-1, :-1]).as_euler('xyz', degrees=True)
             # print(f'x: {rot[0]}, y: {rot[1]}, z: {rot[2]}' )
             if 80 < rot[1] < 100:
                 img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
+
+        obj_distance = data.get('obj_distance', Signals.MISSING_VALUE)
+        if obj_distance is not Signals.MISSING_VALUE:
+            self.obj_distance = obj_distance
+        if self.obj_distance not in Signals:
+            img = cv2.putText(img, f'OBJ DIST: {self.obj_distance / 1000.:.2f}', (450, 470), cv2.FONT_ITALIC, 0.7,
+                              (255, 0, 0), 1,
+                              cv2.LINE_AA)
 
         # HUMAN ########################################################################################################
         if 'fps_ar' in data.keys():
@@ -80,12 +92,6 @@ class Sink(Network.node):
             img = cv2.putText(img, f'DIST: {self.distance:.2f}', (200, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
                               cv2.LINE_AA)
 
-        if 'distance' in data.keys():
-            self.box_distance = data['distance']
-        if self.box_distance is not None:
-            img = cv2.putText(img, f'OBJ DIST: {self.box_distance/1000.:.2f}', (450, 470), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
-                              cv2.LINE_AA)
-
         if 'focus' in data.keys():
             self.focus = data['focus']
         if self.focus is not None:
@@ -98,8 +104,8 @@ class Sink(Network.node):
         if self.pose is not None:  # and self.hands is None:
             img = cv2.rectangle(img, (0, 430), (50, 480), (255, 255, 255), cv2.FILLED)
             for edge in self.edges:
-                p0 = [int((p*50)+50) for p in self.pose[edge[0]][:2]]
-                p1 = [int((p*50)+50) for p in self.pose[edge[1]][:2]]
+                p0 = [int((p * 50) + 50) for p in self.pose[edge[0]][:2]]
+                p1 = [int((p * 50) + 50) for p in self.pose[edge[1]][:2]]
                 p0[1] += 405
                 p1[1] += 405
                 p0[0] += -25
