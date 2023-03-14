@@ -4,7 +4,7 @@ from pathlib import Path
 import tensorrt  # TODO NEEDED IN ERGOCUB, NOT NEEDED IN ISBFSAR
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-from configs.action_rec_config import Network, HPE, FOCUS, AR, MAIN
+from configs.action_rec_config import Network, HPE, AR, MAIN
 import os
 import numpy as np
 import time
@@ -33,9 +33,6 @@ class ISBFSAR(Network.node):
         self.detect_focus = detect_focus
         self.last_time = None
         self.edges = None
-        self.focus_in = None
-        self.focus_out = None
-        self.focus_proc = None
         self.hpe_in = None
         self.hpe_out = None
         self.hpe_proc = None
@@ -45,13 +42,6 @@ class ISBFSAR(Network.node):
         self.last_log = None
 
     def startup(self):
-        # Load modules
-        if self.detect_focus:
-            self.focus_in = Queue(1)
-            self.focus_out = Queue(1)
-            self.focus_proc = Process(target=run_module, args=(FOCUS, self.focus_in, self.focus_out))
-            self.focus_proc.start()
-
         self.hpe_in = Queue(1)
         self.hpe_out = Queue(1)
         self.hpe_proc = Process(target=run_module, args=(HPE, self.hpe_in, self.hpe_out))
@@ -99,8 +89,6 @@ class ISBFSAR(Network.node):
         ar_input = {}
 
         # Start independent modules
-        if self.detect_focus:
-            self.focus_in.put(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         self.hpe_in.put(img)
 
         # RGB CASE
@@ -149,16 +137,6 @@ class ISBFSAR(Network.node):
         elements["is_true"] = is_true
         elements["requires_focus"] = requires_focus
         elements["requires_os"] = requires_os
-
-        # FOCUS #######################################################
-        elements["focus"] = False
-        elements["face_bbox"] = None
-        if self.detect_focus:
-            focus_ret = self.focus_out.get()
-            if focus_ret is not None:
-                focus, face = focus_ret
-                elements["focus"] = focus
-                elements["face_bbox"] = face.bbox.reshape(-1)
 
         # Filter action with os and consistency window
         elements["action"] = -1
