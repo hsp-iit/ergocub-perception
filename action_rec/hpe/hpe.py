@@ -1,6 +1,6 @@
 import copy
 import pickle
-from .utils.misc import postprocess_yolo_output, homography, get_augmentations, is_within_fov, \
+from action_rec.hpe.utils.misc import postprocess_yolo_output, homography, get_augmentations, is_within_fov, \
     reconstruct_absolute
 import einops
 import numpy as np
@@ -8,7 +8,7 @@ from utils.human_runner import Runner
 # from utils.runner import Runner  TODO FIX
 from tqdm import tqdm
 import cv2
-from .utils.matplotlib_visualizer import MPLPosePrinter
+from action_rec.hpe.utils.matplotlib_visualizer import MPLPosePrinter
 
 
 class HumanPoseEstimator:
@@ -157,20 +157,25 @@ class HumanPoseEstimator:
             return None
 
         # Move the skeleton into estimated absolute position if necessary
-        pred3d = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
+        pred3d_recon = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
 
         # Go back in original space (without augmentation and homography)
         pred3d = pred3d @ homo_inv
+        pred3d_recon = pred3d_recon @ homo_inv
 
         # Get correct skeleton
         pred3d = (pred3d.swapaxes(1, 2) @ self.expand_joints).swapaxes(1, 2)
+        pred3d_recon = (pred3d_recon.swapaxes(1, 2) @ self.expand_joints).swapaxes(1, 2)
         if self.skeleton is not None:
             pred3d = pred3d[:, self.skeleton_types[self.skeleton]['indices']]
+            pred3d_recon = pred3d_recon[:, self.skeleton_types[self.skeleton]['indices']]
             edges = self.skeleton_types[self.skeleton]['edges']
         else:
             edges = None
 
         pred3d = pred3d[0]  # Remove batch dimension
+        pred3d_recon = pred3d_recon[0]
+        pred3d = pred3d + pred3d_recon[0]
 
         return {"pose": pred3d,
                 "edges": edges,
@@ -178,18 +183,25 @@ class HumanPoseEstimator:
 
 
 if __name__ == "__main__":
-    from action_rec.utils.params import MetrabsTRTConfig, RealSenseIntrinsics, MainConfig
-    args = MainConfig()
+    from configs.action_rec_config import HPE
+    from multiprocessing.managers import BaseManager
+    import pycuda.autoinit
+    from utils.concurrency.pypy_node import connect
+
+    # Connect to realsense
+    BaseManager.register('get_queue')
+    manager = BaseManager(address=('172.27.192.1', 5000), authkey=b'abracadabra')
+    connect(manager)
+    send_out = manager.get_queue('windows_out')
+
     vis = MPLPosePrinter()
 
-    h = HumanPoseEstimator(MetrabsTRTConfig(), RealSenseIntrinsics())
-
-    # from utils.input import RealSense
-    # cap = RealSense(width=args.cam_width, height=args.cam_height)  # RealSense
-    cap = cv2.VideoCapture(0)  # Webcam
+    h = HumanPoseEstimator(**HPE.Args.to_dict())
 
     for _ in tqdm(range(10000)):
-        ret, img = cap.read()
+        img = send_out.get()["rgb"]
+        # cv2.imwrite('test1.jpg', img)
+        # img = cv2.imread('test1.jpg')
         r = h.estimate(img)
 
         if r is not None:
@@ -199,9 +211,10 @@ if __name__ == "__main__":
             b = r["bbox"]
 
             if p is not None:
+                print(np.sqrt(np.sum(np.square(np.array([0, 0, 0]) - np.array(p[0])))))
                 p = p - p[0]
                 vis.clear()
-                vis.print_pose(p, e)
+                vis.print_pose(p*5, e)
                 vis.sleep(0.001)
 
             if b is not None:

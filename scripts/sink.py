@@ -124,7 +124,7 @@ class Sink(Network.node):
         if self.face_bbox is not None:
             x1, y1, x2, y2 = self.face_bbox
             color = (255, 0, 0) if not focus else (0, 255, 0)
-            img = cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+            img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
 
         if 'actions' in data.keys():
             self.actions = data["actions"]
