@@ -10,6 +10,7 @@ from grasping.shape_completion.confidence_pcr.encoder import ConfidencePCRDecode
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig
 
 
@@ -29,7 +30,6 @@ class Network(BaseConfig):
 
     class Args:
         in_queues = {
-            # in_port_name, out_port_name, data_type, out_name
             'segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc', blocking=True),
             # 'camera_pose': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',
             #                          local_port_name='/VisualPerception/ShapeCompletion/camera_pose:i',
@@ -38,10 +38,11 @@ class Network(BaseConfig):
 
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={k: None for k in ['hands', 'fps_od', 'distance']}),
+                                  write_format={k: Signals.NOT_OBSERVED for k in ['hands', 'fps_od', 'obj_distance']}),
             '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
-                                     write_format={k: -1 for k in ['reconstruction', 'partial', 'transform', 'scene',
-                                                                     'hands', 'planes', 'lines', 'vertices']}),
+                                     write_format={k: Signals.NOT_OBSERVED for k in
+                                                   ['reconstruction', 'transform', 'scene',
+                                                    'hands', 'vertices']}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'distance': -1, 'hands': np.full([4, 4, 2], -1.)})
         }
 
