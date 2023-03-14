@@ -5,8 +5,8 @@ import numpy as np
 from grasping.segmentation.fcn.fcn_segmentator_trt import FcnSegmentatorTRT
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.utils.signals import Signals
 from utils.concurrency.yarp_queue import YarpQueue
-from utils.concurrency.yarppy_node import YarpPyNode
 from utils.confort import BaseConfig
 
 
@@ -33,9 +33,10 @@ class Network(BaseConfig):
         }
 
         out_queues = {
-            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',write_format={'mask': None}),
+            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                  write_format={'mask': Signals.NOT_OBSERVED}),
             'shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
-                                        write_format={'mask': None, 'depth': None, 'rgb': None})
+                                        write_format={k: Signals.NOT_OBSERVED for k in ['mask', 'depth', 'rgb']})
         }
 
 
