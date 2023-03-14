@@ -1,6 +1,6 @@
 import copy
 import pickle
-from .utils.misc import postprocess_yolo_output, homography, get_augmentations, is_within_fov, \
+from action_rec.hpe.utils.misc import postprocess_yolo_output, homography, get_augmentations, is_within_fov, \
     reconstruct_absolute
 import einops
 import numpy as np
@@ -8,7 +8,7 @@ from utils.human_runner import Runner
 # from utils.runner import Runner  TODO FIX
 from tqdm import tqdm
 import cv2
-from .utils.matplotlib_visualizer import MPLPosePrinter
+from action_rec.hpe.utils.matplotlib_visualizer import MPLPosePrinter
 
 
 class HumanPoseEstimator:
@@ -153,11 +153,37 @@ class HumanPoseEstimator:
 
         # If less than 1/3 of the joints is visible, then the resulting pose will be weird
         # n < 30
-        if is_predicted_to_be_in_fov.sum() < is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
-            return None
+        # if is_predicted_to_be_in_fov.sum() < is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
+        #     return None
 
         # Move the skeleton into estimated absolute position if necessary
         pred3d = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
+
+        # # TODO EXP START show pred2d on bbone
+        # bbone_aux = copy.deepcopy(bbone_in[0])
+        # pred2d = pred2d[0]
+        # is_predicted_to_be_in_fov = is_predicted_to_be_in_fov[0]
+        # for p, is_fov in zip(pred2d, is_predicted_to_be_in_fov):
+        #     bbone_aux = cv2.circle(bbone_aux, (int(p[0]), int(p[1])), 2, (0, 255, 0) if is_fov else (0, 0, 255), 2)
+        # cv2.imshow("2d on bbone", bbone_aux.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
+        # # TODO EXP START show reconstructed 3d on bbone
+        # bbone_aux = copy.deepcopy(bbone_in[0])
+        # pred3d_projected = pred3d @ new_K
+        # for p in pred3d_projected[0]:
+        #     bbone_aux = cv2.circle(bbone_aux, (int(p[0]+(bbone_aux.shape[1]/2)), int(p[1]+(bbone_aux.shape[0]/2))), 2, (0, 255, 0), 2)
+        # cv2.imshow("3d on bbone", bbone_aux.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
+        # # TODO EXP START
+        # pred3d_projected = pred3d @ homo_inv
+        # pred3d_projected = pred3d_projected @ self.K
+        # for p in pred3d_projected[0]:
+        #     frame = cv2.circle(frame, (int(p[0]+(frame.shape[1]/2)), int(p[1]+(frame.shape[0]/2))), 2, (0, 255, 0), 2)
+        # cv2.imshow("3d on origin", frame.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
 
         # Go back in original space (without augmentation and homography)
         pred3d = pred3d @ homo_inv
@@ -178,18 +204,25 @@ class HumanPoseEstimator:
 
 
 if __name__ == "__main__":
-    from action_rec.utils.params import MetrabsTRTConfig, RealSenseIntrinsics, MainConfig
-    args = MainConfig()
+    from configs.action_rec_config import HPE
+    from multiprocessing.managers import BaseManager
+    import pycuda.autoinit
+    from utils.concurrency.pypy_node import connect
+
+    # Connect to realsense
+    BaseManager.register('get_queue')
+    manager = BaseManager(address=('172.27.192.1', 5000), authkey=b'abracadabra')
+    connect(manager)
+    send_out = manager.get_queue('windows_out')
+
     vis = MPLPosePrinter()
 
-    h = HumanPoseEstimator(MetrabsTRTConfig(), RealSenseIntrinsics())
-
-    # from utils.input import RealSense
-    # cap = RealSense(width=args.cam_width, height=args.cam_height)  # RealSense
-    cap = cv2.VideoCapture(0)  # Webcam
+    h = HumanPoseEstimator(**HPE.Args.to_dict())
 
     for _ in tqdm(range(10000)):
-        ret, img = cap.read()
+        img = send_out.get()["rgb"]
+        # cv2.imwrite('test1.jpg', img)
+        # img = cv2.imread('test1.jpg')
         r = h.estimate(img)
 
         if r is not None:
@@ -199,9 +232,10 @@ if __name__ == "__main__":
             b = r["bbox"]
 
             if p is not None:
+                print(np.sqrt(np.sum(np.square(np.array([0, 0, 0]) - np.array(p[0])))))
                 p = p - p[0]
                 vis.clear()
-                vis.print_pose(p, e)
+                vis.print_pose(p*5, e)
                 vis.sleep(0.001)
 
             if b is not None:

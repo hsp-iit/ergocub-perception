@@ -4,7 +4,7 @@ from pathlib import Path
 import tensorrt  # TODO NEEDED IN ERGOCUB, NOT NEEDED IN ISBFSAR
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-from configs.action_rec_config import Network, HPE, FOCUS, AR, MAIN
+from configs.action_rec_config import Network, HPE, AR, MAIN
 import os
 import numpy as np
 import time
@@ -33,9 +33,6 @@ class ISBFSAR(Network.node):
         self.detect_focus = detect_focus
         self.last_time = None
         self.edges = None
-        self.focus_in = None
-        self.focus_out = None
-        self.focus_proc = None
         self.hpe_in = None
         self.hpe_out = None
         self.hpe_proc = None
@@ -45,13 +42,6 @@ class ISBFSAR(Network.node):
         self.last_log = None
 
     def startup(self):
-        # Load modules
-        if self.detect_focus:
-            self.focus_in = Queue(1)
-            self.focus_out = Queue(1)
-            self.focus_proc = Process(target=run_module, args=(FOCUS, self.focus_in, self.focus_out))
-            self.focus_proc.start()
-
         self.hpe_in = Queue(1)
         self.hpe_out = Queue(1)
         self.hpe_proc = Process(target=run_module, args=(HPE, self.hpe_in, self.hpe_out))
@@ -99,8 +89,6 @@ class ISBFSAR(Network.node):
         ar_input = {}
 
         # Start independent modules
-        if self.detect_focus:
-            self.focus_in.put(img)
         self.hpe_in.put(img)
 
         # RGB CASE
@@ -150,16 +138,6 @@ class ISBFSAR(Network.node):
         elements["requires_focus"] = requires_focus
         elements["requires_os"] = requires_os
 
-        # FOCUS #######################################################
-        elements["focus"] = False
-        elements["face_bbox"] = None
-        if self.detect_focus:
-            focus_ret = self.focus_out.get()
-            if focus_ret is not None:
-                focus, face = focus_ret
-                elements["focus"] = focus
-                elements["face_bbox"] = face.bbox.reshape(-1)
-
         # Filter action with os and consistency window
         elements["action"] = -1
         if len(elements["actions"]) > 0:
@@ -189,45 +167,46 @@ class ISBFSAR(Network.node):
 
     def loop(self, data):
         log = None
-        if "rgbImage" in data.keys():  # Save last data with image
+        if "rgb" in data.keys():  # Save last data with image
             self.last_data = data
         else:  # It arrives just a message, but we need all
             data.update(self.last_data)
 
         if not self.commands_queue.empty():
             msg = self.commands_queue.get()["msg"]
-            msg = msg.strip()
-            msg = msg.split()
+            if msg is not None:
+                msg = msg.strip()
+                msg = msg.split()
 
-            # select appropriate command
-            if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
-                exit()
+                # select appropriate command
+                if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
+                    exit()
 
-            elif msg[0] == "add" and len(msg) > 1:
-                log = self.learn_command(msg[1:])
-                data = self._recv()
+                elif msg[0] == "add" and len(msg) > 1:
+                    log = self.learn_command(msg[1:])
+                    data = self._recv()
 
-            elif msg[0] == "remove" and len(msg) > 1:
-                log = self.forget_command(msg[1])
+                elif msg[0] == "remove" and len(msg) > 1:
+                    log = self.forget_command(msg[1])
 
-            elif msg[0] == "save":
-                log = self.ar.save()
+                elif msg[0] == "save":
+                    log = self.ar.save()
 
-            elif msg[0] == "load":
-                log = self.ar.load()
+                elif msg[0] == "load":
+                    log = self.ar.load()
 
-            elif msg[0] == "debug":
-                log = self.debug()
+                elif msg[0] == "debug":
+                    log = self.debug()
 
-            elif msg[0] == "edit_focus":
-                log = self.ar.edit_focus(msg[1], msg[2])
+                elif msg[0] == "edit_focus":
+                    log = self.ar.edit_focus(msg[1], msg[2])
 
-            elif msg[0] == "edit_os":
-                log = self.ar.edit_os(msg[1], msg[2])
+                elif msg[0] == "edit_os":
+                    log = self.ar.edit_os(msg[1], msg[2])
 
-            else:
-                log = "Not a valid command!"
-        d = self.get_frame(img=data["rgbImage"], log=log)
+                else:
+                    log = "Not a valid command!"
+        d = self.get_frame(img=data["rgb"], log=log)
         return d
 
     def forget_command(self, flag):

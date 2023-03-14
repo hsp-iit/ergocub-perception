@@ -1,10 +1,11 @@
 import os
 from logging import INFO
 from action_rec.ar.ar import ActionRecognizer
-from action_rec.focus.gaze_estimation.focus import FocusDetector
 from action_rec.hpe.hpe import HumanPoseEstimator
-from utils.concurrency import YarpSysNode  # TODO THIS CAUSES TROUBLES
-from utils.concurrency.yarppy_node import YarpPyNode
+from utils.concurrency.generic_node import GenericNode
+from utils.concurrency.ipc_queue import IPCQueue
+from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
 import platform
 
@@ -38,28 +39,30 @@ class MAIN(BaseConfig):
         window_size = seq_len
         skeleton_scale = 2200.
         acquisition_time = 3  # Seconds
-        fps = 12  # /2.5 # Fps car for action recognition
-        consistency_window_length = 12
+        fps = 100  # /2.5 # Fps car for action recognition
+        consistency_window_length = 8  # 12
         os_score_thr = 0.5
         detect_focus = True
 
 
 class Network(BaseConfig):
-    node = YarpPyNode
+    node = GenericNode
 
     class Args:
-        ip = "localhost"
-        port = 50000
+        in_queues = {
+            # in_port_name, out_port_name, data_type, out_name
+            'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
+                             data_type='rgb', read_format='rgb'),
+        }
 
-        in_config = {'depthCamera': ['rgbImage', 'depthImage']}
+        out_queues = {
+            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                  write_format={'fps_ar': None, 'human_distance': None, 'pose': None,
+                                                'bbox': None, 'actions': None, 'is_true': None,
+                                                'requires_focus': None, 'edges': None, 'log': None,
+                                                'requires_os': None, 'action': None}),
 
-        out_config = {'visualizer': {k: None for k in
-                                     ['fps_ar', 'human_distance', 'focus', 'pose', 'bbox', 'face_bbox', 'actions',
-                                      'is_true', 'requires_focus', 'edges', 'log', 'requires_os', 'action']},
-                      'action_recognition_rpc': {'action': -1, 'human_distance': -1., 'focus': False,
-                                                 "filtered_action": -1}}
-        # make the output queue blocking (can be used to put a breakpoint in the sink and debug the process output)
-        blocking = False
+            'rpc': IPCQueue(ipc_key=1234, write_format={'action': -1, 'human_distance': -1})}
 
 
 class HPE(BaseConfig):
@@ -79,30 +82,16 @@ class HPE(BaseConfig):
         num_aug = 0  # if zero, disables test time augmentation
         just_box = input_type == "rgb"
 
-        fx = 384.025146484375
-        fy = 384.025146484375
-        ppx = 319.09661865234375
-        ppy = 237.75723266601562
+        # D435i (got from andrea)
+        fx = 612.7910766601562
+        fy = 611.8779296875
+        ppx = 321.7364196777344
+        ppy = 245.0658416748047
+
         width = 640
         height = 480
 
         necessary_percentage_visible_joints = 0.3
-
-
-# TODO GO HERE TO CHANGE OPTIONS FOR FOCUS (CHANGE IN FUTURE)
-
-
-class FOCUS(BaseConfig):
-    model = FocusDetector
-
-    class Args:
-        area_thr = 0.03  # head bounding box must be over this value to be close
-        close_thr = -0.95  # When close, z value over this thr is considered focus
-        dist_thr = 0.3  # when distant, roll under this thr is considered focus
-        foc_rot_thr = 0.7  # when close, roll above this thr is considered not focus
-        patience = 3  # result is based on the majority of previous observations
-        sample_params_path = os.path.join(base_dir, "focus", "gaze_estimation", "assets",
-                                          "sample_params.yaml")
 
 
 # TODO GO HERE TO CHANGE OPTION FOR TRAINING ACTION RECOGNITION (CHANGE IN FUTURE)

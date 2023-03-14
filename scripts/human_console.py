@@ -43,7 +43,7 @@ class VISPYVisualizer(Network.node):
                 self.input_text = self.input_text[:-1]
             self.log_text.text = ''
         elif x.text == '+':
-            self._send_all({"human_console_commands": {"msg": self.input_text[1:]}}, blocking=False)
+            self._send_all({"human_console_commands": {"msg": self.input_text[1:]}})
             # self.output_queue.put(self.input_text[1:])  # Do not send '>'
             self.input_text = '>'
             self.log_text.text = ''

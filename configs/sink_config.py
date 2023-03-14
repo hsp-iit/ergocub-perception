@@ -1,5 +1,4 @@
 from logging import INFO
-
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.yarp_queue import YarpQueue
