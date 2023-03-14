@@ -144,7 +144,7 @@ class Sink(Network.node):
         if 'action' in data.keys():
             self.action = data["action"]
         if self.action is not None:
-            if self.obj_distance is Signals.MISSING_VALUE or self.obj_distance/1000 > 1.5:  # No box in 1 meter
+            if self.obj_distance is Signals.NOT_OBSERVED or self.obj_distance/1000 > 1.5:  # No box in 1 meter
                 label = self.id_to_action[self.action] if self.action != -1 else 'none'
                 if label != 'none':
                     textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
