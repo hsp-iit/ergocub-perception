@@ -21,14 +21,14 @@ class Source(Network.node):
     def startup(self):
         self.camera = Input.camera(**Input.Params.to_dict())
 
-    def loop(self):
+    def loop(self, _):
 
         while True:
             try:
                 rgb, depth = self.camera.read()
-                data = {'rgbImage': copy.deepcopy(rgb), 'depthImage': copy.deepcopy(depth)}
+                data = {'rgb': copy.deepcopy(rgb), 'depth': copy.deepcopy(depth)}
 
-                return {k: data for k in Network.Args.out_queues}
+                return data
 
             except RuntimeError as e:
                 logger.error("Realsense: frame didn't arrive")
