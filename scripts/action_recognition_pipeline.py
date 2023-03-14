@@ -100,7 +100,7 @@ class ISBFSAR(Network.node):
 
         # Start independent modules
         if self.detect_focus:
-            self.focus_in.put(img)
+            self.focus_in.put(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         self.hpe_in.put(img)
 
         # RGB CASE
@@ -189,45 +189,46 @@ class ISBFSAR(Network.node):
 
     def loop(self, data):
         log = None
-        if "rgbImage" in data.keys():  # Save last data with image
+        if "rgb" in data.keys():  # Save last data with image
             self.last_data = data
         else:  # It arrives just a message, but we need all
             data.update(self.last_data)
 
         if not self.commands_queue.empty():
             msg = self.commands_queue.get()["msg"]
-            msg = msg.strip()
-            msg = msg.split()
+            if msg is not None:
+                msg = msg.strip()
+                msg = msg.split()
 
-            # select appropriate command
-            if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
-                exit()
+                # select appropriate command
+                if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
+                    exit()
 
-            elif msg[0] == "add" and len(msg) > 1:
-                log = self.learn_command(msg[1:])
-                data = self._recv()
+                elif msg[0] == "add" and len(msg) > 1:
+                    log = self.learn_command(msg[1:])
+                    data = self._recv()
 
-            elif msg[0] == "remove" and len(msg) > 1:
-                log = self.forget_command(msg[1])
+                elif msg[0] == "remove" and len(msg) > 1:
+                    log = self.forget_command(msg[1])
 
-            elif msg[0] == "save":
-                log = self.ar.save()
+                elif msg[0] == "save":
+                    log = self.ar.save()
 
-            elif msg[0] == "load":
-                log = self.ar.load()
+                elif msg[0] == "load":
+                    log = self.ar.load()
 
-            elif msg[0] == "debug":
-                log = self.debug()
+                elif msg[0] == "debug":
+                    log = self.debug()
 
-            elif msg[0] == "edit_focus":
-                log = self.ar.edit_focus(msg[1], msg[2])
+                elif msg[0] == "edit_focus":
+                    log = self.ar.edit_focus(msg[1], msg[2])
 
-            elif msg[0] == "edit_os":
-                log = self.ar.edit_os(msg[1], msg[2])
+                elif msg[0] == "edit_os":
+                    log = self.ar.edit_os(msg[1], msg[2])
 
-            else:
-                log = "Not a valid command!"
-        d = self.get_frame(img=data["rgbImage"], log=log)
+                else:
+                    log = "Not a valid command!"
+        d = self.get_frame(img=data["rgb"], log=log)
         return d
 
     def forget_command(self, flag):

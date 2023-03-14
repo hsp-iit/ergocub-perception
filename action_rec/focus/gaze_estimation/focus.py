@@ -4,7 +4,7 @@ from tqdm import tqdm
 from scipy.spatial.transform import Rotation
 import yaml
 import numpy as np
-from .configuration import FocusConfig  # TODO CHANGE THIS
+from action_rec.focus.gaze_estimation.configuration import FocusConfig  # TODO CHANGE THIS
 
 
 class FocusDetector:
@@ -110,7 +110,6 @@ class FocusDetector:
 
         if len(faces) == 0:
             return None
-
         fc = faces[0]  # We can only have one face
         self.gaze_estimator.estimate_gaze(frame, fc)
 
@@ -148,15 +147,21 @@ def convert_pt(point):
 
 
 if __name__ == "__main__":
-    from ISBFSAR.utils.params import FocusConfig
+    from multiprocessing.managers import BaseManager
+    import pycuda.autoinit
+    from utils.concurrency.pypy_node import connect
+    from configs.action_rec_config import FOCUS
 
-    cap = cv2.VideoCapture(0)
-    # ok, img = cap.read()
-    # img = cv2.imread("frame.jpg")
-    det = FocusDetector(FocusConfig())
+    # Connect to realsense
+    BaseManager.register('get_queue')
+    manager = BaseManager(address=('172.27.192.1', 5000), authkey=b'abracadabra')
+    connect(manager)
+    send_out = manager.get_queue('windows_out')
+
+    det = FocusDetector(**FOCUS.Args.to_dict())
 
     for _ in tqdm(range(10000000)):
-        ok, img = cap.read()
+        img = send_out.get()["rgb"]
         f = det.estimate(img)
 
         if f is not None:
@@ -178,5 +183,3 @@ if __name__ == "__main__":
             cv2.imshow('normalized', f.normalized_image)
         cv2.imshow('frame', img)
         cv2.waitKey(1)
-
-    cap.release()

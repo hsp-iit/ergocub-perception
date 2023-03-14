@@ -71,40 +71,41 @@ class Sink(Network.node):
         if 'fps_ar' in data.keys():
             self.fps_ar = data['fps_ar']
         if self.fps_ar is not None:
-            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
         if 'human_distance' in data.keys():
             self.distance = data['human_distance']
         if self.distance is not None:
-            img = cv2.putText(img, f'DIST: {self.distance:.2f}', (200, 20), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+            img = cv2.putText(img, f'DIST: {self.distance:.2f}', (240, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
         if 'distance' in data.keys():
             self.box_distance = data['distance']
         if self.box_distance is not None:
-            img = cv2.putText(img, f'OBJ DIST: {self.box_distance/1000.:.2f}', (450, 470), cv2.FONT_ITALIC, 0.7, (255, 0, 0), 1,
+            img = cv2.putText(img, f'OBJ DIST: {self.box_distance/1000.:.2f}', (450, 470), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
         if 'focus' in data.keys():
             self.focus = data['focus']
         if self.focus is not None:
-            img = cv2.putText(img, "FOCUS" if self.focus else "NOT FOCUS", (400, 20), cv2.FONT_ITALIC, 0.7,
-                              (0, 255, 0) if self.focus else (0, 0, 255), 1, cv2.LINE_AA)
+            img = cv2.putText(img, "FOCUS" if self.focus else "NOT FOCUS", (460, 20), cv2.FONT_ITALIC, 0.7,
+                              (0, 255, 0) if self.focus else (255, 0, 0), 2, cv2.LINE_AA)
 
         if 'pose' in data.keys():  # and self.hands is None:
             self.pose = data["pose"]
             self.edges = data["edges"]
         if self.pose is not None:  # and self.hands is None:
-            img = cv2.rectangle(img, (0, 430), (50, 480), (255, 255, 255), cv2.FILLED)
+            size = 150
+            img = cv2.rectangle(img, (0, 480-size), (size, 480), (255, 255, 255), cv2.FILLED)
             for edge in self.edges:
-                p0 = [int((p*50)+50) for p in self.pose[edge[0]][:2]]
-                p1 = [int((p*50)+50) for p in self.pose[edge[1]][:2]]
-                p0[1] += 405
-                p1[1] += 405
-                p0[0] += -25
-                p1[0] += -25
-                img = cv2.line(img, p0, p1, (0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+                p0 = [int((p*size)+size) for p in self.pose[edge[0]][:2]]
+                p1 = [int((p*size)+size) for p in self.pose[edge[1]][:2]]
+                p0[1] += int(480 - size*1.5)
+                p1[1] += int(480 - size*1.5)
+                p0[0] += int(-size/2)
+                p1[0] += int(-size/2)
+                img = cv2.line(img, p0, p1, (0, 0, 0), thickness=1, lineType=cv2.LINE_AA)
 
         if 'bbox' in data:
             self.bbox = data["bbox"]
@@ -137,12 +138,13 @@ class Sink(Network.node):
         if 'action' in data.keys():
             self.action = data["action"]
         if self.action is not None:
-            label = self.id_to_action[self.action] if self.action != -1 else 'none'
-            if label != 'none':
-                textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
-                textX = int((img.shape[1] - textsize[0]) / 2)
-                text_color = (0, 255, 0)
-                img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
+            if self.box_distance is None or self.box_distance/1000 > 1.5:  # No box in 1 meter
+                label = self.id_to_action[self.action] if self.action != -1 else 'none'
+                if label != 'none':
+                    textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
+                    textX = int((img.shape[1] - textsize[0]) / 2)
+                    text_color = (0, 255, 0)
+                    img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
 
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 

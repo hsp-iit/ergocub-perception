@@ -153,29 +153,50 @@ class HumanPoseEstimator:
 
         # If less than 1/3 of the joints is visible, then the resulting pose will be weird
         # n < 30
-        if is_predicted_to_be_in_fov.sum() < is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
-            return None
+        # if is_predicted_to_be_in_fov.sum() < is_predicted_to_be_in_fov.size*self.necessary_percentage_visible_joints:
+        #     return None
 
         # Move the skeleton into estimated absolute position if necessary
-        pred3d_recon = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
+        pred3d = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
+
+        # # TODO EXP START show pred2d on bbone
+        # bbone_aux = copy.deepcopy(bbone_in[0])
+        # pred2d = pred2d[0]
+        # is_predicted_to_be_in_fov = is_predicted_to_be_in_fov[0]
+        # for p, is_fov in zip(pred2d, is_predicted_to_be_in_fov):
+        #     bbone_aux = cv2.circle(bbone_aux, (int(p[0]), int(p[1])), 2, (0, 255, 0) if is_fov else (0, 0, 255), 2)
+        # cv2.imshow("2d on bbone", bbone_aux.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
+        # # TODO EXP START show reconstructed 3d on bbone
+        # bbone_aux = copy.deepcopy(bbone_in[0])
+        # pred3d_projected = pred3d @ new_K
+        # for p in pred3d_projected[0]:
+        #     bbone_aux = cv2.circle(bbone_aux, (int(p[0]+(bbone_aux.shape[1]/2)), int(p[1]+(bbone_aux.shape[0]/2))), 2, (0, 255, 0), 2)
+        # cv2.imshow("3d on bbone", bbone_aux.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
+        # # TODO EXP START
+        # pred3d_projected = pred3d @ homo_inv
+        # pred3d_projected = pred3d_projected @ self.K
+        # for p in pred3d_projected[0]:
+        #     frame = cv2.circle(frame, (int(p[0]+(frame.shape[1]/2)), int(p[1]+(frame.shape[0]/2))), 2, (0, 255, 0), 2)
+        # cv2.imshow("3d on origin", frame.astype(np.uint8))
+        # cv2.waitKey(1)
+        # # TODO EXP END
 
         # Go back in original space (without augmentation and homography)
         pred3d = pred3d @ homo_inv
-        pred3d_recon = pred3d_recon @ homo_inv
 
         # Get correct skeleton
         pred3d = (pred3d.swapaxes(1, 2) @ self.expand_joints).swapaxes(1, 2)
-        pred3d_recon = (pred3d_recon.swapaxes(1, 2) @ self.expand_joints).swapaxes(1, 2)
         if self.skeleton is not None:
             pred3d = pred3d[:, self.skeleton_types[self.skeleton]['indices']]
-            pred3d_recon = pred3d_recon[:, self.skeleton_types[self.skeleton]['indices']]
             edges = self.skeleton_types[self.skeleton]['edges']
         else:
             edges = None
 
         pred3d = pred3d[0]  # Remove batch dimension
-        pred3d_recon = pred3d_recon[0]
-        pred3d = pred3d + pred3d_recon[0]
 
         return {"pose": pred3d,
                 "edges": edges,

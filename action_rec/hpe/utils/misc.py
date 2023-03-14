@@ -194,14 +194,15 @@ def reconstruct_absolute(coords2d, coords3d_rel, intrinsics, is_predicted_to_be_
 
     # Joints that wasn't in FOV
     coords_abs_3d_based = coords3d_rel + np.expand_dims(ref, 1)
-
-    # Joints that was in FOV
-    reference_depth = ref[:, 2]
-    relative_depths = coords3d_rel[..., 2]
-    coords_abs_2d_based = back_project(coords2d_normalized, relative_depths, reference_depth)
-
-    return np.where(
-        is_predicted_to_be_in_fov[..., np.newaxis], coords_abs_2d_based, coords_abs_3d_based)
+    return coords_abs_3d_based
+    #
+    # # Joints that was in FOV
+    # reference_depth = ref[:, 2]
+    # relative_depths = coords3d_rel[..., 2]
+    # coords_abs_2d_based = back_project(coords2d_normalized, relative_depths, reference_depth)
+    #
+    # return np.where(
+    #     is_predicted_to_be_in_fov[..., np.newaxis], coords_abs_2d_based, coords_abs_3d_based)
 
 
 def back_project(camcoords2d, delta_z, z_offset):
@@ -215,8 +216,8 @@ def is_within_fov(imcoords, stride_train=32, proc_side=256, centered_stride=True
     # lower = tf.cast(stride_train * 0.75 + offset, tf.float32)
     # upper = tf.cast(proc_side - stride_train * 0.75 + offset, tf.float32)
     # return tf.reduce_all(tf.logical_and(imcoords >= lower, imcoords <= upper), axis=-1)
-    lower = np.array(18).astype(np.float32)
-    upper = np.array(256 - 18).astype(np.float32)
+    lower = np.array(4).astype(np.float32)
+    upper = np.array(256 - 4).astype(np.float32)
     return np.all(np.logical_and(imcoords >= lower, imcoords <= upper), axis=-1)
 
 
