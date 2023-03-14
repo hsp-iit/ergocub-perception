@@ -1,7 +1,6 @@
 import os
 from logging import INFO
 from action_rec.ar.ar import ActionRecognizer
-from action_rec.focus.gaze_estimation.focus import FocusDetector
 from action_rec.hpe.hpe import HumanPoseEstimator
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.ipc_queue import IPCQueue
@@ -58,12 +57,12 @@ class Network(BaseConfig):
 
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'fps_ar': None, 'human_distance': None, 'focus': None, 'pose': None,
-                                                'bbox': None, 'face_bbox': None, 'actions': None, 'is_true': None,
+                                  write_format={'fps_ar': None, 'human_distance': None, 'pose': None,
+                                                'bbox': None, 'actions': None, 'is_true': None,
                                                 'requires_focus': None, 'edges': None, 'log': None,
                                                 'requires_os': None, 'action': None}),
 
-            'rpc': IPCQueue(ipc_key=1234, write_format={'action': -1, 'human_distance': -1, 'focus': False})}
+            'rpc': IPCQueue(ipc_key=1234, write_format={'action': -1, 'human_distance': -1})}
 
 
 class HPE(BaseConfig):
@@ -93,22 +92,6 @@ class HPE(BaseConfig):
         height = 480
 
         necessary_percentage_visible_joints = 0.3
-
-
-# TODO GO HERE TO CHANGE OPTIONS FOR FOCUS (CHANGE IN FUTURE)
-
-
-class FOCUS(BaseConfig):
-    model = FocusDetector
-
-    class Args:
-        area_thr = 0.03  # head bounding box must be over this value to be close
-        close_thr = -0.95  # When close, z value over this thr is considered focus
-        dist_thr = 0.3  # when distant, roll under this thr is considered focus
-        foc_rot_thr = 0.7  # when close, roll above this thr is considered not focus
-        patience = 3  # result is based on the majority of previous observations
-        sample_params_path = os.path.join(base_dir, "focus", "gaze_estimation", "assets",
-                                          "sample_params.yaml")
 
 
 # TODO GO HERE TO CHANGE OPTION FOR TRAINING ACTION RECOGNITION (CHANGE IN FUTURE)

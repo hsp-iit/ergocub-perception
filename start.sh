@@ -85,8 +85,7 @@ tmux split-window -h -t $TMUX_NAME
 
 # Action Recognition RPC
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # TODO TEST
-tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_rpc.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/focus.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # Object Detection RPC
