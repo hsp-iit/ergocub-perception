@@ -32,9 +32,7 @@ class ISBFSAR(Network.node):
         self.detect_focus = detect_focus
         self.last_time = None
         self.edges = None
-        self.hpe_in = None
-        self.hpe_out = None
-        self.hpe_proc = None
+        self.hpe = None
         self.ar = None
         self.last_data = None
         self.commands_queue = None
@@ -45,25 +43,17 @@ class ISBFSAR(Network.node):
         self.ar = AR.model(**AR.Args.to_dict())
         self.ar.load()
 
-        # To receive human commands
-        BaseManager.register('get_queue')
-        manager = BaseManager(address=('localhost', 50000), authkey=b'abracadabra')
-        manager.connect()
-        self.commands_queue = manager.get_queue("human_console_commands")
-
     def get_frame(self, img=None, log=None, cap_fps=True):
         """
         get frame, do inference, return all possible info
         keys: img, bbox, img_preprocessed, human_distance, pose, edges, actions, is_true, requires_focus, focus, face_bbox,
         fps
         """
-        # Add default keys:values
         elements = {}
-        # elements.update(copy.deepcopy(Logging.keys))  # TODO is this needed?
 
         # If img is not given (not a video), try to get img
         if img is None:
-            img = self._recv()["rgbImage"]
+            img = self.read("rgb")["rgb"]
         elements["rgb"] = img
 
         # Msg
@@ -159,45 +149,38 @@ class ISBFSAR(Network.node):
 
     def loop(self, data):
         log = None
-        if "rgb" in data.keys():  # Save last data with image
-            self.last_data = data
-        else:  # It arrives just a message, but we need all
-            data.update(self.last_data)
+        if data["msg"] is not None:
+            msg = data["msg"].strip()
+            msg = msg.split()
 
-        if not self.commands_queue.empty():
-            msg = self.commands_queue.get()["msg"]
-            if msg is not None:
-                msg = msg.strip()
-                msg = msg.split()
+            # select appropriate command
+            if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
+                exit()
 
-                # select appropriate command
-                if msg[0] == 'close' or msg[0] == 'exit' or msg[0] == 'quit' or msg[0] == 'q':
-                    exit()
+            elif msg[0] == "add" and len(msg) > 1:
+                log = self.learn_command(msg[1:])
+                data = self.read("rgb")
 
-                elif msg[0] == "add" and len(msg) > 1:
-                    log = self.learn_command(msg[1:])
-                    data = self._recv()
+            elif msg[0] == "remove" and len(msg) > 1:
+                log = self.forget_command(msg[1])
 
-                elif msg[0] == "remove" and len(msg) > 1:
-                    log = self.forget_command(msg[1])
+            elif msg[0] == "save":
+                log = self.ar.save()
 
-                elif msg[0] == "save":
-                    log = self.ar.save()
+            elif msg[0] == "load":
+                log = self.ar.load()
 
-                elif msg[0] == "load":
-                    log = self.ar.load()
+            elif msg[0] == "debug":
+                log = self.debug()
 
-                elif msg[0] == "debug":
-                    log = self.debug()
+            elif msg[0] == "edit_focus":
+                log = self.ar.edit_focus(msg[1], msg[2])
 
-                elif msg[0] == "edit_focus":
-                    log = self.ar.edit_focus(msg[1], msg[2])
+            elif msg[0] == "edit_os":
+                log = self.ar.edit_os(msg[1], msg[2])
 
-                elif msg[0] == "edit_os":
-                    log = self.ar.edit_os(msg[1], msg[2])
-
-                else:
-                    log = "Not a valid command!"
+            else:
+                log = "Not a valid command!"
         d = self.get_frame(img=data["rgb"], log=log)
         return d
 
@@ -272,17 +255,16 @@ class ISBFSAR(Network.node):
         requires_focus = len(flag) == 3 and flag[2] == "-focus"
         now = time.time()
         while (time.time() - now) < 3:
-            self._send_all(self.get_frame(log="WAIT...", cap_fps=False), False)
+            self.write("visualizer", self.get_frame(log="WAIT...", cap_fps=False), False)
 
-        self._send_all(self.get_frame(log="GO!", cap_fps=False), False)
-        # playsound('assets' + os.sep + 'start.wav')
+        self.write("visualizer", self.get_frame(log="GO!", cap_fps=False), False)
         data = [[] for _ in range(self.window_size)]
         i = 0
         off_time = (self.acquisition_time / self.window_size)
         while i < self.window_size:
             start = time.time()
             res = self.get_frame(log="{:.2f}%".format((i / (self.window_size - 1)) * 100), cap_fps=False)
-            self._send_all(res, False)
+            self.write("visualizer", res, False)
             # Check if the sample is good w.r.t. input type
             good = self.input_type in ["skeleton", "hybrid"] and "pose" in res.keys() and res["pose"] is not None
             good = good or self.input_type == "rgb"
