@@ -30,8 +30,75 @@ docker run --gpus=all -v "$(pwd)":/home/ecub -itd --rm \
 
 # Create tmux session
 tmux new-session -d -s $TMUX_NAME
+tmux set-option -t $TMUX_NAME status-left-length 140
+tmux set -t $TMUX_NAME -g pane-border-status top
+tmux set -t $TMUX_NAME -g mouse on
 
-# Set server
+tmux rename-window -t $TMUX_NAME components
+# Action Recognition Pipeline
+tmux select-pane -T "Action Recognition"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_pipeline.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# Focus Detector
+tmux select-pane -T "Focus Detector"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/focus.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# Grasping Pipeline
+tmux select-pane -T "Grasping Pipeline"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/grasping_pipeline.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# Segmentation
+tmux select-pane -T "Segmentation"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
+
+tmux select-layout -t $TMUX_NAME tiled
+tmux new-window -t $TMUX_NAME
+tmux rename-window -t $TMUX_NAME visualization
+
+# Source
+tmux select-pane -T "Source"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+if [ -n "$START_SOURCE" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "python scripts/source.py" Enter
+fi
+tmux split-window -h -t $TMUX_NAME
+
+# Sink
+tmux select-pane -T "Sink"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/sink.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# 3D Shape Completion Visualizer
+tmux select-pane -T "3D Shape Completion Visualizer"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/od3dviz.py"
+
+tmux select-layout -t $TMUX_NAME tiled
+tmux new-window -t $TMUX_NAME
+tmux rename-window -t $TMUX_NAME communication
+# Manager
+tmux select-pane -T "Manager"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/manager.py" Enter
+tmux split-window -h -t $TMUX_NAME
+
+# Yarp Server
+tmux select-pane -T "Yarp Server"
+
+# Set Yarp Server Configurations
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 
 if [ -n "$YARP_NAMESERVER" ] # Variable is non-null
@@ -42,8 +109,6 @@ fi
 if [ -n "$SERVER_IP" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarp conf $SERVER_IP 10000" Enter
-else
-  tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
 fi
 
 if [ -n "$REPEATER" ] # Variable is non-null
@@ -51,62 +116,23 @@ then
   tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/rgbImage:r" Enter
 fi
 
-# Source
-echo $START_SOURCE
-if [ -n "$START_SOURCE" ] # Variable is non-null
-then
-  tmux send-keys -t $TMUX_NAME "python scripts/source.py" Enter
-fi
-tmux split-window -v -t $TMUX_NAME
-
-# Action Recognition Pipeline
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_pipeline.py" Enter
-tmux split-window -v -t $TMUX_NAME
-
-# Yarp Server
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 if [ -n "$START_YARP_SERVER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarpserver --write" Enter
+else
+  tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
 fi
 
 if [ -n "$REPEATER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
+  tmux split-window -h -t $TMUX_NAME
+  tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
+  tmux send-keys -t $TMUX_NAME "./connect_camera.sh" Enter
 fi
 
-tmux split-window -h -t $TMUX_NAME
-
-# Manager
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/manager.py" Enter
-tmux split-window -h -t $TMUX_NAME
-
-# Action Recognition RPC
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/focus.py" Enter
-tmux split-window -h -t $TMUX_NAME
-
-# Object Detection RPC
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux split-window -h -t $TMUX_NAME
-
-# Source to Sink
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
-tmux select-pane -t $TMUX_NAME:0.0
-tmux split-window -h -t $TMUX_NAME
-
-# Sink
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/sink.py" Enter
-tmux select-pane -t $TMUX_NAME:0.2
-tmux split-window -h -t $TMUX_NAME
-
-# Grasping Pipeline
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/grasping_pipeline.py" Enter
+tmux select-layout -t $TMUX_NAME tiled
 
 # Attach
 tmux a -t $TMUX_NAME
