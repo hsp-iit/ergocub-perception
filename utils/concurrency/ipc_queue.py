@@ -29,7 +29,7 @@ class IPCQueue:
                 try:
                     out_v = struct.pack("h", v)
                 except struct.error as e:
-                    logger.warning(f'struct_error in pysys_node - line: 84. Value not in range: {v}')
+                    logger.warning(f'struct_error in ipc_queue. Value not in range: {v}')
             elif isinstance(v, float):
                 out_v = struct.pack("d", v)
             elif isinstance(v, np.ndarray):
@@ -46,6 +46,6 @@ class IPCQueue:
                 try:
                     self.ipc.receive(block=False)
                 except sysv_ipc.BusyError:
-                    logger.warning('Catched BusyError: pysys_node: 105')
+                    logger.warning('Catched BusyError: ipc_queue')
 
         self.ipc.send(msg, blocking, type=1)
