@@ -1,15 +1,14 @@
 import sys
 from multiprocessing.managers import BaseManager
 from pathlib import Path
-import tensorrt  # TODO NEEDED IN ERGOCUB, NOT NEEDED IN ISBFSAR
-
+import tensorrt  # Avoid Myelin error (DO NOT REMOVE)
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 from configs.action_rec_config import Network, HPE, AR, MAIN
 import os
 import numpy as np
 import time
 import cv2
-from multiprocessing import Process, Queue
+import pycuda.autoinit  # Create context on GPU (DO NOT REMOVE)
 
 docker = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 
@@ -42,11 +41,7 @@ class ISBFSAR(Network.node):
         self.last_log = None
 
     def startup(self):
-        self.hpe_in = Queue(1)
-        self.hpe_out = Queue(1)
-        self.hpe_proc = Process(target=run_module, args=(HPE, self.hpe_in, self.hpe_out))
-        self.hpe_proc.start()
-
+        self.hpe = HPE.model(**HPE.Args.to_dict())
         self.ar = AR.model(**AR.Args.to_dict())
         self.ar.load()
 
@@ -88,11 +83,8 @@ class ISBFSAR(Network.node):
 
         ar_input = {}
 
-        # Start independent modules
-        self.hpe_in.put(img)
-
         # RGB CASE
-        hpe_res = self.hpe_out.get()
+        hpe_res = self.hpe.estimate(img)
         if self.input_type == "hybrid" or self.input_type == "rgb":
             elements["bbox"] = None
             elements["img_preprocessed"] = None
@@ -318,15 +310,6 @@ class ISBFSAR(Network.node):
             return "Action " + action_name + " learned successfully!"
         else:
             return "Cannot add action"
-
-
-def run_module(module, input_queue, output_queue):
-    import pycuda.autoinit
-    x = module.model(**module.Args.to_dict())
-    while True:
-        inp = input_queue.get()
-        y = x.estimate(inp)
-        output_queue.put(y)
 
 
 if __name__ == "__main__":
