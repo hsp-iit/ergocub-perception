@@ -33,6 +33,12 @@ class GenericNode(Process, ABC):
         for queue in self.out_queues.values():
             queue.write(data)
 
+    def read(self, queue, blocking=None):
+        return self.in_queues[queue].read(blocking)
+
+    def write(self, queue, data, blocking=None):
+        return self.out_queues[queue].write(data, blocking)
+
     def startup(self):
         pass
 
