@@ -11,7 +11,7 @@ class GenericNode(Process, ABC):
         self.in_queues = in_queues
         self.out_queues = out_queues
 
-        logger.info(f'Input queues: {", ".join(out_queues.keys())} '
+        logger.info(f'Input queues: {", ".join(in_queues.keys())} '
                     f'- Output queues: {", ".join(out_queues.keys())}')
 
     def _startup(self):
