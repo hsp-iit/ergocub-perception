@@ -6,13 +6,13 @@ from loguru import logger
 
 class GenericNode(Process, ABC):
 
-    def __init__(self, in_queues={}, out_queues={}):
+    def __init__(self, in_queues={}, out_queues={}, auto_write=True, auto_read=True):
         super(Process, self).__init__()
         self.in_queues = in_queues
         self.out_queues = out_queues
-
-        logger.info(f'Input queues: {", ".join(in_queues.keys())} '
-                    f'- Output queues: {", ".join(out_queues.keys())}')
+        self.auto_write = auto_write
+        self.auto_read = auto_read
+        logger.info(f'Input queues: {", ".join(in_queues.keys())} - Output queues: {", ".join(out_queues.keys())}')
 
     def _startup(self):
         logger.info('Starting up...')
@@ -22,13 +22,13 @@ class GenericNode(Process, ABC):
         self.startup()
         logger.success('Start up complete.')
 
-    def _recv(self, blocking=None):
+    def read_all(self, blocking=None):
         data = {}
         for queue in self.in_queues.values():
             data.update(queue.read(blocking))
         return data
 
-    def _send_all(self, data):
+    def write_all(self, data):
         for queue in self.out_queues.values():
             queue.write(data)
 
@@ -53,6 +53,11 @@ class GenericNode(Process, ABC):
         data = {}
 
         while True:
+            if self.auto_read:
+                data = self.read_all()
+
             data = self.loop(data)
 
-            data = self._recv()
+            if data is not None and self.auto_write:
+                self.write_all(data)
+
