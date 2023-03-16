@@ -21,4 +21,4 @@ class Network(BaseConfig):
 
         out_queues = {
             'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
-                                              write_format={'msg': None})}
+                                              write_format={"train": None, "remove": None, "debug": None})}

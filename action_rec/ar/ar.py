@@ -124,7 +124,7 @@ class ActionRecognizer:
         self.requires_os[index] = bool(int(value))
         return flag + " now has os value " + str(bool(int(value)))
 
-    def train(self, inp, ss_id):
+    def train(self, inp):
         if inp['flag'] not in self.support_set_labels:
             if None in self.support_set_labels:
                 first_none_pos = self.support_set_labels.index(None)
@@ -132,6 +132,7 @@ class ActionRecognizer:
                 return False
             self.support_set_labels[first_none_pos] = inp['flag']
         class_id = self.support_set_labels.index(inp['flag'])
+        ss_id = inp["ss_id"]
         if self.input_type in ["skeleton", "hybrid"]:
             self.support_set_data["sk"][class_id][ss_id] = torch.FloatTensor(inp['data']['sk']).cuda()
         if self.input_type in ["rgb", "hybrid"]:
@@ -176,3 +177,61 @@ class ActionRecognizer:
 
         self.support_set_features = None
         return f"Loaded {len(self.support_set_labels)} classes from {load_loc}"
+
+    def save_ss_image(self, edges):
+        import numpy as np
+        import cv2
+
+        ss = self.support_set_data
+
+        labels = self.support_set_labels
+        if len(ss) == 0:
+            return "Support set is empty"
+        if self.input_type in ["hybrid", "rgb"]:
+            ss_rgb = ss["rgb"].detach().cpu().numpy()
+            ss_rgb = ss_rgb.swapaxes(-2, -3).swapaxes(-1, -2)
+            ss_rgb = (ss_rgb - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+            ss_rgb = (ss_rgb * 255).astype(np.uint8)
+            way, shot, seq_len, height, width, _ = ss_rgb.shape
+            # Flat image
+            # ss_rgb = ss_rgb.swapaxes(0, 2)
+            # ss_rgb = ss_rgb.reshape(seq_len, shot, way*height, width, 3)
+            sequences = []
+            for w in range(way):
+                for s in range(shot):
+                    support_class = ss_rgb[w][s].swapaxes(0, 1).reshape(height, seq_len * width, 3)
+                    support_class = cv2.putText(support_class, f"{labels[w]}, {s}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
+                                                2,
+                                                (255, 255, 255), 3, 2)
+                    sequences.append(support_class)
+            ss_rgb = np.concatenate(sequences, axis=0)
+            cv2.imwrite("SUPPORT_SET.png", ss_rgb)
+        if self.input_type in ["hybrid", "skeleton"]:
+            # ss = np.stack([ss[c]["poses"].detach().cpu().numpy() for c in ss.keys()])
+            classes = []
+            ss_sk = ss["sk"].detach().cpu().numpy()
+            way, shot, _, _ = ss_sk.shape
+            for ss_c in ss_sk:  # FOR EACH CLASS, 5, 16, 90
+                ss_c = ss_c.reshape(ss_c.shape[:-1] + (30, 3))  # 5, 16, 30 , 3
+                size = 250
+                zoom = 2
+                visual = np.zeros((size * ss_c.shape[0], size * ss_c.shape[1]))
+                ss_c = (ss_c + 1) * (size / 2)  # Send each pose from [-1, +1] to [0, size]
+                ss_c *= zoom
+                ss_c = ss_c[..., :2]
+                ss_c[..., 1] += np.arange(ss_c.shape[0])[..., None, None].repeat(ss_c.shape[1], axis=1) * size
+                ss_c[..., 0] += np.arange(ss_c.shape[1])[None, ..., None].repeat(ss_c.shape[0], axis=0) * size
+                ss_c[..., 1] -= size / 2
+                ss_c[..., 0] -= size / 2
+                ss_c = ss_c.reshape(-1, 30, 2).astype(int)
+                for pose in ss_c:
+                    for point in pose:
+                        visual = cv2.circle(visual, point, 1, (255, 0, 0))
+                    for edge in edges:
+                        visual = cv2.line(visual, pose[edge[0]], pose[edge[1]], (255, 0, 0))
+                classes.append(visual)
+            visual = np.concatenate(classes, axis=0)
+            for i, label in enumerate(labels):
+                visual = cv2.putText(visual, label, (10, 10 + i * size * shot), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                     (255, 255, 255), 1, 2)
+            cv2.imwrite("SUPPORT_SET.png", visual)

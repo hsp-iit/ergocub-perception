@@ -43,7 +43,6 @@ class MAIN(BaseConfig):
         fps = 100  # /2.5 # Fps car for action recognition
         consistency_window_length = 8  # 12
         os_score_thr = 0.5
-        detect_focus = True
 
 
 class Network(BaseConfig):
@@ -57,7 +56,7 @@ class Network(BaseConfig):
             'action_rec_in': PyQueue(ip="localhost", port=50000, queue_name='action_rec_in', blocking=False),
                              data_type='rgb', read_format='rgb'),
             'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
-                                              read_format={'msg': None})
+                                              read_format={"train": None, "remove": None, "debug": None})
         }
 
         out_queues = {

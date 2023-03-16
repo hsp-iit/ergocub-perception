@@ -1,17 +1,11 @@
-import os
 import cv2
-
 # os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH")
 from vispy import app, scene, visuals
-app.use_app('glfw') # Set backend
+app.use_app('glfw')  # Set backend
 from vispy.scene.visuals import Text, Image
 import numpy as np
-import math
-from pathlib import Path
 from loguru import logger
-import sys
-
-sys.path.insert(0, Path(__file__).parent.parent.as_posix())
+import time
 from utils.logging import setup_logger
 from configs.human_console_config import Logging, Network
 
@@ -43,11 +37,16 @@ class VISPYVisualizer(Network.node):
                 self.input_text = self.input_text[:-1]
             self.log_text.text = ''
         elif x.text == '+':
-            self.write("human_console_commands", {"msg": self.input_text[1:]})  # Do not send '>'
+            command = self.input_text[1:].strip().split()
+            if command[0] == "add":
+                self.log_text.text = self.add_action(command[1:])
+            elif command[0] == "remove":
+                self.log_text.text = self.remove_action(command[1:])
+            elif command[0] == "debug":
+                self.log_text.text = self.debug()
+            else:
+                self.log_text.text = "Unknown command"
             self.input_text = '>'
-            self.log_text.text = ''
-        # elif x.text == '\\':
-        #     self.show = not self.show
         elif x.text == '`':
             self.os = not self.os
         else:
@@ -56,6 +55,8 @@ class VISPYVisualizer(Network.node):
 
     def __init__(self):
         super().__init__(**Network.Args.to_dict())
+        self.window_size = 16  # TODO TAKE THIS FROM CONFIGURATION
+        self.input_type = "skeleton"  # TODO TAKE THIS FROM CONFIGURATION
 
     def startup(self):
         self.input_text = '>'
@@ -338,6 +339,65 @@ class VISPYVisualizer(Network.node):
                     self.os_score.center = (2, 2)  # MOVE OUTSIDE
         app.process_events()
         return {}
+
+    def add_action(self, flag):
+        action_name = flag[0]
+        try:
+            ss_id = int(flag[1])
+        except Exception:
+            return "Format not valid"
+        requires_focus = len(flag) == 3 and flag[2] == "-focus"
+        now = time.time()
+        self.log_text.text = "WAIT..."
+        while (time.time() - now) < 3:
+            elements = self.read("visualizer")
+            elements.update(self.read("rgb"))
+            self.loop(elements)
+
+        self.log_text.text = "GO!"
+        data = [[] for _ in range(self.window_size)]
+        i = 0
+        # off_time = (self.acquisition_time / self.window_size)
+        while i < self.window_size:
+            # start = time.time()
+            res = self.read("visualizer")
+            res.update(self.read("rgb"))
+            self.loop(res)
+            self.log_text.text = "{:.2f}%".format((i / (self.window_size - 1)) * 100)
+            # Check if the sample is good w.r.t. input type
+            good = self.input_type in ["skeleton", "hybrid"] and "pose" in res.keys() and res["pose"] is not None
+            good = good or self.input_type == "rgb"
+            if good:
+                if self.input_type in ["skeleton", "hybrid"]:
+                    data[i].append(res["pose"].reshape(-1))  # CAREFUL with the reshape
+                if self.input_type in ["rgb", "hybrid"]:
+                    data[i].append(res["img_preprocessed"])
+                i += 1
+            # while (time.time() - start) < off_time:  # Busy wait
+            #     continue
+
+        inp = {"flag": action_name,
+               "data": {},
+               "requires_focus": requires_focus,
+               "ss_id": ss_id}
+
+        if self.input_type == "rgb":  # Unique case with images in first position
+            inp["data"]["rgb"] = np.stack([x[0] for x in data])
+        if self.input_type in ["skeleton", "hybrid"]:
+            inp["data"]["sk"] = np.stack([x[0] for x in data])
+        if self.input_type == "hybrid":
+            inp["data"]["rgb"] = np.stack([x[1] for x in data])
+
+        self.write("human_console_commands", {"train": inp})
+        return "Action {} learned successfully".format(action_name)
+
+    def remove_action(self, flag):
+        self.write("human_console_commands", {"remove": flag[0]})
+        return "Action {} removed".format(flag[0])
+
+    def debug(self):
+        self.write("human_console_commands", {"debug": True})
+        return "Support set saved in root directory"
 
 
 if __name__ == "__main__":
