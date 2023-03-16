@@ -42,7 +42,6 @@ class MAIN(BaseConfig):
         fps = 100  # /2.5 # Fps car for action recognition
         consistency_window_length = 8  # 12
         os_score_thr = 0.5
-        detect_focus = True
 
 
 class Network(BaseConfig):
@@ -54,7 +53,7 @@ class Network(BaseConfig):
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
                              data_type='rgb', read_format='rgb'),
             'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
-                                              read_format={'msg': None})
+                                              read_format={"train": None, "remove": None, "debug": None})
         }
 
         out_queues = {
