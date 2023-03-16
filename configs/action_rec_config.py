@@ -53,6 +53,8 @@ class Network(BaseConfig):
             # in_port_name, out_port_name, data_type, out_name
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
                              data_type='rgb', read_format='rgb'),
+            'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
+                                              read_format={'msg': None})
         }
 
         out_queues = {
