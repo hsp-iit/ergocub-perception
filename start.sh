@@ -63,7 +63,7 @@ tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
 
 tmux select-layout -t $TMUX_NAME tiled
 tmux new-window -t $TMUX_NAME
-tmux rename-window -t $TMUX_NAME visualization
+tmux rename-window -t $TMUX_NAME input/output
 
 # Source
 tmux select-pane -T "Source"
@@ -78,6 +78,13 @@ tmux split-window -h -t $TMUX_NAME
 tmux select-pane -T "Sink"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/sink.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# Recorder
+tmux select-pane -T "Recorder"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/recorder.py" Enter
 
 tmux split-window -h -t $TMUX_NAME
 
