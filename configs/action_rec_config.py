@@ -5,6 +5,7 @@ from action_rec.hpe.hpe import HumanPoseEstimator
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
+from utils.concurrency.utils.signals import Signals
 from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
 import platform
@@ -52,7 +53,8 @@ class Network(BaseConfig):
         in_queues = {
             # in_port_name, out_port_name, data_type, out_name
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
-                             data_type='rgb', read_format='rgb'),
+                             data_type='rgb', read_format='rgb', read_default=Signals.USE_LATEST, blocking=False),
+            'action_rec_in': PyQueue(ip="localhost", port=50000, queue_name='action_rec_in', blocking=False)
         }
 
         out_queues = {
