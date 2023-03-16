@@ -46,7 +46,8 @@ class Sink(Network.node):
 
     def loop(self, data: dict) -> dict:
 
-        if 'rgb' in data.keys():
+        rgb = data.get('rgb', None)
+        if rgb is not None:
             self.img = data['rgb']
         img = self.img
 

@@ -3,15 +3,19 @@ from multiprocessing import Process
 
 from loguru import logger
 
+from utils.concurrency.utils.signals import Signals
+
 
 class GenericNode(Process, ABC):
 
     def __init__(self, in_queues={}, out_queues={}, auto_write=True, auto_read=True):
         super(Process, self).__init__()
+        self._latest = {}
         self.in_queues = in_queues
         self.out_queues = out_queues
         self.auto_write = auto_write
         self.auto_read = auto_read
+
         logger.info(f'Input queues: {", ".join(in_queues.keys())} - Output queues: {", ".join(out_queues.keys())}')
 
     def _startup(self):
@@ -26,6 +30,11 @@ class GenericNode(Process, ABC):
         data = {}
         for queue in self.in_queues.values():
             data.update(queue.read(blocking))
+
+        self._latest.update(
+            {k: v for k, v in data.items() if v not in Signals and v is not None}
+        )
+        data.update({k: self._latest[k] for k in data if data[k] is Signals.USE_LATEST})
         return data
 
     def write_all(self, data):
