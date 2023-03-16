@@ -5,6 +5,7 @@ from queue import Empty, Full
 
 from loguru import logger
 
+
 def connect(manager):
     logger.info('Connecting to manager...')
     start = time.time()
@@ -33,6 +34,9 @@ class PyQueue:
         manager = BaseManager(address=(ip, port), authkey=b'abracadabra')
         connect(manager)
         self.queue = manager.get_queue(queue_name)
+
+    def startup(self):
+        pass
 
     def write(self, data, blocking=None):
         if blocking is None:
@@ -74,6 +78,3 @@ class PyQueue:
             msg = {k: v for k, v, in template.items() if k in self.read_format}  # remove unnecessary keys
 
         return msg
-
-
-

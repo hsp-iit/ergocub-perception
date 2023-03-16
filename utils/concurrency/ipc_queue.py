@@ -14,6 +14,9 @@ class IPCQueue:
         self.write_format = write_format
         self.blocking = blocking
 
+    def startup(self):
+        pass
+
     def write(self, data, blocking=None):
         if blocking is None:
             blocking = self.blocking
