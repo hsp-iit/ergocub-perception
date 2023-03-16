@@ -54,7 +54,6 @@ class Network(BaseConfig):
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/ActionRecognition/rgbImage:i',
                              data_type='rgb', read_format='rgb', read_default=Signals.USE_LATEST, blocking=False),
             'action_rec_in': PyQueue(ip="localhost", port=50000, queue_name='action_rec_in', blocking=False),
-                             data_type='rgb', read_format='rgb'),
             'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
                                               read_format={"train": None, "remove": None, "debug": None})
         }
@@ -66,7 +65,7 @@ class Network(BaseConfig):
                                                 'requires_focus': None, 'edges': None, 'log': None,
                                                 'requires_os': None, 'action': None}),
 
-            'rpc': IPCQueue(ipc_key=1234, write_format={'action': -1, 'human_distance': -1})}
+            'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1, 'human_distance': -1})}
 
 
 class HPE(BaseConfig):
