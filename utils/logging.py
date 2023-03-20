@@ -1,9 +1,15 @@
+import asyncio
+import logging
 import multiprocessing
 import sys
 import __main__
+import time
+import weakref
+from asyncio import get_running_loop
 from pathlib import Path
 
 from loguru import logger
+from loguru._asyncio_loop import get_task_loop
 
 
 # TensorRT logging is handled separately inside the Runner classes
@@ -35,7 +41,7 @@ def setup_logger(level=0, name=None, recurring=False):
 
     logger.add(sys.stdout,
                format=formatter,
-               diagnose=True, filter=lvl_filter)  # b28774 (magenta)
+               diagnose=True, filter=lvl_filter, colorize=True)  # b28774 (magenta)
 
     logger.level('INFO', color='<fg white>')  # fef5ed
     logger.level('SUCCESS', color='<fg green>')  # 79d70f
