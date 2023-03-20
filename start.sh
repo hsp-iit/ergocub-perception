@@ -35,17 +35,32 @@ tmux set -t $TMUX_NAME -g pane-border-status top
 tmux set -t $TMUX_NAME -g mouse on
 
 tmux rename-window -t $TMUX_NAME components
+
+# Human Detection
+tmux select-pane -T "Human Detection"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/human_detection.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
+# Human Pose Estimation
+tmux select-pane -T "Human Pose Estimation"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/human_pose_estimation.py" Enter
+
+tmux split-window -h -t $TMUX_NAME
+
 # Action Recognition Pipeline
 tmux select-pane -T "Action Recognition"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/action_recognition_pipeline.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/action_recognition.py" Enter
 
 tmux split-window -h -t $TMUX_NAME
 
 # Focus Detector
-tmux select-pane -T "Focus Detector"
+tmux select-pane -T "Focus Detection"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/focus.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/focus_detection.py" Enter
 
 tmux split-window -h -t $TMUX_NAME
 

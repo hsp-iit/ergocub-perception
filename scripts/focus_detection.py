@@ -35,17 +35,20 @@ class Focus(Network.node):
         logger.info("Read camera input", recurring=True)
 
         rgb = data['rgb']
-        rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
 
+        if rgb is None:
+            return {}
+
+        rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
         ret = self.focus_model.estimate(rgb)
 
         if ret is not None:
             foc, face = ret
             output["focus"] = foc
             output["face_bbox"] = face.bbox.reshape(-1)
+            output["fps_focus"] = self.fps()
 
         logger.info("FOCUS detected", recurring=True)
-
 
         return output
 

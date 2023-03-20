@@ -26,7 +26,11 @@ class Sink(Network.node):
         self.hands = Signals.NOT_OBSERVED
         self.obj_distance = Signals.NOT_OBSERVED
 
+        self.fps_hd = None
+        self.fps_hpe = None
         self.fps_ar = None
+        self.fps_focus = None
+
         self.distance = None
         self.focus = None
         self.pose = None
@@ -81,10 +85,28 @@ class Sink(Network.node):
                               cv2.LINE_AA)
 
         # HUMAN ########################################################################################################
+        if 'fps_hd' in data.keys():
+            self.fps_hd = data['fps_hd']
+        if self.fps_hd is not None:
+            img = cv2.putText(img, f'FPS HD: {int(self.fps_hd)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+                              cv2.LINE_AA)
+
+        if 'fps_hpe' in data.keys():
+            self.fps_hpe = data['fps_hpe']
+        if self.fps_hpe is not None:
+            img = cv2.putText(img, f'FPS HPE: {int(self.fps_hpe)}', (10, 40), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+                              cv2.LINE_AA)
+
         if 'fps_ar' in data.keys():
             self.fps_ar = data['fps_ar']
         if self.fps_ar is not None:
-            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 60), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+                              cv2.LINE_AA)
+
+        if 'fps_focus' in data.keys():
+            self.fps_focus = data['fps_focus']
+        if self.fps_focus is not None:
+            img = cv2.putText(img, f'FPS FOCUS: {int(self.fps_focus)}', (10, 80), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
         if 'human_distance' in data.keys():
@@ -117,7 +139,7 @@ class Sink(Network.node):
         if 'bbox' in data:
             self.bbox = data["bbox"]
         if self.bbox is not None:  # and self.hands is None:
-            x1, x2, y1, y2 = self.bbox
+            x1, y1, x2, y2 = self.bbox
             img = cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 3)
 
         if 'focus' in data.keys():
