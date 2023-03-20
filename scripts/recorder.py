@@ -62,10 +62,11 @@ class Recorder(Network.node):
             self.write_all(output)
 
             # cv2.imshow('recorder control', self.reservoir['rgb'][self.frame])
-            k = cv2.waitKey(22)
-
             if not self.stop:
+                k = cv2.waitKey(22)
                 self.frame += 1
+            else:
+                k = cv2.waitKey(0)
 
         if k == ord('a'):
             self.frame -= 1
@@ -88,5 +89,5 @@ class Recorder(Network.node):
 
 
 if __name__ == '__main__':
-    source = Recorder()
-    source.run()
+    recorder = Recorder()
+    recorder.run()

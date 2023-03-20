@@ -35,7 +35,10 @@ class Network(BaseConfig):
             'action_rec_in': PyQueue(ip="localhost", port=50000, queue_name='action_rec_in',
                                        write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'focus_in': PyQueue(ip="localhost", port=50000, queue_name='focus_in',
-                                       write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
+                                       write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+            'od3d_viz_in': PyQueue(ip="localhost", port=50000, queue_name='rec_od3dviz',
+                                   write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
         }
 
         auto_read = False
+        auto_write = False

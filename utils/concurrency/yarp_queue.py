@@ -113,7 +113,7 @@ class YarpQueue:
 
         return msg
 
-    def write(self, data):
+    def write(self, data, blocking):
 
         v = data.get(self.write_format, self.write_default)
 
