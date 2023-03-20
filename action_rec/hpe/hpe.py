@@ -1,28 +1,17 @@
-import copy
 import pickle
-from action_rec.hpe.utils.misc import postprocess_yolo_output, homography, get_augmentations, is_within_fov, \
-    reconstruct_absolute
+from action_rec.hpe.utils.misc import homography, is_within_fov, reconstruct_absolute
 import einops
 import numpy as np
 from utils.human_runner import Runner
-# from utils.runner import Runner  TODO FIX
 from tqdm import tqdm
 import cv2
 from action_rec.hpe.utils.matplotlib_visualizer import MPLPosePrinter
 
 
 class HumanPoseEstimator:
-    def __init__(self, just_box=None, yolo_thresh=None, nms_thresh=None, num_aug=None, skeleton=None,
-                 yolo_engine_path=None, image_transformation_engine_path=None, bbone_engine_path=None,
+    def __init__(self, skeleton=None, image_transformation_engine_path=None, bbone_engine_path=None,
                  heads_engine_path=None, skeleton_types_path=None, expand_joints_path=None, fx=None, fy=None, ppx=None,
-                 ppy=None, width=None, height=None, necessary_percentage_visible_joints=None):
-
-        self.just_box = just_box
-
-        self.yolo_thresh = yolo_thresh
-        self.nms_thresh = nms_thresh
-        self.num_aug = num_aug
-        self.n_test = 1 if self.num_aug < 1 else self.num_aug
+                 ppy=None, necessary_percentage_visible_joints=None, width=None, height=None):
 
         # Intrinsics and K matrix of RealSense
         self.K = np.zeros((3, 3), np.float32)
@@ -39,67 +28,23 @@ class HumanPoseEstimator:
             self.skeleton_types = pickle.load(input_file)
 
         # Load modules
-        self.yolo = Runner(yolo_engine_path)  # model_config.yolo_engine_path
-        if not self.just_box:
-            self.image_transformation = Runner(image_transformation_engine_path)
-            self.bbone = Runner(bbone_engine_path)
-            self.heads = Runner(heads_engine_path)
+        self.image_transformation = Runner(image_transformation_engine_path)
+        self.bbone = Runner(bbone_engine_path)
+        self.heads = Runner(heads_engine_path)
 
         self.necessary_percentage_visible_joints = necessary_percentage_visible_joints
 
-    def estimate(self, frame):
+    def estimate(self, rgb, bbox):
 
-        # Preprocess for yolo
-        square_img = cv2.resize(frame, (256, 256), fx=1.0, fy=1.0, interpolation=cv2.INTER_AREA)
-        yolo_in = copy.deepcopy(square_img)
-        yolo_in = cv2.cvtColor(yolo_in, cv2.COLOR_BGR2RGB)
-        yolo_in = np.transpose(yolo_in, (2, 0, 1)).astype(np.float32)
-        yolo_in = np.expand_dims(yolo_in, axis=0)
-        yolo_in = yolo_in / 255.0
-
-        # Yolo
-        outputs = self.yolo(yolo_in)
-        boxes, confidences = outputs[0].reshape(1, 4032, 1, 4), outputs[1].reshape(1, 4032, 80)
-        bboxes_batch = postprocess_yolo_output(boxes, confidences, self.yolo_thresh, self.nms_thresh)
-
-        # Get only the bounding box with the human with highest probability
-        box = bboxes_batch[0]  # Remove batch dimension
-        humans = []
-        for e in box:  # For each object in the image
-            if e[5] == 0:  # If it is a human
-                humans.append(e)
-        if len(humans) > 0:
-            # humans.sort(key=lambda x: x[4], reverse=True)  # Sort with decreasing probability
-            humans.sort(key=lambda x: (x[2]-x[0])*(x[3]-x[1]), reverse=True)  # Sort with decreasing area  # TODO TEST
-            human = humans[0]
-        else:
-            return None
-
-        # Preprocess for BackBone
-        x1 = int(human[0] * frame.shape[1]) if int(human[0] * frame.shape[1]) > 0 else 0
-        y1 = int(human[1] * frame.shape[0]) if int(human[1] * frame.shape[0]) > 0 else 0
-        x2 = int(human[2] * frame.shape[1]) if int(human[2] * frame.shape[1]) > 0 else 0
-        y2 = int(human[3] * frame.shape[0]) if int(human[3] * frame.shape[0]) > 0 else 0
-
-        # If we are doing rgb inference, we need just the box
-        if self.just_box:
-            return {"bbox": (x1, y1, x2, y2)}
+        x1, y1, x2, y2 = bbox
 
         new_K, homo_inv = homography(x1, x2, y1, y2, self.K, 256)
 
-        # Test time augmentation (What is Gamma Decoding?)
-        if self.num_aug > 0:
-            aug_should_flip, aug_rotflipmat, aug_gammas, aug_scales = get_augmentations(self.num_aug)
-            new_K = np.tile(new_K, (self.num_aug, 1, 1))
-            for k in range(self.num_aug):
-                new_K[k, :2, :2] *= aug_scales[k]
-            homo_inv = aug_rotflipmat @ np.tile(homo_inv[0], (self.num_aug, 1, 1))
-
         # Apply homography
         H = self.K @ np.linalg.inv(new_K @ homo_inv)
-        bbone_in = self.image_transformation(frame.astype(int), H.astype(np.float32))
+        bbone_in = self.image_transformation(rgb.astype(int), H.astype(np.float32))
 
-        bbone_in = bbone_in[0].reshape(self.n_test, 256, 256, 3)  # [..., ::-1]
+        bbone_in = bbone_in[0].reshape(1, 256, 256, 3)  # [..., ::-1]
         bbone_in_ = (bbone_in / 255.0).astype(np.float32)
 
         # BackBone
@@ -198,9 +143,13 @@ class HumanPoseEstimator:
 
         pred3d = pred3d[0]  # Remove batch dimension
 
+        human_distance = np.sqrt(
+            np.sum(np.square(np.array([0, 0, 0]) - np.array(pred3d[0])))) * 2.5
+        pred3d = pred3d - pred3d[0, :]
+
         return {"pose": pred3d,
                 "edges": edges,
-                "bbox": (x1, x2, y1, y2)}
+                "human_distance": human_distance}
 
 
 if __name__ == "__main__":

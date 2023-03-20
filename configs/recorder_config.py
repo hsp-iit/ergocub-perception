@@ -29,15 +29,19 @@ class Network(BaseConfig):
 
         out_queues = {
             'rec_viz': PyQueue(ip="localhost", port=50000, queue_name='rec_viz',
-                                    write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
-            'segmentation_in': PyQueue(ip="localhost", port=50000, queue_name='segmentation_in',
                                write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+            'segmentation_in': PyQueue(ip="localhost", port=50000, queue_name='segmentation_in',
+                                       write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'action_rec_in': PyQueue(ip="localhost", port=50000, queue_name='action_rec_in',
-                                       write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+                                     write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'focus_in': PyQueue(ip="localhost", port=50000, queue_name='focus_in',
-                                       write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+                                write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'od3d_viz_in': PyQueue(ip="localhost", port=50000, queue_name='rec_od3dviz',
-                                   write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
+                                   write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='hd_in',
+                                 write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+            'rec_hd': PyQueue(ip="localhost", port=50000, queue_name='rec_hd',
+                              write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
         }
 
         auto_read = False

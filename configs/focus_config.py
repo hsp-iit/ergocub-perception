@@ -2,6 +2,7 @@ import os
 from logging import INFO
 from action_rec.focus.gaze_estimation.focus import FocusDetector
 from utils.concurrency.generic_node import GenericNode
+from utils.concurrency.generic_node_fps import GenericNodeFPS
 from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
@@ -20,18 +21,18 @@ class Logging(BaseConfig):
 
 
 class Network(BaseConfig):
-    node = GenericNode
+    node = GenericNodeFPS
 
     class Args:
         in_queues = {
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/Focus/rgbImage:i',
                              data_type='rgb', read_format='rgb', read_default=Signals.USE_LATEST, blocking=False),
-            'focus_in': PyQueue(ip="localhost", port=50000, queue_name='focus_in', blocking=False)
+            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='rec_focus', blocking=False)
         }
 
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'focus': None, 'face_bbox': None}),
+                                  write_format={'focus': None, 'face_bbox': None, 'fps_focus': None}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'focus': False})
         }
 
