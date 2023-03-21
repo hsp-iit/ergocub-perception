@@ -24,6 +24,6 @@ class Network(BaseConfig):
 
         out_queues = {
             'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
-                             write_format={"train": None, "remove": None, "debug": None, "load": None,
-                                           "save": None})}
+                                     write_format={"train": None, "remove": None, "debug": None, "load": None,
+                                                   "save": None, "remove_action": None, "remove_example": None})}
         auto_write = False

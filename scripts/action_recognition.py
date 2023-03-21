@@ -32,9 +32,15 @@ class ActionRecognition(Network.node):
         train_data = data["train"] if "train" in data.keys() else None
         if train_data is not None:
             elements["log"] = self.ar.train(train_data)
-        remove_data = data["remove"] if "remove" in data.keys() else None
+
+        remove_data = data["remove_action"] if "remove_action" in data.keys() else None
         if remove_data is not None:
-            elements["log"] = self.ar.remove(remove_data)
+            elements["log"] = self.ar.remove_action(remove_data)
+
+        remove_example = data["remove_example"] if "remove_example" in data.keys() else None
+        if remove_example is not None:
+            elements["log"] = self.ar.remove_example(remove_example[0], remove_example[1])
+
         debug_data = data["debug"] if "debug" in data.keys() else None
         if debug_data is not None:
             elements["log"] = self.ar.save_ss_image()
@@ -107,11 +113,9 @@ class ActionRecognition(Network.node):
 
         # Make inference
         results = self.ar.inference(ar_input)
-        actions, is_true, requires_focus, requires_os = results
+        actions, is_true = results
         elements["actions"] = actions
         elements["is_true"] = is_true
-        elements["requires_focus"] = requires_focus
-        elements["requires_os"] = requires_os
 
         # Filter action with os and consistency window
         elements["action"] = -1
@@ -119,9 +123,8 @@ class ActionRecognition(Network.node):
             best_action = max(elements["actions"], key=elements["actions"].get)
             best_index = list(elements["actions"].keys()).index(best_action)
             # Reject low os
-            if elements["requires_os"][best_index]:
-                if is_true < self.os_score_thr:
-                    best_index = -1
+            if is_true < self.os_score_thr:
+                best_index = -1
             # Consistency window
             if len(self.last_n_actions) > self.consistency_window_length:
                 self.last_n_actions = self.last_n_actions[1:]

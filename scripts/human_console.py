@@ -39,9 +39,12 @@ class VISPYVisualizer(Network.node):
         elif x.text == '+':
             command = self.input_text[1:].strip().split()
             if command[0] == "add":
-                self.add_action(command[1:])
+                self.add_action(command[1])
             elif command[0] == "remove":
-                self.remove_action(command[1:])
+                if len(command) == 2:  # NO ID, REMOVE ALL ACTION
+                    self.remove_action(command[1])
+                elif len(command) == 3:  # ALSO ID, REMOVE ONE EXAMPLE
+                    self.remove_example(command[1], int(command[2]))
             elif command[0] == "debug":
                 self.debug()
             elif command[0] == "load":
@@ -300,32 +303,32 @@ class VISPYVisualizer(Network.node):
                             width=score * 0.25)
                         self.b2.add(self.values[action])
                         # Eye for focus
-                        if self.requires_focus[i]:
-                            self.focuses[action] = scene.visuals.Rectangle(center=(7 / 16, 0.6 - (0.1 * i)),
-                                                                           color='red' if not self.focus else 'green',
-                                                                           border_color='red' if not self.focus else 'green',
-                                                                           height=0.1, width=0.05)
-                            self.b2.add(self.focuses[action])
+                        # if self.requires_focus[i]:
+                        #     self.focuses[action] = scene.visuals.Rectangle(center=(7 / 16, 0.6 - (0.1 * i)),
+                        #                                                    color='red' if not self.focus else 'green',
+                        #                                                    border_color='red' if not self.focus else 'green',
+                        #                                                    height=0.1, width=0.05)
+                        #     self.b2.add(self.focuses[action])
                     # Os score
                     self.actions_text[action].color = "white"
                     if score == m:  # If action is None, we exit at the beginning
-                        if self.requires_os[i]:
-                            self.is_true = self.is_true + 0.001 if self.is_true < 0.1 else self.is_true
-                            self.os_score.color = get_color(self.is_true)
-                            self.os_score.border_color = get_color(self.is_true)
-                        else:
-                            self.is_true = 1
-                            self.os_score.color = 'white'
-                            self.os_score.border_color = 'white'
+                        # if self.requires_os[i]:
+                        self.is_true = self.is_true + 0.001 if self.is_true < 0.1 else self.is_true
+                        self.os_score.color = get_color(self.is_true)
+                        self.os_score.border_color = get_color(self.is_true)
+                        # else:
+                        #     self.is_true = 1
+                        #     self.os_score.color = 'white'
+                        #     self.os_score.border_color = 'white'
 
                         self.os_score.width = self.is_true * 0.25
                         self.os_score.center = [(6 / 8) + ((self.is_true * 0.25) / 2), 0.6 - (0.1 * i)]
 
                         if self.is_true > 0.66:
-                            if self.requires_focus[i]:
-                                self.actions_text[action].color = "green" if self.focus else "orange"
-                            else:
-                                self.actions_text[action].color = "green"
+                            # if self.requires_focus[i]:
+                            self.actions_text[action].color = "green" if self.focus else "orange"
+                            # else:
+                            #     self.actions_text[action].color = "green"
                 # Remove erased action (if any)
                 to_remove = []
                 for key in self.actions_text.keys():
@@ -344,12 +347,8 @@ class VISPYVisualizer(Network.node):
         app.process_events()
 
     def add_action(self, flag):
-        action_name = flag[0]
-        try:
-            ss_id = int(flag[1])
-        except Exception:
-            return "Format not valid"
-        requires_focus = len(flag) == 3 and flag[2] == "-focus"
+        action_name = flag
+        # requires_focus = len(flag) == 3 and flag[2] == "-focus"
         now = time.time()
         self.log_text.text = "WAIT..."
         while (time.time() - now) < 3:
@@ -380,9 +379,7 @@ class VISPYVisualizer(Network.node):
             #     continue
 
         inp = {"flag": action_name,
-               "data": {},
-               "requires_focus": requires_focus,
-               "ss_id": ss_id}
+               "data": {}}
 
         if self.input_type == "rgb":  # Unique case with images in first position
             inp["data"]["rgb"] = np.stack([x[0] for x in data])
@@ -394,7 +391,10 @@ class VISPYVisualizer(Network.node):
         self.write("console_to_ar", {"train": inp})
 
     def remove_action(self, flag):
-        self.write("console_to_ar", {"remove": flag[0]})
+        self.write("console_to_ar", {"remove_action": flag})
+
+    def remove_example(self, flag, ss_id):
+        self.write("console_to_ar", {"remove_example": (flag, ss_id)})
 
     def debug(self):
         self.write("console_to_ar", {"debug": True})

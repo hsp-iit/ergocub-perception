@@ -31,8 +31,8 @@ class Network(BaseConfig):
         in_queues = {
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=True),
             'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
-                                     read_format={"train": None, "remove": None, "debug": None, "load": None,
-                                                  "save": None})
+                                     read_format={"train": None, "remove_action": None, "debug": None, "load": None,
+                                                  "remove_example": None, "save": None})
         }
 
         out_queues = {
