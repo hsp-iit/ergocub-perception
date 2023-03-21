@@ -106,7 +106,7 @@ class ActionRecognizer:
             if self.input_type in ["rgb", "hybrid"]:
                 self.support_set_data["rgb"][class_id] = 0
             self.support_set_features = None
-            return True
+            return "Action {} removed".format(flag)
         else:
             return False
 
@@ -141,7 +141,7 @@ class ActionRecognizer:
         self.requires_os[class_id] = True
         self.support_set_mask[class_id][ss_id] = 1
         self.support_set_features = None
-        return True
+        return "Action {} learned successfully".format(inp["flag"])
 
     def save(self):
         save_loc = os.path.join(self.support_set_path, self.input_type)
@@ -178,9 +178,10 @@ class ActionRecognizer:
         self.support_set_features = None
         return f"Loaded {len(self.support_set_labels)} classes from {load_loc}"
 
-    def save_ss_image(self, edges):
+    def save_ss_image(self):
         import numpy as np
         import cv2
+        import pickle
 
         ss = self.support_set_data
 
@@ -206,7 +207,9 @@ class ActionRecognizer:
                     sequences.append(support_class)
             ss_rgb = np.concatenate(sequences, axis=0)
             cv2.imwrite("SUPPORT_SET.png", ss_rgb)
-        if self.input_type in ["hybrid", "skeleton"]:
+        if self.input_type in ["hybrid", "skeleton"]:  # TODO MAKE IT BETTER
+            with open(os.path.join("action_rec", "hpe", "assets", "skeleton_types.pkl"), "rb") as input_file:
+                edges = pickle.load(input_file)['smpl+head_30']['edges']
             # ss = np.stack([ss[c]["poses"].detach().cpu().numpy() for c in ss.keys()])
             classes = []
             ss_sk = ss["sk"].detach().cpu().numpy()
@@ -235,3 +238,5 @@ class ActionRecognizer:
                 visual = cv2.putText(visual, label, (10, 10 + i * size * shot), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                      (255, 255, 255), 1, 2)
             cv2.imwrite("SUPPORT_SET.png", visual)
+
+        return "Support set image save to SUPPORT_SET.png"

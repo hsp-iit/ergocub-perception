@@ -26,22 +26,29 @@ class ActionRecognition(Network.node):
         self.ar.load()
 
     def loop(self, data):
+        elements = {}
+
         # Human Console Commands
         train_data = data["train"] if "train" in data.keys() else None
         if train_data is not None:
-            self.ar.train(train_data)
+            elements["log"] = self.ar.train(train_data)
         remove_data = data["remove"] if "remove" in data.keys() else None
         if remove_data is not None:
-            self.ar.remove(remove_data)
+            elements["log"] = self.ar.remove(remove_data)
         debug_data = data["debug"] if "debug" in data.keys() else None
         if debug_data is not None:
-            self.ar.save_ss_image(self.edges)
+            elements["log"] = self.ar.save_ss_image()
+        save_data = data["save"] if "save" in data.keys() else None
+        if save_data is not None:
+            elements["log"] = self.ar.save()
+        load_data = data["load"] if "load" in data.keys() else None
+        if load_data is not None:
+            elements["log"] = self.ar.load()
 
-        elements = {}
         ar_input = {}
         pose = data["pose"]
         if pose is None:
-            return {}
+            return elements
 
         ar_input["sk"] = pose.reshape(-1)
 
@@ -136,10 +143,10 @@ class ActionRecognition(Network.node):
 
 
 if __name__ == "__main__":
-    m = ActionRecognition(input_type='skeleton',
-                          window_size=4,
-                          skeleton_scale=2200.,
-                          acquisition_time=3,
-                          consistency_window_length=4,
-                          os_score_thr=0.5)
+    m = ActionRecognition(input_type=AR.Main.input_type,
+                          window_size=AR.Main.window_size,
+                          skeleton_scale=AR.Main.skeleton_scale,
+                          acquisition_time=AR.Main.acquisition_time,
+                          consistency_window_length=AR.Main.consistency_window_length,
+                          os_score_thr=AR.Main.os_score_thr)
     m.run()

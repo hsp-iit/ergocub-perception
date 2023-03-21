@@ -39,11 +39,15 @@ class VISPYVisualizer(Network.node):
         elif x.text == '+':
             command = self.input_text[1:].strip().split()
             if command[0] == "add":
-                self.log_text.text = self.add_action(command[1:])
+                self.add_action(command[1:])
             elif command[0] == "remove":
-                self.log_text.text = self.remove_action(command[1:])
+                self.remove_action(command[1:])
             elif command[0] == "debug":
-                self.log_text.text = self.debug()
+                self.debug()
+            elif command[0] == "load":
+                self.load()
+            elif command[0] == "save":
+                self.save()
             else:
                 self.log_text.text = "Unknown command"
             self.input_text = '>'
@@ -220,7 +224,7 @@ class VISPYVisualizer(Network.node):
             self.rgb = elements["rgb"]
             if self.rgb is not None:
                 if self.bbox is not None:
-                    x1, x2, y1, y2 = self.bbox
+                    x1, y1, x2, y2 = self.bbox
                     self.rgb = cv2.rectangle(self.rgb, (x1, y1), (x2, y2), (0, 0, 255), 3)
                 if self.face_bbox is not None:
                     x1, y1, x2, y2 = self.face_bbox
@@ -338,7 +342,6 @@ class VISPYVisualizer(Network.node):
                 if len(self.actions_text) == 0:
                     self.os_score.center = (2, 2)  # MOVE OUTSIDE
         app.process_events()
-        return {}
 
     def add_action(self, flag):
         action_name = flag[0]
@@ -350,7 +353,7 @@ class VISPYVisualizer(Network.node):
         now = time.time()
         self.log_text.text = "WAIT..."
         while (time.time() - now) < 3:
-            elements = self.read("visualizer")
+            elements = self.read("human_console_visualizer")
             elements.update(self.read("rgb"))
             self.loop(elements)
 
@@ -360,7 +363,7 @@ class VISPYVisualizer(Network.node):
         # off_time = (self.acquisition_time / self.window_size)
         while i < self.window_size:
             # start = time.time()
-            res = self.read("visualizer")
+            res = self.read("human_console_visualizer")
             res.update(self.read("rgb"))
             self.loop(res)
             self.log_text.text = "{:.2f}%".format((i / (self.window_size - 1)) * 100)
@@ -388,16 +391,19 @@ class VISPYVisualizer(Network.node):
         if self.input_type == "hybrid":
             inp["data"]["rgb"] = np.stack([x[1] for x in data])
 
-        self.write("human_console_commands", {"train": inp})
-        return "Action {} learned successfully".format(action_name)
+        self.write("console_to_ar", {"train": inp})
 
     def remove_action(self, flag):
-        self.write("human_console_commands", {"remove": flag[0]})
-        return "Action {} removed".format(flag[0])
+        self.write("console_to_ar", {"remove": flag[0]})
 
     def debug(self):
-        self.write("human_console_commands", {"debug": True})
-        return "Support set saved in root directory"
+        self.write("console_to_ar", {"debug": True})
+
+    def load(self):
+        self.write("console_to_ar", {"load": True})
+
+    def save(self):
+        self.write("console_to_ar", {"save": True})
 
 
 if __name__ == "__main__":
