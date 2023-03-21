@@ -26,7 +26,7 @@ class Network(BaseConfig):
 
 
 class Input(BaseConfig):
-    camera = RealSense
+    camera = WinRealSense
 
     class Params:
         rgb_res = (640, 480)

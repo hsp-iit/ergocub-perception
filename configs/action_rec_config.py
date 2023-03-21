@@ -7,7 +7,6 @@ from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.confort import BaseConfig
 
-
 input_type = "skeleton"  # rgb, skeleton or hybrid
 seq_len = 8 if input_type != "skeleton" else 16
 
@@ -30,20 +29,23 @@ class Network(BaseConfig):
 
     class Args:
         in_queues = {
-            'pose': PyQueue(ip="localhost", port=50000, queue_name='pose', blocking=True,
-                            # read_format={"pose": None}
-                            ),
-            'human_console_commands': PyQueue(ip="localhost", port=50000, queue_name='human_console_commands',
-                                              read_format={"train": None, "remove": None, "debug": None})
+            'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=True),
+            'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
+                                     read_format={"train": None, "remove_action": None, "debug": None, "load": None,
+                                                  "remove_example": None, "save": None})
         }
 
         out_queues = {
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                                write_format={'fps_ar': None, 'actions': None, 'is_true': None,
+                                                              'requires_focus': None, 'log': None,
+                                                              'requires_os': None}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'fps_ar': None, 'actions': None, 'is_true': None,
-                                                'requires_focus': None, 'log': None,
-                                                'requires_os': None, 'action': None}),
+                                  write_format={'fps_ar': None, 'action': None}),
 
             'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1})}
+
+        max_fps = 12
 
 
 base_dir = os.path.join('action_rec', 'ar', 'weights', 'engines')
@@ -73,3 +75,11 @@ class AR(BaseConfig):
         way = 5
         n_joints = 30
         shot = 5
+
+    class Main:
+        input_type = 'skeleton'
+        window_size = 4
+        skeleton_scale = 2200.
+        acquisition_time = 3
+        consistency_window_length = 4
+        os_score_thr = 0.5

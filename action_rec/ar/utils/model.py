@@ -57,16 +57,20 @@ class TemporalCrossTransformer(nn.Module):
         self.add_hook = add_hook
         self.scores = []
 
-    def forward(self, support_set, support_labels, queries):
-        b, k, n, _, _ = support_set.shape
+    def forward(self, support_set, support_labels, queries):  # TODO MAKE IT WORK WITH BATCHES (?)
+        # support_set = support_set[0]  # 1, 25, 16, 256 -> 25, 16, 256
+        # support_labels = support_labels[0]  # 1, 25 -> 25
+        # b, kn, _, _ = support_set.shape
+        kn, _, _ = support_set.shape
+        n_queries = 1
 
         # static pe
         support_set = self.pe(support_set)
         queries = self.pe(queries)
 
         # construct new queries and support set made of tuples of images after pe
-        s = [torch.index_select(support_set, -2, p).reshape(b, k, n, -1) for p in self.tuples]
-        q = [torch.index_select(queries, -2, p).reshape(b, 1, 1, -1) for p in self.tuples]
+        s = [torch.index_select(support_set, -2, p).reshape(kn, -1) for p in self.tuples]
+        q = [torch.index_select(queries, -2, p).reshape(1, -1) for p in self.tuples]
         support_set = torch.stack(s, dim=-2)
         queries = torch.stack(q, dim=-2)
 
@@ -82,22 +86,63 @@ class TemporalCrossTransformer(nn.Module):
         mh_support_set_vs = support_set_vs
         mh_queries_vs = queries_vs
 
-        # TODO ULTRA NEW
+        # New
+        unique_labels = torch.unique(support_labels)
+        all_distances_tensor = torch.zeros(n_queries, len(unique_labels))
+        query_prototypes = []
 
-        scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
-        scores = softmax(scores, dim=-1)
-        query_prototype = torch.matmul(scores, mh_support_set_vs)
-        # print(torch.mean(query_prototype, dim=2, keepdim=True).shape)  # OLD, problem with absent supports
-        query_prototype = torch.sum(query_prototype, dim=2) / torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1)  # Division with zero!
-        query_prototype = query_prototype.unsqueeze(2)
-        # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1))
-        diff = mh_queries_vs - query_prototype
-        norm_sq = torch.norm(diff, dim=[-2, -1])**2
-        # print(norm_sq)
-        distance = torch.div(norm_sq, self.tuples_len)
-        distance = distance * -1
+        for c in unique_labels:
+            # select keys and values for just this class
+            class_k = torch.index_select(mh_support_set_ks, 0, self._extract_class_indices(support_labels, c))
+            class_v = torch.index_select(mh_support_set_vs, 0, self._extract_class_indices(support_labels, c))
+            # k_bs = class_k.shape[0]
 
-        return {'logits': distance.squeeze(-1), 'diffs': diff, 'prototypes': query_prototype}
+            class_scores = torch.matmul(mh_queries_ks.unsqueeze(1), class_k.transpose(-2, -1)) / math.sqrt(
+                self.args.trans_linear_out_dim)
+
+            # reshape etc. to apply a softmax for each query tuple
+            class_scores = class_scores.permute(0, 2, 1, 3)
+            class_scores = class_scores.reshape(n_queries, self.tuples_len, -1)
+            class_scores = [self.class_softmax(class_scores[i]) for i in range(n_queries)]
+            class_scores = torch.cat(class_scores)
+            class_scores = class_scores.reshape(n_queries, self.tuples_len, -1, self.tuples_len)
+            class_scores = class_scores.permute(0, 2, 1, 3)
+
+            # get query specific class prototype
+            query_prototype = torch.matmul(class_scores, class_v)
+            query_prototype = torch.mean(query_prototype, dim=1)
+            # query_prototype = torch.sum(query_prototype, dim=1)/query_prototype.shape[1]
+            query_prototypes.append(query_prototype)
+
+            # calculate distances from queries to query-specific class prototypes
+            diff = mh_queries_vs - query_prototype
+            norm_sq = torch.norm(diff, dim=[-2, -1]) ** 2
+            distance = torch.div(norm_sq, self.tuples_len)
+
+            # multiply by -1 to get logits
+            distance = distance * -1
+            all_distances_tensor[:, c] = distance
+
+        query_prototypes = torch.stack(query_prototypes, dim=1)
+        best_prototype_index = torch.argmax(all_distances_tensor, dim=-1)
+        best_prototype = query_prototypes[:, best_prototype_index.item()]  # TODO CHECK
+        diff = mh_queries_vs - best_prototype
+
+        # OLD
+        # scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
+        # scores = softmax(scores, dim=-1)
+        # query_prototype = torch.matmul(scores, mh_support_set_vs)
+        # # print(torch.mean(query_prototype, dim=2, keepdim=True).shape)  # OLD, problem with absent supports
+        # query_prototype = torch.mean(query_prototype, dim=2, keepdim=True)  # NEWEST
+        # # query_prototype = torch.sum(query_prototype, dim=2) / torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1)  # Division with zero!  # NOT TOO OLD # TODO
+        # query_prototype = query_prototype.unsqueeze(2)
+        # # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1))
+        # diff = mh_queries_vs - query_prototype
+        # norm_sq = torch.norm(diff, dim=[-2, -1])**2
+        # # print(norm_sq)
+        # distance = torch.div(norm_sq, self.tuples_len)
+        # distance = distance * -1
+        return {'logits': all_distances_tensor, 'diff': diff}
 
         # # TODO OLD
         #
@@ -173,7 +218,6 @@ class TemporalCrossTransformer(nn.Module):
         :param which_class: Label for which indices are extracted.
         :return: (torch.tensor) Indices in the form of a mask that indicate the locations of the specified label.
         """
-        return which_class.reshape((-1,))
         class_mask = torch.eq(labels, which_class)  # binary mask of labels equal to which_class
         class_mask_indices = torch.nonzero(class_mask)  # indices of labels equal to which class
         return torch.reshape(class_mask_indices, (-1,))  # reshape to be a 1D vector
@@ -307,7 +351,7 @@ class TRXOS(nn.Module):
 
     def forward(self, ss_data, ss_labels, query_data, ss_features=None):
 
-        b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
+        # b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
         # Query
         features = []
         if "rgb" in query_data.keys():
@@ -344,12 +388,13 @@ class TRXOS(nn.Module):
 
         all_logits = out['logits']
 
-        chosen_index = torch.argmax(all_logits, dim=1)
-        feature = out['diffs'][torch.arange(b), chosen_index, ...]
-        decision = self.discriminator(feature)
+        # chosen_index = torch.argmax(all_logits, dim=1)
+        # feature = out['diffs'][torch.arange(b), chosen_index, ...]
+        decision = self.discriminator(out['diff'])
 
-        return {'logits': all_logits, 'is_true': decision, 'prototypes': out['prototypes'],
-                'support_features': ss_features}
+        return {'logits': all_logits, 'is_true': decision}
+        # return {'logits': all_logits, 'is_true': decision, 'prototypes': out['prototypes'],
+        #         'support_features': ss_features}
 
         # # TODO OLD
         # b, l, c, h, w = target_images[0].size()

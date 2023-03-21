@@ -8,7 +8,6 @@ from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig
 
-
 input_type = "skeleton"  # rgb, skeleton or hybrid
 seq_len = 8 if input_type != "skeleton" else 16
 
@@ -44,17 +43,18 @@ class Network(BaseConfig):
 
     class Args:
         in_queues = {
-            'human_pose_estimation': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
-                                             # read_format={'rgb': Signals.USE_LATEST, 'bbox': Signals.USE_LATEST},
-                                             blocking=True)
+            'hd_to_hpe': PyQueue(ip="localhost", port=50000, queue_name='hd_to_hpe', blocking=True)
         }
 
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_hpe': None, 'human_distance': None, 'pose': None,
                                                 'edges': None}),
-            'pose': PyQueue(ip="localhost", port=50000, queue_name='pose', blocking=False,
-                            write_format={'pose': None}),
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
+                                                write_format={'human_distance': None, 'pose': None,
+                                                              'edges': None}),
+            'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=False,
+                                 write_format={'pose': None}),
             'rpc': IPCQueue(ipc_key=5678, write_format={'human_distance': -1})}
 
 

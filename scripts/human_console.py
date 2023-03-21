@@ -39,11 +39,18 @@ class VISPYVisualizer(Network.node):
         elif x.text == '+':
             command = self.input_text[1:].strip().split()
             if command[0] == "add":
-                self.log_text.text = self.add_action(command[1:])
+                self.add_action(command[1])
             elif command[0] == "remove":
-                self.log_text.text = self.remove_action(command[1:])
+                if len(command) == 2:  # NO ID, REMOVE ALL ACTION
+                    self.remove_action(command[1])
+                elif len(command) == 3:  # ALSO ID, REMOVE ONE EXAMPLE
+                    self.remove_example(command[1], int(command[2]))
             elif command[0] == "debug":
-                self.log_text.text = self.debug()
+                self.debug()
+            elif command[0] == "load":
+                self.load()
+            elif command[0] == "save":
+                self.save()
             else:
                 self.log_text.text = "Unknown command"
             self.input_text = '>'
@@ -220,7 +227,7 @@ class VISPYVisualizer(Network.node):
             self.rgb = elements["rgb"]
             if self.rgb is not None:
                 if self.bbox is not None:
-                    x1, x2, y1, y2 = self.bbox
+                    x1, y1, x2, y2 = self.bbox
                     self.rgb = cv2.rectangle(self.rgb, (x1, y1), (x2, y2), (0, 0, 255), 3)
                 if self.face_bbox is not None:
                     x1, y1, x2, y2 = self.face_bbox
@@ -269,7 +276,7 @@ class VISPYVisualizer(Network.node):
                     if action is None:
                         continue
                     # The following line prevent bugs when creating rectangle with no width
-                    if self.actions[action] == 0:
+                    if self.actions[action] < 1e-4:
                         score = 0.001
                     else:
                         score = self.actions[action]
@@ -296,32 +303,32 @@ class VISPYVisualizer(Network.node):
                             width=score * 0.25)
                         self.b2.add(self.values[action])
                         # Eye for focus
-                        if self.requires_focus[i]:
-                            self.focuses[action] = scene.visuals.Rectangle(center=(7 / 16, 0.6 - (0.1 * i)),
-                                                                           color='red' if not self.focus else 'green',
-                                                                           border_color='red' if not self.focus else 'green',
-                                                                           height=0.1, width=0.05)
-                            self.b2.add(self.focuses[action])
+                        # if self.requires_focus[i]:
+                        #     self.focuses[action] = scene.visuals.Rectangle(center=(7 / 16, 0.6 - (0.1 * i)),
+                        #                                                    color='red' if not self.focus else 'green',
+                        #                                                    border_color='red' if not self.focus else 'green',
+                        #                                                    height=0.1, width=0.05)
+                        #     self.b2.add(self.focuses[action])
                     # Os score
                     self.actions_text[action].color = "white"
                     if score == m:  # If action is None, we exit at the beginning
-                        if self.requires_os[i]:
-                            self.is_true = self.is_true + 0.001 if self.is_true < 0.1 else self.is_true
-                            self.os_score.color = get_color(self.is_true)
-                            self.os_score.border_color = get_color(self.is_true)
-                        else:
-                            self.is_true = 1
-                            self.os_score.color = 'white'
-                            self.os_score.border_color = 'white'
+                        # if self.requires_os[i]:
+                        self.is_true = self.is_true + 0.001 if self.is_true < 0.1 else self.is_true
+                        self.os_score.color = get_color(self.is_true)
+                        self.os_score.border_color = get_color(self.is_true)
+                        # else:
+                        #     self.is_true = 1
+                        #     self.os_score.color = 'white'
+                        #     self.os_score.border_color = 'white'
 
                         self.os_score.width = self.is_true * 0.25
                         self.os_score.center = [(6 / 8) + ((self.is_true * 0.25) / 2), 0.6 - (0.1 * i)]
 
                         if self.is_true > 0.66:
-                            if self.requires_focus[i]:
-                                self.actions_text[action].color = "green" if self.focus else "orange"
-                            else:
-                                self.actions_text[action].color = "green"
+                            # if self.requires_focus[i]:
+                            self.actions_text[action].color = "green" if self.focus else "orange"
+                            # else:
+                            #     self.actions_text[action].color = "green"
                 # Remove erased action (if any)
                 to_remove = []
                 for key in self.actions_text.keys():
@@ -338,19 +345,14 @@ class VISPYVisualizer(Network.node):
                 if len(self.actions_text) == 0:
                     self.os_score.center = (2, 2)  # MOVE OUTSIDE
         app.process_events()
-        return {}
 
     def add_action(self, flag):
-        action_name = flag[0]
-        try:
-            ss_id = int(flag[1])
-        except Exception:
-            return "Format not valid"
-        requires_focus = len(flag) == 3 and flag[2] == "-focus"
+        action_name = flag
+        # requires_focus = len(flag) == 3 and flag[2] == "-focus"
         now = time.time()
         self.log_text.text = "WAIT..."
         while (time.time() - now) < 3:
-            elements = self.read("visualizer")
+            elements = self.read("human_console_visualizer")
             elements.update(self.read("rgb"))
             self.loop(elements)
 
@@ -360,7 +362,7 @@ class VISPYVisualizer(Network.node):
         # off_time = (self.acquisition_time / self.window_size)
         while i < self.window_size:
             # start = time.time()
-            res = self.read("visualizer")
+            res = self.read("human_console_visualizer")
             res.update(self.read("rgb"))
             self.loop(res)
             self.log_text.text = "{:.2f}%".format((i / (self.window_size - 1)) * 100)
@@ -377,9 +379,7 @@ class VISPYVisualizer(Network.node):
             #     continue
 
         inp = {"flag": action_name,
-               "data": {},
-               "requires_focus": requires_focus,
-               "ss_id": ss_id}
+               "data": {}}
 
         if self.input_type == "rgb":  # Unique case with images in first position
             inp["data"]["rgb"] = np.stack([x[0] for x in data])
@@ -388,16 +388,22 @@ class VISPYVisualizer(Network.node):
         if self.input_type == "hybrid":
             inp["data"]["rgb"] = np.stack([x[1] for x in data])
 
-        self.write("human_console_commands", {"train": inp})
-        return "Action {} learned successfully".format(action_name)
+        self.write("console_to_ar", {"train": inp})
 
     def remove_action(self, flag):
-        self.write("human_console_commands", {"remove": flag[0]})
-        return "Action {} removed".format(flag[0])
+        self.write("console_to_ar", {"remove_action": flag})
+
+    def remove_example(self, flag, ss_id):
+        self.write("console_to_ar", {"remove_example": (flag, ss_id)})
 
     def debug(self):
-        self.write("human_console_commands", {"debug": True})
-        return "Support set saved in root directory"
+        self.write("console_to_ar", {"debug": True})
+
+    def load(self):
+        self.write("console_to_ar", {"load": True})
+
+    def save(self):
+        self.write("console_to_ar", {"save": True})
 
 
 if __name__ == "__main__":

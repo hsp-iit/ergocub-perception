@@ -26,22 +26,35 @@ class ActionRecognition(Network.node):
         self.ar.load()
 
     def loop(self, data):
+        elements = {}
+
         # Human Console Commands
         train_data = data["train"] if "train" in data.keys() else None
         if train_data is not None:
-            self.ar.train(train_data)
-        remove_data = data["remove"] if "remove" in data.keys() else None
+            elements["log"] = self.ar.train(train_data)
+
+        remove_data = data["remove_action"] if "remove_action" in data.keys() else None
         if remove_data is not None:
-            self.ar.remove(remove_data)
+            elements["log"] = self.ar.remove_action(remove_data)
+
+        remove_example = data["remove_example"] if "remove_example" in data.keys() else None
+        if remove_example is not None:
+            elements["log"] = self.ar.remove_example(remove_example[0], remove_example[1])
+
         debug_data = data["debug"] if "debug" in data.keys() else None
         if debug_data is not None:
-            self.ar.save_ss_image(self.edges)
+            elements["log"] = self.ar.save_ss_image()
+        save_data = data["save"] if "save" in data.keys() else None
+        if save_data is not None:
+            elements["log"] = self.ar.save()
+        load_data = data["load"] if "load" in data.keys() else None
+        if load_data is not None:
+            elements["log"] = self.ar.load()
 
-        elements = {}
         ar_input = {}
         pose = data["pose"]
         if pose is None:
-            return {}
+            return elements
 
         ar_input["sk"] = pose.reshape(-1)
 
@@ -100,11 +113,9 @@ class ActionRecognition(Network.node):
 
         # Make inference
         results = self.ar.inference(ar_input)
-        actions, is_true, requires_focus, requires_os = results
+        actions, is_true = results
         elements["actions"] = actions
         elements["is_true"] = is_true
-        elements["requires_focus"] = requires_focus
-        elements["requires_os"] = requires_os
 
         # Filter action with os and consistency window
         elements["action"] = -1
@@ -112,9 +123,8 @@ class ActionRecognition(Network.node):
             best_action = max(elements["actions"], key=elements["actions"].get)
             best_index = list(elements["actions"].keys()).index(best_action)
             # Reject low os
-            if elements["requires_os"][best_index]:
-                if is_true < self.os_score_thr:
-                    best_index = -1
+            if is_true < self.os_score_thr:
+                best_index = -1
             # Consistency window
             if len(self.last_n_actions) > self.consistency_window_length:
                 self.last_n_actions = self.last_n_actions[1:]
@@ -136,10 +146,10 @@ class ActionRecognition(Network.node):
 
 
 if __name__ == "__main__":
-    m = ActionRecognition(input_type='skeleton',
-                          window_size=4,
-                          skeleton_scale=2200.,
-                          acquisition_time=3,
-                          consistency_window_length=4,
-                          os_score_thr=0.5)
+    m = ActionRecognition(input_type=AR.Main.input_type,
+                          window_size=AR.Main.window_size,
+                          skeleton_scale=AR.Main.skeleton_scale,
+                          acquisition_time=AR.Main.acquisition_time,
+                          consistency_window_length=AR.Main.consistency_window_length,
+                          os_score_thr=AR.Main.os_score_thr)
     m.run()
