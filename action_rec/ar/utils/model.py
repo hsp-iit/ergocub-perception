@@ -110,7 +110,8 @@ class TemporalCrossTransformer(nn.Module):
 
             # get query specific class prototype
             query_prototype = torch.matmul(class_scores, class_v)
-            query_prototype = torch.sum(query_prototype, dim=1)/5   # TODO NOT 5!!!!!!
+            query_prototype = torch.mean(query_prototype, dim=1)
+            # query_prototype = torch.sum(query_prototype, dim=1)/query_prototype.shape[1]
             query_prototypes.append(query_prototype)
 
             # calculate distances from queries to query-specific class prototypes

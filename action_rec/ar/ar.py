@@ -71,9 +71,6 @@ class ActionRecognizer:
 
         with torch.no_grad():
             outputs = self.ar(None, ss_labels, data, ss_features=ss_f)  # Data is query
-        # Save support features
-        # if self.support_set_features is None:
-        #     self.support_set_features = outputs['support_features']
 
         # Softmax
         true_logits = outputs['logits']
