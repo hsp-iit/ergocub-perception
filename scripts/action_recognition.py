@@ -8,15 +8,13 @@ setup_logger(**Logging.Logger.Params.to_dict())
 
 
 class ActionRecognition(Network.node):
-    def __init__(self, input_type, window_size, skeleton_scale, acquisition_time,
-                 consistency_window_length, os_score_thr):
+    def __init__(self, input_type, window_size, acquisition_time, consistency_window_length, os_score_thr):
         super().__init__(**Network.Args.to_dict())
         self.input_type = input_type
         self.window_size = window_size
         self.fps_s = []
         self.last_poses = []
         self.last_n_actions = []
-        self.skeleton_scale = skeleton_scale
         self.consistency_window_length = consistency_window_length
         self.os_score_thr = os_score_thr
         self.ar = None
@@ -28,28 +26,21 @@ class ActionRecognition(Network.node):
     def loop(self, data):
         elements = {}
 
-        # Human Console Commands
-        train_data = data["train"] if "train" in data.keys() else None
-        if train_data is not None:
-            elements["log"] = self.ar.train(train_data)
-
-        remove_data = data["remove_action"] if "remove_action" in data.keys() else None
-        if remove_data is not None:
-            elements["log"] = self.ar.remove_action(remove_data)
-
-        remove_example = data["remove_example"] if "remove_example" in data.keys() else None
-        if remove_example is not None:
-            elements["log"] = self.ar.remove_example(remove_example[0], remove_example[1])
-
-        debug_data = data["debug"] if "debug" in data.keys() else None
-        if debug_data is not None:
-            elements["log"] = self.ar.save_ss_image()
-        save_data = data["save"] if "save" in data.keys() else None
-        if save_data is not None:
-            elements["log"] = self.ar.save()
-        load_data = data["load"] if "load" in data.keys() else None
-        if load_data is not None:
-            elements["log"] = self.ar.load()
+        # Human Console Commands, command[0] is command, else are args
+        command = data["command"] if "command" in data.keys() else None
+        if command is not None:
+            if command[0] == "train":
+                elements["log"] = self.ar.train(command[1])
+            elif command[0] == "remove_action":
+                elements["log"] = self.ar.remove_action(command[1])
+            elif command[0] == "remove_example":
+                elements["log"] = self.ar.remove_example(command[1], command[2])
+            elif command[0] == "debug":
+                elements["log"] = self.ar.save_ss_image()
+            elif command[0] == "save":
+                elements["log"] = self.ar.save()
+            elif command[0] == "load":
+                self.ar.load()
 
         ar_input = {}
         pose = data["pose"]
@@ -116,6 +107,8 @@ class ActionRecognition(Network.node):
         actions, is_true = results
         elements["actions"] = actions
         elements["is_true"] = is_true
+        print(actions)
+        print(is_true)
 
         # Filter action with os and consistency window
         elements["action"] = -1
@@ -148,7 +141,6 @@ class ActionRecognition(Network.node):
 if __name__ == "__main__":
     m = ActionRecognition(input_type=AR.Main.input_type,
                           window_size=AR.Main.window_size,
-                          skeleton_scale=AR.Main.skeleton_scale,
                           acquisition_time=AR.Main.acquisition_time,
                           consistency_window_length=AR.Main.consistency_window_length,
                           os_score_thr=AR.Main.os_score_thr)

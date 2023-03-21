@@ -42,15 +42,15 @@ class VISPYVisualizer(Network.node):
                 self.add_action(command[1])
             elif command[0] == "remove":
                 if len(command) == 2:  # NO ID, REMOVE ALL ACTION
-                    self.remove_action(command[1])
+                    self.write("console_to_ar", {"command": ("remove_action", command[1])})
                 elif len(command) == 3:  # ALSO ID, REMOVE ONE EXAMPLE
-                    self.remove_example(command[1], int(command[2]))
+                    self.write("console_to_ar", {"command": ("remove_example", command[1], int(command[2]))})
             elif command[0] == "debug":
-                self.debug()
+                self.write("console_to_ar", {"command": ("debug",)})
             elif command[0] == "load":
-                self.load()
+                self.write("console_to_ar", {"command": ("load",)})
             elif command[0] == "save":
-                self.save()
+                self.write("console_to_ar", {"command": ("save",)})
             else:
                 self.log_text.text = "Unknown command"
             self.input_text = '>'
@@ -388,22 +388,7 @@ class VISPYVisualizer(Network.node):
         if self.input_type == "hybrid":
             inp["data"]["rgb"] = np.stack([x[1] for x in data])
 
-        self.write("console_to_ar", {"train": inp})
-
-    def remove_action(self, flag):
-        self.write("console_to_ar", {"remove_action": flag})
-
-    def remove_example(self, flag, ss_id):
-        self.write("console_to_ar", {"remove_example": (flag, ss_id)})
-
-    def debug(self):
-        self.write("console_to_ar", {"debug": True})
-
-    def load(self):
-        self.write("console_to_ar", {"load": True})
-
-    def save(self):
-        self.write("console_to_ar", {"save": True})
+        self.write("console_to_ar", {"command": ("train", inp)})
 
 
 if __name__ == "__main__":
