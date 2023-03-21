@@ -66,8 +66,7 @@ class ActionRecognizer:
             ss_labels = ss_labels + [count]*len(self.support_set[c]["features"])
             count += 1
         ss_f = torch.concatenate(class_features)
-        ss_f = ss_f.unsqueeze(0)
-        ss_labels = torch.LongTensor(ss_labels).cuda().unsqueeze(0)
+        ss_labels = torch.LongTensor(ss_labels).cuda()
 
         with torch.no_grad():
             outputs = self.ar(None, ss_labels, data, ss_features=ss_f)  # Data is query

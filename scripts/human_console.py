@@ -276,7 +276,7 @@ class VISPYVisualizer(Network.node):
                     if action is None:
                         continue
                     # The following line prevent bugs when creating rectangle with no width
-                    if self.actions[action] == 0:
+                    if self.actions[action] < 1e-4:
                         score = 0.001
                     else:
                         score = self.actions[action]

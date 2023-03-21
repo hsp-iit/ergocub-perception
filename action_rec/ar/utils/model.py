@@ -58,8 +58,8 @@ class TemporalCrossTransformer(nn.Module):
         self.scores = []
 
     def forward(self, support_set, support_labels, queries):  # TODO MAKE IT WORK WITH BATCHES (?)
-        support_set = support_set[0]  # 1, 25, 16, 256 -> 25, 16, 256
-        support_labels = support_labels[0]  # 1, 25 -> 25
+        # support_set = support_set[0]  # 1, 25, 16, 256 -> 25, 16, 256
+        # support_labels = support_labels[0]  # 1, 25 -> 25
         # b, kn, _, _ = support_set.shape
         kn, _, _ = support_set.shape
         n_queries = 1
@@ -351,7 +351,7 @@ class TRXOS(nn.Module):
 
     def forward(self, ss_data, ss_labels, query_data, ss_features=None):
 
-        b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
+        # b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
         # Query
         features = []
         if "rgb" in query_data.keys():
