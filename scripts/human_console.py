@@ -270,7 +270,7 @@ class VISPYVisualizer(Network.node):
 
             # Actions
             if self.actions is not None:
-
+                act_vert_off = 0.5/len(self.actions)
                 m = max(self.actions.values()) if len(self.actions) > 0 else 0  # Just max
                 for i, action in enumerate(self.actions.keys()):
                     if action is None:
@@ -284,8 +284,8 @@ class VISPYVisualizer(Network.node):
                         text = action
                         self.actions_text[action].text = text
                         self.values[action].width = score * 0.25
-                        self.actions_text[action].pos = (3 / 16, 0.6 - (0.1 * i))
-                        self.values[action].center = (4 / 8 + ((score * 0.25) / 2), 0.6 - (0.1 * i))
+                        self.actions_text[action].pos = (3 / 16, 0.6 - (act_vert_off * i))
+                        self.values[action].center = (4 / 8 + ((score * 0.25) / 2), 0.6 - (act_vert_off * i))
                         self.values[action].color = get_color(score)
                         self.values[action].border_color = get_color(score)
                         if action in self.focuses.keys():
@@ -295,11 +295,11 @@ class VISPYVisualizer(Network.node):
                         # Action label
                         self.actions_text[action] = Text('', rotation=0, anchor_x="center", anchor_y="center",
                                                          font_size=12,
-                                                         pos=(3 / 16, 0.6 - (0.1 * i)), color="white")
+                                                         pos=(3 / 16, 0.6 - (act_vert_off * i)), color="white")
                         self.b2.add(self.actions_text[action])
                         self.values[action] = scene.visuals.Rectangle(
-                            center=(4 / 8 + ((score * 0.25) / 2), 0.6 - (0.1 * i)),
-                            color=get_color(score), border_color=get_color(score), height=0.1,
+                            center=(4 / 8 + ((score * 0.25) / 2), 0.6 - (act_vert_off * i)),
+                            color=get_color(score), border_color=get_color(score), height=act_vert_off,
                             width=score * 0.25)
                         self.b2.add(self.values[action])
                         # Eye for focus
@@ -320,9 +320,9 @@ class VISPYVisualizer(Network.node):
                         #     self.is_true = 1
                         #     self.os_score.color = 'white'
                         #     self.os_score.border_color = 'white'
-
+                        self.os_score.height = act_vert_off
                         self.os_score.width = self.is_true * 0.25
-                        self.os_score.center = [(6 / 8) + ((self.is_true * 0.25) / 2), 0.6 - (0.1 * i)]
+                        self.os_score.center = [(6 / 8) + ((self.is_true * 0.25) / 2), 0.6 - (act_vert_off * i)]
 
                         if self.is_true > 0.66:
                             # if self.requires_focus[i]:
