@@ -69,7 +69,7 @@ class VISPYVisualizer(Network.node):
         self.input_text = '>'
 
         self.canvas = scene.SceneCanvas(keys='interactive')
-        self.canvas.size = 1200, 600
+        self.canvas.size = 600, 600
         self.canvas.events.key_press.connect(self.printer)
         self.canvas.show()
 
@@ -79,27 +79,8 @@ class VISPYVisualizer(Network.node):
         # be automatically resized whenever the grid is resized.
         grid = self.canvas.central_widget.add_grid()
 
-        # Plot
-        b1 = grid.add_view(row=0, col=0)
-        b1.border_color = (0.5, 0.5, 0.5, 1)
-        b1.camera = scene.TurntableCamera(45, elevation=30, azimuth=0, distance=2)
-        self.lines = []
-        Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
-        for _ in range(30):
-            self.lines.append(Plot3D(
-                [],
-                width=3.0,
-                color="purple",
-                edge_color="w",
-                symbol="o",
-                face_color=(0.2, 0.2, 1, 0.8),
-                marker_size=1,
-            ))
-            b1.add(self.lines[_])
-        coords = scene.visuals.GridLines(parent=b1.scene)
-
         # Info
-        self.b2 = grid.add_view(row=0, col=1)
+        self.b2 = grid.add_view(row=0, col=0)
         self.b2.camera = scene.PanZoomCamera(rect=(0, 0, 1, 1))
         self.b2.camera.interactive = False
         self.b2.border_color = (0.5, 0.5, 0.5, 1)
@@ -129,16 +110,8 @@ class VISPYVisualizer(Network.node):
         self.actions_text = {}
         self.values = {}
 
-        # Image
-        b3 = grid.add_view(row=1, col=0)
-        b3.camera = scene.PanZoomCamera(rect=(0, 0, 640, 480))
-        b3.camera.interactive = False
-        b3.border_color = (0.5, 0.5, 0.5, 1)
-        self.image = Image()
-        b3.add(self.image)
-
         # Commands
-        b4 = grid.add_view(row=1, col=1)
+        b4 = grid.add_view(row=1, col=0)
         b4.camera = scene.PanZoomCamera(rect=(0, 0, 1, 1))
         b4.camera.interactive = False
         b4.border_color = (0.5, 0.5, 0.5, 1)
@@ -218,45 +191,10 @@ class VISPYVisualizer(Network.node):
                 self.focus_text.text = "NOT FOC."
                 self.focus_text.color = "red"
 
-        # IMAGE, FACE_BBOX, HUMAN_BBOX
-        if "bbox" in elements.keys():
-            self.bbox = elements["bbox"]
-        if "face_bbox" in elements.keys():
-            self.face_bbox = elements["face_bbox"]
-        if "rgb" in elements.keys():
-            self.rgb = elements["rgb"]
-            if self.rgb is not None:
-                if self.bbox is not None:
-                    x1, y1, x2, y2 = self.bbox
-                    self.rgb = cv2.rectangle(self.rgb, (x1, y1), (x2, y2), (0, 0, 255), 3)
-                if self.face_bbox is not None:
-                    x1, y1, x2, y2 = self.face_bbox
-                    color = (255, 0, 0) if not self.focus else (0, 255, 0)
-                    self.rgb = cv2.rectangle(self.rgb, (x1, y1), (x2, y2), color, 3)
-                self.image.set_data(cv2.flip(self.rgb, 0))
-
         # DIST
         if "human_distance" in elements.keys():
             self.dist = elements["human_distance"] if elements["human_distance"] != -1 else None
             self.distance_text.text = "DIST: {:.2f}m".format(self.dist) if self.dist is not None else "DIST:"
-
-        # POSE
-        # if "pose" in elements.keys():
-        #     self.pose = elements["pose"]
-        #     if "edges" in elements.keys():
-        #         self.edges = elements["edges"]  # THIS SHOULD NEVER BE NONE
-        #     if self.pose is not None:
-        #         pose = self.pose @ np.matrix([[1, 0, 0],
-        #                                       [0, math.cos(90), -math.sin(90)],
-        #                                       [0, math.sin(90), math.cos(90)]])
-        #         for i, edge in enumerate(self.edges):
-        #             self.lines[i].set_data((pose[[edge[0], edge[1]]]),
-        #                                    color="purple",
-        #                                    edge_color="white")
-        #     else:
-        #         for i in range(len(self.lines)):
-        #             self.lines[i].set_data(color="grey",
-        #                                    edge_color="white")
 
         # ACTIONS
         if "actions" in elements.keys():
@@ -269,7 +207,7 @@ class VISPYVisualizer(Network.node):
                 self.requires_os = elements["requires_os"]
 
             # Actions
-            if self.actions is not None:
+            if self.actions is not None and len(self.actions) > 0:
                 act_vert_off = 0.5/len(self.actions)
                 m = max(self.actions.values()) if len(self.actions) > 0 else 0  # Just max
                 for i, action in enumerate(self.actions.keys()):
@@ -302,33 +240,18 @@ class VISPYVisualizer(Network.node):
                             color=get_color(score), border_color=get_color(score), height=act_vert_off,
                             width=score * 0.25)
                         self.b2.add(self.values[action])
-                        # Eye for focus
-                        # if self.requires_focus[i]:
-                        #     self.focuses[action] = scene.visuals.Rectangle(center=(7 / 16, 0.6 - (0.1 * i)),
-                        #                                                    color='red' if not self.focus else 'green',
-                        #                                                    border_color='red' if not self.focus else 'green',
-                        #                                                    height=0.1, width=0.05)
-                        #     self.b2.add(self.focuses[action])
                     # Os score
                     self.actions_text[action].color = "white"
                     if score == m:  # If action is None, we exit at the beginning
-                        # if self.requires_os[i]:
                         self.is_true = self.is_true + 0.001 if self.is_true < 0.1 else self.is_true
                         self.os_score.color = get_color(self.is_true)
                         self.os_score.border_color = get_color(self.is_true)
-                        # else:
-                        #     self.is_true = 1
-                        #     self.os_score.color = 'white'
-                        #     self.os_score.border_color = 'white'
                         self.os_score.height = act_vert_off
                         self.os_score.width = self.is_true * 0.25
                         self.os_score.center = [(6 / 8) + ((self.is_true * 0.25) / 2), 0.6 - (act_vert_off * i)]
 
                         if self.is_true > 0.66:
-                            # if self.requires_focus[i]:
                             self.actions_text[action].color = "green" if self.focus else "orange"
-                            # else:
-                            #     self.actions_text[action].color = "green"
                 # Remove erased action (if any)
                 to_remove = []
                 for key in self.actions_text.keys():

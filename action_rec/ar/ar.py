@@ -124,6 +124,7 @@ class ActionRecognizer:
         import numpy as np
         import cv2
         import pickle
+        import imageio
         #
         # ss = self.support_set_data
         #
@@ -152,28 +153,48 @@ class ActionRecognizer:
         if self.input_type in ["hybrid", "skeleton"]:  # TODO MAKE IT BETTER
             with open(os.path.join("action_rec", "hpe", "assets", "skeleton_types.pkl"), "rb") as input_file:
                 edges = pickle.load(input_file)['smpl+head_30']['edges']
-            classes = []
+            # Get maximum number of supports
+            max_num_support = 0
+            for k in self.support_set.keys():
+                if len(self.support_set[k]["sk"]) > max_num_support:
+                    max_num_support = len(self.support_set[k]["sk"])
+            # Write gif
+            size = 250
+            support_gifs = []
             for class_name in self.support_set.keys():
                 sks = np.stack(self.support_set[class_name]["sk"])
                 sks = sks.reshape(sks.shape[:-1] + (30, 3))  # 5, 16, 30 , 3
-                size = 250
-                zoom = 2
-                visual = np.zeros((size * sks.shape[0], size * sks.shape[1]))
-                sks = (sks + 1) * (size / 2)  # Send each pose from [-1, +1] to [0, size]
-                sks *= zoom
-                sks = sks[..., :2]
-                sks[..., 1] += np.arange(sks.shape[0])[..., None, None].repeat(sks.shape[1], axis=1) * size
-                sks[..., 0] += np.arange(sks.shape[1])[None, ..., None].repeat(sks.shape[0], axis=0) * size
-                sks[..., 1] -= size / 2
-                sks[..., 0] -= size / 2
-                sks = sks.reshape(-1, 30, 2).astype(int)
-                for pose in sks:
-                    for point in pose:
-                        visual = cv2.circle(visual, point, 1, (255, 0, 0))
-                    for edge in edges:
-                        visual = cv2.line(visual, pose[edge[0]], pose[edge[1]], (255, 0, 0))
-                visual = cv2.putText(visual, class_name, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
-                classes.append(visual)
-            visual = np.concatenate(classes, axis=0)
-            cv2.imwrite("SUPPORT_SET.png", visual)
-        return "Support set image save to SUPPORT_SET.png"
+                sks *= 2
+                sks = ((sks + 1)/2)*size  # Send each pose from [-1, +1] to [0, size]
+                sks = sks[..., :2]  # 5, 16, 30 , 2
+                class_gif = []
+                for i in range(sks.shape[1]):  # Repeat 16 times
+                    class_visual = np.zeros((size*2, size*max_num_support))
+                    class_visual = cv2.putText(class_visual, class_name, (30, int(size/2)), cv2.FONT_HERSHEY_SIMPLEX, 3,
+                                               (255, 255, 255), 2, 2)
+                    for j in range(sks.shape[0]):
+                        class_visual = cv2.putText(class_visual, f"{j}", (int((size*j) + size/2), int(size*(4/5))),
+                                                   cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                                   (255, 255, 255), 2, 2)
+                        for point in sks[j][i]:
+                            class_visual = cv2.circle(class_visual, (int(point[0] + j*size),  # x
+                                                                     int(point[1] + size)), 1, (255, 0, 0))  # y
+                        for edge in edges:
+                            class_visual = cv2.line(class_visual,
+                                                    (int(sks[j][i][edge[0]][0] + j*size),  # x1
+                                                     int(sks[j][i][edge[0]][1] + size)),  # y1
+                                                    (int(sks[j][i][edge[1]][0] + j*size),  # x2
+                                                     int(sks[j][i][edge[1]][1] + size)),  # y2
+                                                    (255, 0, 0))
+                    class_gif.append(class_visual)
+                support_gifs.append(class_gif)
+
+            n_classes = len(support_gifs)
+            support_gifs = [np.stack(elem) for elem in support_gifs]
+            support_gifs = np.stack(support_gifs)
+            support_gifs = np.swapaxes(support_gifs, 0, 1)
+            support_gifs = np.reshape(support_gifs, (16, size * n_classes * 2, size * max_num_support))
+            support_gifs = [elem.astype(np.uint8) for elem in support_gifs]
+            imageio.mimsave('SUPPORT_SET.gif', support_gifs, fps=12)
+
+        return "Support set image save to SUPPORT_SET.gif"
