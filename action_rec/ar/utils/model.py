@@ -10,23 +10,84 @@ from torch.nn.functional import softmax
 NUM_SAMPLES = 1
 
 
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout, max_len=5000, pe_scale_factor=0.1):
-        super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-        self.pe_scale_factor = pe_scale_factor
-        # Compute the positional encodings once in log space.
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(position * div_term) * self.pe_scale_factor
-        pe[:, 1::2] = torch.cos(position * div_term) * self.pe_scale_factor
-        pe = pe.unsqueeze(0)
-        self.register_buffer('pe', pe)
+class TRXOS(nn.Module):
+    def __init__(self, args, add_hook=False):
+        super(TRXOS, self).__init__()
+        self.args = args
+        self.way = args.way
 
-    def forward(self, x):
-        x = x + Variable(self.pe[:, :x.size(-2)], requires_grad=False)
-        return self.dropout(x)
+        self.trans_linear_in_dim = args.trans_linear_in_dim
+        self.features_extractor = nn.ModuleDict()
+        if args.input_type in ["skeleton", "hybrid"]:
+            self.features_extractor['sk'] = MLP(args.n_joints * 3, args.n_joints * 3 * 2, 256)
+        if args.input_type in ["rgb", "hybrid"]:
+            if add_hook:
+                resnet = self.myresnet50(pretrained=True)
+            else:
+                resnet = resnet50(pretrained=True)
+            self.features_extractor["rgb"] = nn.Sequential(*list(resnet.children())[:-1])
+
+        self.transformers = nn.ModuleList([TemporalCrossTransformer(args, s, add_hook=add_hook) for s in args.temp_set])
+
+        self.model = args.model
+        if self.model == "DISC":
+            self.discriminator = Discriminator(seq_len=int(((args.seq_len-1)*args.seq_len)/2),
+                                               dim=args.trans_linear_out_dim,
+                                               l=args.seq_len)
+        if self.model == "EXP":
+            self.discriminator = torch.exp
+
+        self.post_resnet = PostResNet()
+
+    def forward(self, ss_data, ss_labels, query_data, ss_features=None):
+
+        # b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
+        # Query
+        features = []
+        if "rgb" in query_data.keys():
+            b, l, c, h, w = query_data["rgb"].size()
+            target_features_rgb = self.features_extractor['rgb'](query_data["rgb"].reshape(-1, c, h, w))
+            target_features_rgb = target_features_rgb.reshape(b*l, -1)  # Remove last two dimension (1, 1)
+            target_features_rgb = self.post_resnet(target_features_rgb)
+            target_features_rgb = target_features_rgb.reshape(b, l, -1)
+            features.append(target_features_rgb)
+        if "sk" in query_data.keys():
+            target_features_sk = self.features_extractor['sk'](query_data["sk"])
+            features.append(target_features_sk)
+        query_features = torch.concat(features, dim=-1).unsqueeze(1).unsqueeze(1)  # Add n and k dimensions
+
+        # Support set
+        if ss_features is None:
+            features = []
+            if "rgb" in ss_data.keys():
+                b, k, n, l, c, h, w = ss_data["rgb"].size()
+                context_features_rgb = self.features_extractor['rgb'](ss_data["rgb"].reshape(-1, c, h, w))
+                context_features_rgb = context_features_rgb.reshape(b*k*n*l, -1)
+                context_features_rgb = self.post_resnet(context_features_rgb)
+                context_features_rgb = context_features_rgb.reshape(b, k, n, l, -1)
+                features.append(context_features_rgb)
+            if "sk" in ss_data.keys():
+                context_features_sk = self.features_extractor['sk'](ss_data["sk"])
+                features.append(context_features_sk)
+            ss_features = torch.concat(features, dim=-1)
+
+        out = self.transformers[0](ss_features, ss_labels, query_features)
+        all_logits = out['logits']
+
+        decision = self.discriminator(out['diff'])
+
+        return {'logits': all_logits, 'is_true': decision}
+
+    def distribute_model(self):
+        """
+        Distributes the CNNs over multiple GPUs.
+        :return: Nothing
+        """
+        if self.args.num_gpus > 1:
+            self.features_extractor["rgb"].cuda(0)
+            self.features_extractor["rgb"] = torch.nn.DataParallel(self.features_extractor["rgb"],
+                                                                   device_ids=[i for i in range(0, self.args.num_gpus)])
+            self.features_extractor["rgb"].cuda(0)
 
 
 class TemporalCrossTransformer(nn.Module):
@@ -57,69 +118,7 @@ class TemporalCrossTransformer(nn.Module):
         self.add_hook = add_hook
         self.scores = []
 
-    def old(self, support_set, support_labels, queries):
-        support_labels = torch.full((5, 5), 1).cuda().unsqueeze(0)
-        support_set = support_set.reshape(1, 5, 5, 16, 256)
-        queries = queries.reshape(1, 1, 1, 16, 256)
-
-        b, k, n, _, _ = support_set.shape
-
-        # static pe
-        support_set = self.pe(support_set)
-        queries = self.pe(queries)
-
-        # construct new queries and support set made of tuples of images after pe
-        s = [torch.index_select(support_set, -2, p).reshape(b, k, n, -1) for p in self.tuples]
-        q = [torch.index_select(queries, -2, p).reshape(b, 1, 1, -1) for p in self.tuples]
-        support_set = torch.stack(s, dim=-2)
-        queries = torch.stack(q, dim=-2)
-
-        # apply linear maps
-        support_set_ks = self.k_linear(support_set)
-        queries_ks = self.k_linear(queries)
-        support_set_vs = self.v_linear(support_set)
-        queries_vs = self.v_linear(queries)
-
-        # apply norms where necessary
-        mh_support_set_ks = self.norm_k(support_set_ks)
-        mh_queries_ks = self.norm_k(queries_ks)
-        mh_support_set_vs = support_set_vs
-        mh_queries_vs = queries_vs
-        # print("OLD", mh_queries_vs)  THERE ARE THE SAME
-        # TODO ULTRA NEW
-
-        scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
-        # TODO SCORES IS THE SAME
-        # print("OLD_bf", scores[0][0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-        # print("OLD_bf", scores[0][0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-        # scores 1, 5, 5, 120, 120
-        # TODO il problema e' qua: sto facendo una softmax sbagliata (ogni coppia query - supporto)
-        # TODO dovrei fare 1 5 120 120 -> 1 120 5 120 -> 1 120 600 ->
-        # TODO SCORES HERE ARE DIFFERENT
-        scores = softmax(scores, dim=-1)
-        # print("OLD_aft", scores[0][0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-        # print("OLD_aft", scores[0][0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-        query_prototype = torch.matmul(scores, mh_support_set_vs)
-        # print(torch.mean(query_prototype, dim=2, keepdim=True).shape)  # OLD, problem with absent supports
-        # print(torch.sum(query_prototype, dim=2).shape)
-        # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1).shape)  # TODO REMOVE
-        query_prototype = torch.sum(query_prototype, dim=2) / torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1)  # Division with zero!
-        query_prototype = query_prototype.unsqueeze(2)
-        # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1))
-        diff = mh_queries_vs - query_prototype
-        norm_sq = torch.norm(diff, dim=[-2, -1])**2
-        # print(norm_sq)
-        distance = torch.div(norm_sq, self.tuples_len)
-        distance = distance * -1
-
-        # print("OLD logits", distance.squeeze(-1))
-
-        return {'logits': distance.squeeze(-1), 'diffs': diff, 'prototypes': query_prototype}
-
-    def forward(self, support_set, support_labels, queries):  # TODO MAKE IT WORK WITH BATCHES (?)
-        # support_set = support_set[0]  # 1, 25, 16, 256 -> 25, 16, 256
-        # support_labels = support_labels[0]  # 1, 25 -> 25
-        # b, kn, _, _ = support_set.shape
+    def forward(self, support_set, support_labels, queries):
         kn, _, _ = support_set.shape
         n_queries = 1
 
@@ -145,7 +144,6 @@ class TemporalCrossTransformer(nn.Module):
         mh_queries_ks = self.norm_k(queries_ks)
         mh_support_set_vs = support_set_vs
         mh_queries_vs = queries_vs
-        # print("NEW", mh_queries_vs)  # TODO THERE ARE THE SAME
 
         # New
         unique_labels = torch.unique(support_labels)
@@ -156,18 +154,10 @@ class TemporalCrossTransformer(nn.Module):
             # select keys and values for just this class
             class_k = torch.index_select(mh_support_set_ks, 0, self._extract_class_indices(support_labels, c))
             class_v = torch.index_select(mh_support_set_vs, 0, self._extract_class_indices(support_labels, c))
-            # k_bs = class_k.shape[0]
 
             class_scores = torch.matmul(mh_queries_ks.unsqueeze(1), class_k.transpose(-2, -1)) / math.sqrt(
                 self.args.trans_linear_out_dim)
-            # TODO SCORES HERE IS THE SAME
-            # print("NEW_bf", class_scores[0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-            # print("NEW_bf", class_scores[0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-            # class_scores = 1*5*120*120
 
-            # reshape etc. to apply a softmax for each query tuple
-            # 1 5 120 120
-            # proviamo softmax su -2 e dopo media
             # TODO TRX, GOOD FOR THEM
             # class_scores = class_scores.permute(0, 2, 1, 3)  # 1, 120, 5, 120
             # class_scores = class_scores.reshape(n_queries, self.tuples_len, -1)  # 1 120 600
@@ -179,15 +169,9 @@ class TemporalCrossTransformer(nn.Module):
             # TODO MY, GOOD FOR US
             class_scores = softmax(class_scores, dim=-1)
 
-            # get query specific class prototype
-            # TODO SCORES HERE ARE DIFFERENT
-            # print("NEW_aft", class_scores[0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
-            # print("NEW_aft", class_scores[0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
             query_prototype = torch.matmul(class_scores, class_v)
             query_prototype = torch.mean(query_prototype, dim=1)
-            # query_prototype = torch.sum(query_prototype, dim=1)/query_prototype.shape[1]
             query_prototypes.append(query_prototype)
-
 
             # calculate distances from queries to query-specific class prototypes
             diff = mh_queries_vs - query_prototype
@@ -202,89 +186,8 @@ class TemporalCrossTransformer(nn.Module):
         best_prototype_index = torch.argmax(all_distances_tensor, dim=-1)
         best_prototype = query_prototypes[:, best_prototype_index.item()]  # TODO CHECK
         diff = mh_queries_vs - best_prototype
-        # print("NEW logits",all_distances_tensor)
-        # OLD
-        # scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
-        # scores = softmax(scores, dim=-1)
-        # query_prototype = torch.matmul(scores, mh_support_set_vs)
-        # # print(torch.mean(query_prototype, dim=2, keepdim=True).shape)  # OLD, problem with absent supports
-        # query_prototype = torch.mean(query_prototype, dim=2, keepdim=True)  # NEWEST
-        # # query_prototype = torch.sum(query_prototype, dim=2) / torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1)  # Division with zero!  # NOT TOO OLD # TODO
-        # query_prototype = query_prototype.unsqueeze(2)
-        # # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1))
-        # diff = mh_queries_vs - query_prototype
-        # norm_sq = torch.norm(diff, dim=[-2, -1])**2
-        # # print(norm_sq)
-        # distance = torch.div(norm_sq, self.tuples_len)
-        # distance = distance * -1
-        # print(distance)
-        return {'logits': all_distances_tensor, 'diff': diff}
 
-        # # TODO OLD
-        #
-        # # unique_labels = torch.unique(support_labels)  # TODO READD
-        # # I REMOVED THE LINE ABOVE BECAUSE UNIQUE IS NOT SUPPORTED IN TRT
-        # # unique_labels = support_labels
-        #
-        # # init tensor to hold distances between every support tuple and every target tuple
-        # # all_distances_tensor = torch.zeros(n_queries, self.args.way).cuda()
-        # all_distances_tensor = []
-        # diffs = []
-        # prototypes = []
-        # for c in support_labels[0]:
-        #     # select keys and values for just this class
-        #     class_k = torch.index_select(mh_support_set_ks, -3, c)
-        #     class_v = torch.index_select(mh_support_set_vs, -3, c)
-        #     # k_bs = class_k.shape[0]
-        #
-        #     class_scores = torch.matmul(mh_queries_ks, class_k.transpose(-2, -1)) / math.sqrt(
-        #         self.args.trans_linear_out_dim)
-        #
-        #     # reshape etc. to apply a softmax for each query tuple
-        #     # class_scores = class_scores.permute(0, 2, 1, 3)
-        #     # class_scores = class_scores.reshape(batch_size, n_queries, self.tuples_len, self.tuples_len)  # -1
-        #
-        #     # TODO BEFORE
-        #     class_scores = self.class_softmax(class_scores)
-        #     if self.add_hook:
-        #         self.scores.append(class_scores.detach())
-        #     # TODO NEW
-        #     # max_along_axis = class_scores.max(dim=-2, keepdim=True).values
-        #     # exponential = torch.exp(class_scores[0] - max_along_axis)
-        #     # denominator = torch.sum(exponential, dim=-2, keepdim=True)
-        #     # denominator = denominator.repeat(1, self.tuples_len)
-        #     # class_scores = torch.div(exponential, denominator)
-        #     # TODO END
-        #
-        #     # class_scores = torch.cat(class_scores)
-        #     # class_scores = class_scores.reshape(batch_size, n_queries, self.tuples_len, 1, self.tuples_len)  # -1
-        #     # class_scores = class_scores.permute(0, 1, 3, 2, 4)
-        #
-        #     # get query specific class prototype
-        #     query_prototype = torch.matmul(class_scores, class_v)
-        #     prototypes.append(query_prototype)
-        #     # query_prototype = torch.sum(query_prototype, dim=1)
-        #
-        #     # calculate distances from queries to query-specific class prototypes
-        #     diff = mh_queries_vs - query_prototype
-        #     norm_sq = torch.norm(diff, dim=[-2, -1]) ** 2
-        #     distance = torch.div(norm_sq, self.tuples_len)
-        #
-        #     # multiply by -1 to get logits
-        #     distance = distance * -1
-        #     all_distances_tensor.append(distance)
-        #     # c_idx = c.long()
-        #     # all_distances_tensor[:, c_idx] = 1  # distance
-        #     # all_distances_tensor = all_distances_tensor + c_idx + distance
-        #
-        #     diffs.append(diff)
-        #
-        # all_distances_tensor = torch.cat(all_distances_tensor, dim=1)
-        #
-        # return_dict = {'logits': all_distances_tensor, 'diffs': torch.concat(diffs, dim=1),
-        #                'prototypes': prototypes}
-        #
-        # return return_dict
+        return {'logits': all_distances_tensor, 'diff': diff}
 
     @staticmethod
     def _extract_class_indices(labels, which_class):
@@ -297,6 +200,25 @@ class TemporalCrossTransformer(nn.Module):
         class_mask = torch.eq(labels, which_class)  # binary mask of labels equal to which_class
         class_mask_indices = torch.nonzero(class_mask)  # indices of labels equal to which class
         return torch.reshape(class_mask_indices, (-1,))  # reshape to be a 1D vector
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, dropout, max_len=5000, pe_scale_factor=0.1):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        self.pe_scale_factor = pe_scale_factor
+        # Compute the positional encodings once in log space.
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term) * self.pe_scale_factor
+        pe[:, 1::2] = torch.cos(position * div_term) * self.pe_scale_factor
+        pe = pe.unsqueeze(0)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + Variable(self.pe[:, :x.size(-2)], requires_grad=False)
+        return self.dropout(x)
 
 
 class MLP(torch.nn.Module):
@@ -394,159 +316,3 @@ class myresnet50(ResNet):
         x = self.fc(x)
 
         return x
-
-
-class TRXOS(nn.Module):
-    def __init__(self, args, add_hook=False):
-        super(TRXOS, self).__init__()
-        self.args = args
-        self.way = args.way
-
-        self.trans_linear_in_dim = args.trans_linear_in_dim
-        self.features_extractor = nn.ModuleDict()
-        if args.input_type in ["skeleton", "hybrid"]:
-            self.features_extractor['sk'] = MLP(args.n_joints * 3, args.n_joints * 3 * 2, 256)
-        if args.input_type in ["rgb", "hybrid"]:
-            if add_hook:
-                resnet = self.myresnet50(pretrained=True)
-            else:
-                resnet = resnet50(pretrained=True)
-            self.features_extractor["rgb"] = nn.Sequential(*list(resnet.children())[:-1])
-
-        self.transformers = nn.ModuleList([TemporalCrossTransformer(args, s, add_hook=add_hook) for s in args.temp_set])
-
-        self.model = args.model
-        if self.model == "DISC":
-            self.discriminator = Discriminator(seq_len=int(((args.seq_len-1)*args.seq_len)/2),
-                                               dim=args.trans_linear_out_dim,
-                                               l=args.seq_len)
-        if self.model == "EXP":
-            self.discriminator = torch.exp
-
-        self.post_resnet = PostResNet()
-
-    def forward(self, ss_data, ss_labels, query_data, ss_features=None):
-
-        # b = query_data[list(query_data.keys())[0]].size()[0]  # ss_data can be None
-        # Query
-        features = []
-        if "rgb" in query_data.keys():
-            b, l, c, h, w = query_data["rgb"].size()
-            target_features_rgb = self.features_extractor['rgb'](query_data["rgb"].reshape(-1, c, h, w))
-            target_features_rgb = target_features_rgb.reshape(b*l, -1)  # Remove last two dimension (1, 1)
-            target_features_rgb = self.post_resnet(target_features_rgb)
-            target_features_rgb = target_features_rgb.reshape(b, l, -1)
-            features.append(target_features_rgb)
-        if "sk" in query_data.keys():
-            target_features_sk = self.features_extractor['sk'](query_data["sk"])
-            features.append(target_features_sk)
-        query_features = torch.concat(features, dim=-1).unsqueeze(1).unsqueeze(1)  # Add n and k dimensions
-
-        # Support set
-        if ss_features is None:
-            features = []
-            if "rgb" in ss_data.keys():
-                b, k, n, l, c, h, w = ss_data["rgb"].size()
-                context_features_rgb = self.features_extractor['rgb'](ss_data["rgb"].reshape(-1, c, h, w))
-                context_features_rgb = context_features_rgb.reshape(b*k*n*l, -1)
-                context_features_rgb = self.post_resnet(context_features_rgb)
-                context_features_rgb = context_features_rgb.reshape(b, k, n, l, -1)
-                features.append(context_features_rgb)
-            if "sk" in ss_data.keys():
-                context_features_sk = self.features_extractor['sk'](ss_data["sk"])
-                features.append(context_features_sk)
-            ss_features = torch.concat(features, dim=-1)
-
-        # Post ResNet
-        # print(torch.count_nonzero(ss_features, dim=(-1, -2)).shape)
-        # print(torch.count_nonzero(ss_features, dim=(-1, -2)) > 0)
-        out = self.transformers[0](ss_features, ss_labels, query_features)
-        # print("NOW", out["logits"])
-        self.transformers[0].old(ss_features, ss_labels, query_features)["logits"]
-        #
-        all_logits = out['logits']
-
-        # chosen_index = torch.argmax(all_logits, dim=1)
-        # feature = out['diffs'][torch.arange(b), chosen_index, ...]
-        decision = self.discriminator(out['diff'])
-
-        return {'logits': all_logits, 'is_true': decision}
-        # return {'logits': all_logits, 'is_true': decision, 'prototypes': out['prototypes'],
-        #         'support_features': ss_features}
-
-        # # TODO OLD
-        # b, l, c, h, w = target_images[0].size()
-        #
-        # # Query
-        # target_features_rgb = self.features_extractor['rgb'](target_images[0].reshape(-1, c, h, w)).reshape(b, l, -1)
-        # target_features_rgb = self.post_resnet(target_features_rgb)
-        # target_features_sk = self.features_extractor['sk'](target_images[1])
-        # target_features = torch.concat((target_features_rgb, target_features_sk), dim=-1)
-        # target_features = target_features.unsqueeze(1)
-        #
-        # # Support set
-        # if ss_features is None:
-        #     context_features_rgb = self.features_extractor['rgb'](context_images[0].reshape(-1, c, h, w)).reshape(b, self.way, l, -1)
-        #     context_features_rgb = self.post_resnet(context_features_rgb)
-        #     context_features_sk = self.features_extractor['sk'](context_images[1])
-        #     context_features = torch.concat((context_features_rgb, context_features_sk), dim=-1)
-        # else:
-        #     context_features = ss_features
-        #
-        # # Post ResNet
-        # out = self.transformers[0](context_features, context_labels, target_features)
-        # all_logits = out['logits']
-        #
-        # chosen_index = torch.argmax(all_logits, dim=1)
-        # feature = out['diffs'][torch.arange(b), chosen_index, ...]
-        # decision = self.discriminator(feature)
-        #
-        # return {'logits': all_logits, 'is_true': decision, 'prototypes': out['prototypes'],
-        #         'support_features': context_features}
-
-    def distribute_model(self):
-        """
-        Distributes the CNNs over multiple GPUs.
-        :return: Nothing
-        """
-        if self.args.num_gpus > 1:
-            self.features_extractor["rgb"].cuda(0)
-            self.features_extractor["rgb"] = torch.nn.DataParallel(self.features_extractor["rgb"],
-                                                                   device_ids=[i for i in range(0, self.args.num_gpus)])
-            self.features_extractor["rgb"].cuda(0)
-
-
-if __name__ == "__main__":
-    from utils.params import TRXConfig
-    model = TRXOS(TRXConfig()).cuda()
-
-    model(torch.rand((1, 5, 16, 90)).cuda(),
-          torch.randint(5, (1, 5)).cuda(),
-          torch.rand((1, 16, 90)).cuda())
-
-    import torch
-    import torch.nn.functional as F
-
-
-    def aggregate_accuracy(test_logits_sample, test_labels):
-        """
-        Compute classification accuracy.
-        """
-        averaged_predictions = torch.logsumexp(test_logits_sample, dim=0)
-        return torch.mean(torch.eq(test_labels, torch.argmax(averaged_predictions, dim=-1)).float())
-
-
-    def loss_fn(test_logits_sample, test_labels, device):
-        """
-        Compute the classification loss.
-        """
-        size = test_logits_sample.size()
-        sample_count = size[0]  # scalar for the loop counter
-        num_samples = torch.tensor([sample_count], dtype=torch.float, device=device, requires_grad=False)
-
-        log_py = torch.empty(size=(size[0], size[1]), dtype=torch.float, device=device)
-        for sample in range(sample_count):
-            log_py[sample] = -F.cross_entropy(test_logits_sample[sample], test_labels.float(), reduction='none')
-        score = torch.logsumexp(log_py, dim=0) - torch.log(num_samples)
-        return -torch.sum(score, dim=0)
-

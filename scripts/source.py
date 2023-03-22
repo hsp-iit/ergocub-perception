@@ -16,19 +16,15 @@ class Source(Network.node):
     def __init__(self):
         super().__init__(**Network.Args.to_dict())
         self.camera = None
-        
 
     def startup(self):
         self.camera = Input.camera(**Input.Params.to_dict())
 
     def loop(self, _):
-        import cv2
 
         while True:
             try:
-                # rgb, depth = self.camera.read()
-                rgb = cv2.imread("rgb.jpg")
-                depth = cv2.imread("depth.jpg")
+                rgb, depth = self.camera.read()
                 data = {'rgb': copy.deepcopy(rgb), 'depth': copy.deepcopy(depth)}
 
                 return data

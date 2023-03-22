@@ -49,66 +49,11 @@ class ActionRecognition(Network.node):
 
         ar_input["sk"] = pose.reshape(-1)
 
-        # img = data["rgb"]
-        # ar_input = {}
-        # elements = {}
-
-        # Cap fps
-        # if self.last_time is not None:
-        #     while (time.time() - self.last_time) < 1 / self.fps and cap_fps:
-        #         time.sleep(0.01)
-        #     self.fps_s.append(1. / (time.time() - self.last_time))
-        #     fps_s = self.fps_s[-10:]
-        #     fps = sum(fps_s) / len(fps_s)
-        #     elements["fps_ar"] = fps
-        # self.last_time = time.time()
-
-        # RGB CASE
-        # hpe_res = self.hpe.estimate(img)
-        # if self.input_type == "hybrid" or self.input_type == "rgb":
-        #     elements["bbox"] = None
-        #     elements["img_preprocessed"] = None
-        #     if hpe_res is not None:
-        #         x1, y1, x2, y2 = hpe_res['bbox']
-        #         elements["bbox"] = x1, x2, y1, y2
-        #         xm = int((x1 + x2) / 2)
-        #         ym = int((y1 + y2) / 2)
-        #         l = max(xm - x1, ym - y1)
-        #         img_ = img[(ym - l if ym - l > 0 else 0):(ym + l), (xm - l if xm - l > 0 else 0):(xm + l)]
-        #         img_ = cv2.resize(img_, (224, 224))
-        #         img_ = img_ / 255.
-        #         img_ = img_ * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
-        #         img_ = img_.swapaxes(-1, -3).swapaxes(-1, -2)
-        #         ar_input["rgb"] = img_
-        #         elements["img_preprocessed"] = img_
-
-        # SKELETON CASE
-        # if self.input_type == "hybrid" or self.input_type == "skeleton":
-        #     # elements["human_distance"] = None
-        #     elements["pose"] = None
-        #     # elements["edges"] = None
-        #     # elements["bbox"] = None
-        #     if hpe_res is not None:
-        #         pose, edges, bbox = hpe_res['pose'], hpe_res['edges'], hpe_res['bbox']
-        #         if self.edges is None:
-        #             self.edges = edges
-        #         if pose is not None:
-        #             elements["human_distance"] = np.sqrt(
-        #                 np.sum(np.square(np.array([0, 0, 0]) - np.array(pose[0])))) * 2.5
-        #             pose = pose - pose[0, :]
-        #             elements["pose"] = pose
-        #             ar_input["sk"] = pose.reshape(-1)
-        #         elements["edges"] = edges
-        #         if bbox is not None:
-        #             elements["bbox"] = bbox
-
         # Make inference
         results = self.ar.inference(ar_input)
         actions, is_true = results
         elements["actions"] = actions
         elements["is_true"] = is_true
-        print(actions)
-        print(is_true)
 
         # Filter action with os and consistency window
         elements["action"] = -1
