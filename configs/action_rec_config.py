@@ -31,15 +31,13 @@ class Network(BaseConfig):
         in_queues = {
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=True),
             'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
-                                     read_format={"train": None, "remove_action": None, "debug": None, "load": None,
-                                                  "remove_example": None, "save": None})
+                                     read_format={"command": None})
         }
 
         out_queues = {
             'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                                 write_format={'fps_ar': None, 'actions': None, 'is_true': None,
-                                                              'requires_focus': None, 'log': None,
-                                                              'requires_os': None}),
+                                                              'log': None}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_ar': None, 'action': None}),
 
@@ -79,7 +77,6 @@ class AR(BaseConfig):
     class Main:
         input_type = 'skeleton'
         window_size = 4
-        skeleton_scale = 2200.
         acquisition_time = 3
         consistency_window_length = 4
         os_score_thr = 0.5
