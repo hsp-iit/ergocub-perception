@@ -57,6 +57,65 @@ class TemporalCrossTransformer(nn.Module):
         self.add_hook = add_hook
         self.scores = []
 
+    def old(self, support_set, support_labels, queries):
+        support_labels = torch.full((5, 5), 1).cuda().unsqueeze(0)
+        support_set = support_set.reshape(1, 5, 5, 16, 256)
+        queries = queries.reshape(1, 1, 1, 16, 256)
+
+        b, k, n, _, _ = support_set.shape
+
+        # static pe
+        support_set = self.pe(support_set)
+        queries = self.pe(queries)
+
+        # construct new queries and support set made of tuples of images after pe
+        s = [torch.index_select(support_set, -2, p).reshape(b, k, n, -1) for p in self.tuples]
+        q = [torch.index_select(queries, -2, p).reshape(b, 1, 1, -1) for p in self.tuples]
+        support_set = torch.stack(s, dim=-2)
+        queries = torch.stack(q, dim=-2)
+
+        # apply linear maps
+        support_set_ks = self.k_linear(support_set)
+        queries_ks = self.k_linear(queries)
+        support_set_vs = self.v_linear(support_set)
+        queries_vs = self.v_linear(queries)
+
+        # apply norms where necessary
+        mh_support_set_ks = self.norm_k(support_set_ks)
+        mh_queries_ks = self.norm_k(queries_ks)
+        mh_support_set_vs = support_set_vs
+        mh_queries_vs = queries_vs
+        # print("OLD", mh_queries_vs)  THERE ARE THE SAME
+        # TODO ULTRA NEW
+
+        scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
+        # TODO SCORES IS THE SAME
+        # print("OLD_bf", scores[0][0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+        # print("OLD_bf", scores[0][0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+        # scores 1, 5, 5, 120, 120
+        # TODO il problema e' qua: sto facendo una softmax sbagliata (ogni coppia query - supporto)
+        # TODO dovrei fare 1 5 120 120 -> 1 120 5 120 -> 1 120 600 ->
+        # TODO SCORES HERE ARE DIFFERENT
+        scores = softmax(scores, dim=-1)
+        # print("OLD_aft", scores[0][0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+        # print("OLD_aft", scores[0][0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+        query_prototype = torch.matmul(scores, mh_support_set_vs)
+        # print(torch.mean(query_prototype, dim=2, keepdim=True).shape)  # OLD, problem with absent supports
+        # print(torch.sum(query_prototype, dim=2).shape)
+        # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1).shape)  # TODO REMOVE
+        query_prototype = torch.sum(query_prototype, dim=2) / torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1)  # Division with zero!
+        query_prototype = query_prototype.unsqueeze(2)
+        # print(torch.sum(support_labels, dim=2).unsqueeze(-1).unsqueeze(-1))
+        diff = mh_queries_vs - query_prototype
+        norm_sq = torch.norm(diff, dim=[-2, -1])**2
+        # print(norm_sq)
+        distance = torch.div(norm_sq, self.tuples_len)
+        distance = distance * -1
+
+        # print("OLD logits", distance.squeeze(-1))
+
+        return {'logits': distance.squeeze(-1), 'diffs': diff, 'prototypes': query_prototype}
+
     def forward(self, support_set, support_labels, queries):  # TODO MAKE IT WORK WITH BATCHES (?)
         # support_set = support_set[0]  # 1, 25, 16, 256 -> 25, 16, 256
         # support_labels = support_labels[0]  # 1, 25 -> 25
@@ -69,6 +128,7 @@ class TemporalCrossTransformer(nn.Module):
         queries = self.pe(queries)
 
         # construct new queries and support set made of tuples of images after pe
+        queries = queries[0][0]
         s = [torch.index_select(support_set, -2, p).reshape(kn, -1) for p in self.tuples]
         q = [torch.index_select(queries, -2, p).reshape(1, -1) for p in self.tuples]
         support_set = torch.stack(s, dim=-2)
@@ -85,6 +145,7 @@ class TemporalCrossTransformer(nn.Module):
         mh_queries_ks = self.norm_k(queries_ks)
         mh_support_set_vs = support_set_vs
         mh_queries_vs = queries_vs
+        # print("NEW", mh_queries_vs)  # TODO THERE ARE THE SAME
 
         # New
         unique_labels = torch.unique(support_labels)
@@ -99,20 +160,34 @@ class TemporalCrossTransformer(nn.Module):
 
             class_scores = torch.matmul(mh_queries_ks.unsqueeze(1), class_k.transpose(-2, -1)) / math.sqrt(
                 self.args.trans_linear_out_dim)
+            # TODO SCORES HERE IS THE SAME
+            # print("NEW_bf", class_scores[0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+            # print("NEW_bf", class_scores[0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+            # class_scores = 1*5*120*120
 
             # reshape etc. to apply a softmax for each query tuple
-            class_scores = class_scores.permute(0, 2, 1, 3)
-            class_scores = class_scores.reshape(n_queries, self.tuples_len, -1)
-            class_scores = [self.class_softmax(class_scores[i]) for i in range(n_queries)]
-            class_scores = torch.cat(class_scores)
-            class_scores = class_scores.reshape(n_queries, self.tuples_len, -1, self.tuples_len)
-            class_scores = class_scores.permute(0, 2, 1, 3)
+            # 1 5 120 120
+            # proviamo softmax su -2 e dopo media
+            # TODO TRX, GOOD FOR THEM
+            # class_scores = class_scores.permute(0, 2, 1, 3)  # 1, 120, 5, 120
+            # class_scores = class_scores.reshape(n_queries, self.tuples_len, -1)  # 1 120 600
+            # # this is a softmax that for each query couple chose the most interesting couple of support
+            # class_scores = [self.class_softmax(class_scores[i]) for i in range(n_queries)]
+            # class_scores = torch.cat(class_scores)
+            # class_scores = class_scores.reshape(n_queries, self.tuples_len, -1, self.tuples_len)
+            # class_scores = class_scores.permute(0, 2, 1, 3)
+            # TODO MY, GOOD FOR US
+            class_scores = softmax(class_scores, dim=-1)
 
             # get query specific class prototype
+            # TODO SCORES HERE ARE DIFFERENT
+            # print("NEW_aft", class_scores[0][0][0])  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
+            # print("NEW_aft", class_scores[0][0][0].shape)  # TODO CHECKKKKKKKKKKKKKKKKKKKKK
             query_prototype = torch.matmul(class_scores, class_v)
             query_prototype = torch.mean(query_prototype, dim=1)
             # query_prototype = torch.sum(query_prototype, dim=1)/query_prototype.shape[1]
             query_prototypes.append(query_prototype)
+
 
             # calculate distances from queries to query-specific class prototypes
             diff = mh_queries_vs - query_prototype
@@ -127,7 +202,7 @@ class TemporalCrossTransformer(nn.Module):
         best_prototype_index = torch.argmax(all_distances_tensor, dim=-1)
         best_prototype = query_prototypes[:, best_prototype_index.item()]  # TODO CHECK
         diff = mh_queries_vs - best_prototype
-
+        # print("NEW logits",all_distances_tensor)
         # OLD
         # scores = torch.matmul(mh_queries_ks, mh_support_set_ks.transpose(-1, -2)) / math.sqrt(self.args.trans_linear_out_dim)
         # scores = softmax(scores, dim=-1)
@@ -142,6 +217,7 @@ class TemporalCrossTransformer(nn.Module):
         # # print(norm_sq)
         # distance = torch.div(norm_sq, self.tuples_len)
         # distance = distance * -1
+        # print(distance)
         return {'logits': all_distances_tensor, 'diff': diff}
 
         # # TODO OLD
@@ -385,7 +461,9 @@ class TRXOS(nn.Module):
         # print(torch.count_nonzero(ss_features, dim=(-1, -2)).shape)
         # print(torch.count_nonzero(ss_features, dim=(-1, -2)) > 0)
         out = self.transformers[0](ss_features, ss_labels, query_features)
-
+        # print("NOW", out["logits"])
+        self.transformers[0].old(ss_features, ss_labels, query_features)["logits"]
+        #
         all_logits = out['logits']
 
         # chosen_index = torch.argmax(all_logits, dim=1)
