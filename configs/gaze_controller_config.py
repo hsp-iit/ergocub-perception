@@ -20,12 +20,12 @@ class Logging(BaseConfig):
 class Network(BaseConfig):
     node = GenericNode
 
-    #  /realsense-holder-publisher/pose:o
+    #  /realsense-holder-publisher/pose:o  /ergocub-rs-pose/pose:o
     class Args:
         in_queues = {
             'from_seg': PyQueue(ip="localhost", port=50000, queue_name='seg_to_gc',
                                 read_format={'point': Signals.MISSING_VALUE}, blocking=True),
-            'from_pose_streamer': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',
+            'from_pose_streamer': YarpQueue(remote_port_name='/realsense-holder-publisher/pose:o',
                                             local_port_name='/VisualPerception/ShapeCompletion/camera_pose:i',
                                             data_type='list', read_format='camera_pose',
                                             read_default=Signals.MISSING_VALUE, blocking=True),

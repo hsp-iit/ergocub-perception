@@ -29,14 +29,13 @@ class Segmentation(Network.node):
         super().__init__(**Network.Args.to_dict())
         self.seg_model = None
         self.follow_object = True
-        self.R = Rotation.from_euler('xyz', [-90, 0, 0], degrees=True).as_matrix()
+        self.R = Rotation.from_euler('xyz', [180, 0, 0], degrees=True).as_matrix()
         self.timer = Timer(window=10)
 
     def startup(self):
         self.seg_model = Segmentator.model(**Segmentator.Args.to_dict())
 
     def loop(self, data):
-
         output = copy.deepcopy(data)
 
         self.timer.start()
@@ -85,7 +84,7 @@ class Segmentation(Network.node):
         self.write('to_shape_completion', {'segmented_pc': segmented_pc})
 
         point = np.mean(segmented_pc, axis=0, keepdims=True)
-        self.write('to_gaze_control', {'point': point})
+        self.write('to_gaze_control', {'point': point @ self.R})
         if self.follow_object:
             self.write('to_3d_viz', {'point': point})
 
