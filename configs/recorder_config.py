@@ -39,10 +39,13 @@ class Network(BaseConfig):
                                 write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'od3d_viz_in': PyQueue(ip="localhost", port=50000, queue_name='rec_od3dviz',
                                    write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
-            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='hd_in',
+            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='rec_focus',
                                  write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'rec_hd': PyQueue(ip="localhost", port=50000, queue_name='rec_hd',
                               write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
+            'rec_human_console': PyQueue(ip="localhost", port=50000, queue_name='rec_human_console',
+                                         write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
+
         }
         # out_queues = {
         #     'rgb_out': YarpQueue(local_port_name='/Recorder/rgbImage:r',
