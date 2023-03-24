@@ -1,0 +1,29 @@
+<application>
+
+  <!-- Generic information-->
+  <name>Action Recognition</name>
+  <description>Template Application</description>
+  <version></version>
+
+  <authors>
+      <author email="andrea.rosasco@iit.it"> first andrea.rosasco </author>
+  </authors>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/Focus/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/HumanDetection/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+</application>
+
+
+
+
