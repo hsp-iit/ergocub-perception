@@ -20,11 +20,12 @@ class Network(BaseConfig):
     node = GenericNode
 
     class Args:
+
         in_queues = {
-            'rgb_in': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/Replay/rgbImage:i',
-                                data_type='rgb', read_format='rgb', blocking=True),
-            'depth_in': YarpQueue(remote_port_name='/depthCamera/depthImage:r', local_port_name='/Replay/depthImage:i',
-                                  data_type='depth', read_format='depth', blocking=True)
+            'rgb_in': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/Recorder/rgbImage:i',
+                                 data_type='rgb', read_format='rgb', blocking=False),
+            'depth_in': YarpQueue(remote_port_name='/depthCamera/depthImage:r', local_port_name='/Recorder/depthImage:i',
+                                  data_type='depth', read_format='depth', blocking=False)
         }
 
         out_queues = {
@@ -41,8 +42,14 @@ class Network(BaseConfig):
             'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='hd_in',
                                  write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
             'rec_hd': PyQueue(ip="localhost", port=50000, queue_name='rec_hd',
-                              write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']})
+                              write_format={k: Signals.NOT_OBSERVED for k in ['rgb', 'depth']}),
         }
+        # out_queues = {
+        #     'rgb_out': YarpQueue(local_port_name='/Recorder/rgbImage:r',
+        #                          data_type='rgb', read_format='rgb', blocking=False),
+        #     'depth_out': YarpQueue(local_port_name='/Recorder/depthImage:r',
+        #                          data_type='depth', read_format='depth', blocking=False),
+        # }
 
         auto_read = False
         auto_write = False
