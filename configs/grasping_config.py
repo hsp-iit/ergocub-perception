@@ -47,13 +47,6 @@ class Network(BaseConfig):
         }
 
 
-class Segmentation(BaseConfig):
-    model = FcnSegmentatorTRT
-
-    class Args:
-        engine_path = './grasping/segmentation/fcn/trt/assets/seg_fp16_docker.engine'
-
-
 class Denoiser(BaseConfig):
     model = DbscanDenoiser
 
