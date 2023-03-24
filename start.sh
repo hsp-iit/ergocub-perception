@@ -125,6 +125,12 @@ tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/manager.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
+# YarpManager
+tmux select-pane -T "YarpManager"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "yarpmanager --from .xml/yarpmanager.ini"
+tmux split-window -h -t $TMUX_NAME
+
 # Yarp Server
 tmux select-pane -T "Yarp Server"
 

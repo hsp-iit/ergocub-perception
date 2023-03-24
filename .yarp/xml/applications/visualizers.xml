@@ -1,0 +1,34 @@
+<application>
+
+  <!-- Generic information-->
+  <name>Visualizers</name>
+  <description>Template Application</description>
+  <version></version>
+
+  <authors>
+      <author email="andrea.rosasco@iit.it"> first andrea.rosasco </author>
+  </authors>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/Visualizer3D/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/depthImage:r</from>
+      <to>/Visualizer3D/depthImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/Visualizer/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+</application>
+
+
+
+

@@ -1,0 +1,34 @@
+<application>
+
+  <!-- Generic information-->
+  <name>Utils</name>
+  <description>Template Application</description>
+  <version></version>
+
+  <authors>
+      <author email="andrea.rosasco@iit.it"> first andrea.rosasco </author>
+  </authors>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/Recorder/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/depthImage:r</from>
+      <to>/Recorder/depthImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+  <connection persist="false">
+      <from qos="level:high; priority:10; policy:1" external="true">/depthCamera/rgbImage:r</from>
+      <to>/HumanConsole/rgbImage:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+
+</application>
+
+
+
+
