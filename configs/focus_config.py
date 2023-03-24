@@ -33,8 +33,12 @@ class Network(BaseConfig):
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'focus': None, 'face_bbox': None, 'fps_focus': None}),
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
+                                                write_format={'focus': None, 'face_bbox': None, 'fps_focus': None}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'focus': False})
         }
+
+        max_fps = 20
 
 
 class FOCUS(BaseConfig):

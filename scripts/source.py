@@ -16,7 +16,6 @@ class Source(Network.node):
     def __init__(self):
         super().__init__(**Network.Args.to_dict())
         self.camera = None
-        
 
     def startup(self):
         self.camera = Input.camera(**Input.Params.to_dict())

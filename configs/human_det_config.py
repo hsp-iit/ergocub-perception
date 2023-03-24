@@ -32,16 +32,20 @@ class Network(BaseConfig):
         }
 
         out_queues = {
+            'hd_to_hpe': PyQueue(ip="localhost", port=50000, queue_name='hd_to_hpe',
+                                 write_format={'rgb': None, 'bbox': None}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'bbox': None, 'fps_hd': None}),
-            'human_pose_estimation': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
-                                             write_format={'rgb': None, 'bbox': None})
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
+                                                write_format={'bbox': None})
         }
+
+        max_fps = 20
 
 
 class HD(BaseConfig):
-
     model = HumanDetector
+
     class Args:
         yolo_thresh = 0.3
         nms_thresh = 0.7
