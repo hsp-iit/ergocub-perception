@@ -1,9 +1,9 @@
-import yarp
+import cv2
 from grasping.utils.misc import pose_to_matrix
-from utils.concurrency.generic_node import GenericNode
+import yarp
 from utils.concurrency.utils.signals import Signals
 
-from configs.segmentation_config import Segmentator, Network, Logging
+from configs.gaze_controller_config import Network, Logging
 from utils.logging import setup_logger
 
 setup_logger(**Logging.Logger.Params.to_dict())
