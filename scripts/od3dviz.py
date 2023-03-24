@@ -74,15 +74,15 @@ class ObjectDetection3DVisualizer(Network.node):
 
         offset = np.array([0, 0.5, 0])
 
-        center = data.get('center', Signals.MISSING_VALUE)
-        if center is Signals.MISSING_VALUE:
+        point = data.get('point', Signals.MISSING_VALUE)
+        if point is Signals.MISSING_VALUE:
             pass
-        elif center is Signals.NOT_OBSERVED:
+        elif point is Signals.NOT_OBSERVED:
             self.partial_scatter.parent = None
         else:
             self.vb1.add(self.partial_scatter)
 
-            self.center.set_data((center @ self.vis_R1 - offset), edge_color='orange',
+            self.center.set_data((point @ self.vis_R1 - offset), edge_color='orange',
                                           face_color='green', size=50)
 
         rgb, depth = data.get('rgb', Signals.MISSING_VALUE), data.get('depth', Signals.MISSING_VALUE)

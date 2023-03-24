@@ -40,10 +40,10 @@ class Network(BaseConfig):
                                            write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc']}),
             'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                  write_format={k: Signals.NOT_OBSERVED for k in
-                                               ['center']}),
+                                               ['point']}),
             'to_gaze_control': PyQueue(ip="localhost", port=50000, queue_name='seg_to_gc',
                                        write_format={k: Signals.NOT_OBSERVED for k in
-                                                     ['center']})
+                                                     ['point']})
         }
 
         auto_write = False

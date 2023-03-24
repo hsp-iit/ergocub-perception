@@ -87,7 +87,7 @@ class Segmentation(Network.node):
         point = np.mean(segmented_pc, axis=0, keepdims=True)
         self.write('to_gaze_control', {'point': point})
         if self.follow_object:
-            self.write('to_3d_viz', {'center': point})
+            self.write('to_3d_viz', {'point': point})
 
 
 if __name__ == '__main__':
