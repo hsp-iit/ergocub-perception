@@ -28,7 +28,7 @@ def draw_pcs(*pcs):
 
 
 def draw_mask(rgb, mask):
-    overlay = copy.deepcopy(rgb)
+    overlay = np.zeros_like(rgb)
     if np.any(mask == 1):
         overlay[mask == 1] = np.array([0, 0, 128])
     res1 = cv2.addWeighted(rgb, 1, overlay, 0.5, 0)
