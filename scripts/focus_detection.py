@@ -49,6 +49,7 @@ class Focus(Network.node):
             output["focus"] = foc
             output["face_bbox"] = face.bbox.reshape(-1)
             output["fps_focus"] = self.fps()
+            output["point"] = face.head_position
 
         logger.info("FOCUS detected", recurring=True)
 
