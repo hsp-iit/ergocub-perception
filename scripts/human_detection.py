@@ -1,4 +1,6 @@
 from loguru import logger
+
+from utils.concurrency.utils.signals import Signals
 from utils.logging import setup_logger
 import tensorrt as trt
 # https://github.com/NVIDIA/TensorRT/issues/1945
@@ -21,6 +23,9 @@ class HumanDetection(Network.node):
         logger.info("Read camera input", recurring=True)
 
         rgb = data['rgb']
+        if rgb in Signals:
+            return {}
+
         bbox = self.hd_model.estimate(rgb)["bbox"]
 
         logger.info("FOCUS detected", recurring=True)

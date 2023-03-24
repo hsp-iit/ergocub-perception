@@ -20,7 +20,7 @@ class Network(BaseConfig):
             'grasping': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                 read_format={k: Signals.MISSING_VALUE for k in
                                              ['reconstruction', 'transform', 'scene',
-                                              'hands', 'vertices']},
+                                              'hands', 'vertices', 'center']},
                                 blocking=False),
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/Visualizer3D/rgbImage:i',
                              data_type='rgb', read_format='rgb', read_default=Signals.USE_LATEST, blocking=False),

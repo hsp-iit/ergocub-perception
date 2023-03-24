@@ -11,7 +11,11 @@ class YarpQueue:
     def __init__(self, data_type, local_port_name, remote_port_name=None,
                  read_format=None, read_default=None,
                  write_format=None, write_default=None,
+                 auto_connect=True, auto_write=True, auto_read=True,
                  blocking=True):
+
+        self.auto_write = auto_write
+        self.auto_read = auto_read
 
         self.local_port_name = local_port_name
         self.remote_port_name = remote_port_name
@@ -57,7 +61,7 @@ class YarpQueue:
         self.port = port
         self.port.open(local_port_name)
 
-        if remote_port_name is not None:
+        if remote_port_name is not None and auto_connect:
             style = yarp.ContactStyle()
             style.persistent = True
             yarp.Network.connect(remote_port_name, local_port_name, style)
@@ -87,6 +91,7 @@ class YarpQueue:
             while True:
                 if (data := self.port.read(False)) is not None:
                     break
+                # TODO check if connected, sleep and retry for a maximum of time. Then give up
                 if not yarp.Network.isConnected(self.remote_port_name, self.local_port_name):
                     data = None
                     break

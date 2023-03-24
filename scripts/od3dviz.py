@@ -56,6 +56,7 @@ class ObjectDetection3DVisualizer(Network.node):
         vb1.camera.link(vb2.camera)
 
         self.scene_scatter = Markers(parent=vb1.scene)
+        self.center = Markers(size=10, parent=vb1.scene)
         self.reconstruction_scatter = Markers(parent=vb1.scene)
         self.partial_scatter = Markers(parent=vb1.scene)
 
@@ -72,6 +73,17 @@ class ObjectDetection3DVisualizer(Network.node):
     def loop(self, data: dict):
 
         offset = np.array([0, 0.5, 0])
+
+        center = data.get('center', Signals.MISSING_VALUE)
+        if center is Signals.MISSING_VALUE:
+            pass
+        elif center is Signals.NOT_OBSERVED:
+            self.partial_scatter.parent = None
+        else:
+            self.vb1.add(self.partial_scatter)
+
+            self.center.set_data((center @ self.vis_R1 - offset), edge_color='orange',
+                                          face_color='green', size=50)
 
         rgb, depth = data.get('rgb', Signals.MISSING_VALUE), data.get('depth', Signals.MISSING_VALUE)
         if rgb is Signals.MISSING_VALUE or depth is Signals.MISSING_VALUE:

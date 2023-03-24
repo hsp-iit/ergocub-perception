@@ -57,9 +57,11 @@ class Sink(Network.node):
 
         # GRASPING #####################################################################################################
         mask = data.get('mask', Signals.MISSING_VALUE)
-        if mask not in Signals:
+
+        if mask is not Signals.MISSING_VALUE:
             self.mask = mask
-        img = draw_mask(img, self.mask)
+        if self.mask not in Signals:
+            img = draw_mask(img, self.mask)
 
         center = data.get('center', Signals.MISSING_VALUE)
         if center is not Signals.MISSING_VALUE:

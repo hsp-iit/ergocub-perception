@@ -34,11 +34,19 @@ class Network(BaseConfig):
         }
 
         out_queues = {
-            'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'mask': Signals.NOT_OBSERVED}),
-            'shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
-                                        write_format={k: Signals.NOT_OBSERVED for k in ['mask', 'depth', 'rgb']})
+            'to_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                     write_format={'mask': Signals.NOT_OBSERVED}),
+            'to_shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
+                                           write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc']}),
+            'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
+                                 write_format={k: Signals.NOT_OBSERVED for k in
+                                               ['center']}),
+            'to_gaze_control': PyQueue(ip="localhost", port=50000, queue_name='seg_to_gc',
+                                       write_format={k: Signals.NOT_OBSERVED for k in
+                                                     ['center']})
         }
+
+        auto_write = False
 
 
 class Segmentator(BaseConfig):

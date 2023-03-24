@@ -13,10 +13,11 @@ class GenericNode(Process, ABC):
         super(Process, self).__init__()
         self.in_queues = in_queues
         self.out_queues = out_queues
+
         self.auto_write = auto_write
         self.auto_read = auto_read
 
-        self.latest = defaultdict(lambda: None)
+        self.latest = defaultdict(lambda: Signals.NOT_OBSERVED)
 
     def _startup(self):
         logger.info('Input queues startup...')
@@ -74,12 +75,17 @@ class GenericNode(Process, ABC):
 
         while True:
             if self.auto_read:
-                data = self.read_all()
+                data = {}
+                for name, queue in self.in_queues.items():
+                    if queue.auto_read:
+                        data.update(self.read(name))
 
             data = self.loop(data)
 
             if self.auto_write:
-                self.write_all(data)
+                for name, queue in self.out_queues.items():
+                    if queue.auto_write:
+                        self.write(name, data)
 
 
 def check_format(data):
