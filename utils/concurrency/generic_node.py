@@ -74,12 +74,17 @@ class GenericNode(Process, ABC):
 
         while True:
             if self.auto_read:
-                data = self.read_all()
+                data = {}
+                for name, queue in self.in_queues.items():
+                    if queue.auto_read:
+                        data.update(self.read(name))
 
             data = self.loop(data)
 
             if self.auto_write:
-                self.write_all(data)
+                for name, queue in self.out_queues.items():
+                    if queue.auto_write:
+                        self.write(name, data)
 
 
 def check_format(data):

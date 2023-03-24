@@ -9,7 +9,10 @@ from loguru import logger
 
 class IPCQueue:
 
-    def __init__(self, ipc_key, write_format, blocking=False):
+    def __init__(self, ipc_key, write_format, auto_read=True, auto_write=True, blocking=False):
+        self.auto_write = auto_write
+        self.auto_read = auto_read
+
         self.ipc = sysv_ipc.MessageQueue(ipc_key, sysv_ipc.IPC_CREAT)
         self.write_format = write_format
         self.blocking = blocking

@@ -24,7 +24,11 @@ def connect(manager):
 
 class PyQueue:
 
-    def __init__(self, ip, port, queue_name, write_format=None, read_format=None, blocking=False):
+    def __init__(self, ip, port, queue_name, write_format=None, read_format=None,
+                 auto_write=True, auto_read=True, blocking=False):
+
+        self.auto_write = auto_write
+        self.auto_read = auto_read
 
         self.blocking = blocking
         self.write_format = write_format
