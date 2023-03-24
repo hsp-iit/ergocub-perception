@@ -7,6 +7,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from loguru import logger
 
+from utils.concurrency.utils.signals import Signals
+
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 
 from grasping.utils.input import RealSense
@@ -70,51 +72,18 @@ class Grasping(Network.node):
 
         self.timer.start()
         # Input
-
-        logger.info("Read camera input", recurring=True)
-
-        rgb = data['rgb']
-        depth = data['depth']
+        segmented_pc = data['segmented_pc']
+        if segmented_pc in Signals:
+            return {}
 
         # Blocking should be fine as the camera pose streamer is much faster than this module
-
         if 'camera_pose' in data:
             camera_pose = data['camera_pose']
             camera_pose = pose_to_matrix(camera_pose)
 
-        output['rgb'] = rgb
-        output['depth'] = depth
-
         # Setup transformations
         R = Rotation.from_euler('xyz', [180, 0, 0], degrees=True).as_matrix()
         flip_z = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]])
-
-        # Segment the rgb and extract the object depth
-        mask = data['mask']
-        output['mask'] = mask
-
-        segmented_depth = copy.deepcopy(depth)
-        segmented_depth[mask != 1] = 0
-
-        if len(segmented_depth.nonzero()[0]) > 4096:
-            distance = segmented_depth[segmented_depth != 0].min()
-            output['obj_distance'] = int(distance)
-
-            if distance < 700:
-                self.action = 'give'
-            else:
-                self.action = 'none'
-
-        if (c1 := (self.action != 'give')) or (c2 := (len(segmented_depth.nonzero()[0]) < 4096)):
-            if not c1 and c2:
-                logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
-            output['fps_od'] = 1 / self.timer.compute(stop=True)
-
-            return output
-
-        logger.info("Depth segmented", recurring=True)
-        segmented_pc = RealSense.depth_pointcloud(segmented_depth)
-        logger.info("Depth to point cloud", recurring=True)
 
         # Downsample
         idx = np.random.choice(segmented_pc.shape[0], 4096, replace=False)
@@ -198,9 +167,7 @@ class Grasping(Network.node):
             output['planes'] = poses[4]
             output['lines'] = poses[5]
             output['vertices'] = poses[6] * (var * 2) + mean  # de-normalized
-            o3d_scene = RealSense.rgb_pointcloud(depth, rgb)
             output['partial'] = normalized_pc
-            output['scene'] = np.concatenate([np.array(o3d_scene.points) @ R, np.array(o3d_scene.colors)], axis=1)
             output['reconstruction'] = reconstruction
             output['transform'] = denormalize
 
