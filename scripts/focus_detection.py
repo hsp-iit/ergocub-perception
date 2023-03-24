@@ -4,6 +4,8 @@ from pathlib import Path
 from loguru import logger
 import cv2
 
+from utils.concurrency.utils.signals import Signals
+
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 
 # from grasping.utils.avg_timer import Timer
@@ -36,7 +38,7 @@ class Focus(Network.node):
 
         rgb = data['rgb']
 
-        if rgb is None:
+        if rgb in Signals:
             return {}
 
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)

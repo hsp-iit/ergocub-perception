@@ -13,10 +13,11 @@ class GenericNode(Process, ABC):
         super(Process, self).__init__()
         self.in_queues = in_queues
         self.out_queues = out_queues
+
         self.auto_write = auto_write
         self.auto_read = auto_read
 
-        self.latest = defaultdict(lambda: None)
+        self.latest = defaultdict(lambda: Signals.NOT_OBSERVED)
 
     def _startup(self):
         logger.info('Input queues startup...')
