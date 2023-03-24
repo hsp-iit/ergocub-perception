@@ -1,4 +1,4 @@
-import cv2
+# import cv2
 # os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH")
 from vispy import app, scene, visuals
 app.use_app('glfw')  # Set backend
@@ -165,6 +165,8 @@ class VISPYVisualizer(Network.node):
         self.requires_focus = None
         self.log = None
         self.requires_os = None
+        self.last_time = time.time()
+        self.times = []
 
     def loop(self, elements):
         if not elements:
@@ -176,10 +178,16 @@ class VISPYVisualizer(Network.node):
             if self.log is not None and self.log != ' ':
                 self.log_text.text = self.log
 
-        # FPS
-        if "fps_ar" in elements.keys():
-            self.fps = elements["fps_ar"]
-            self.fps_text.text = "FPS: {:.2f}".format(self.fps if self.fps else 0)
+        # # FPS
+        # if "fps_ar" in elements.keys():
+        #     self.fps = elements["fps_ar"]
+        #     self.fps_text.text = "FPS: {:.2f}".format(self.fps if self.fps else 0)
+        # CONSOLE FPS
+        self.times.append(time.time() - self.last_time)
+        self.times = self.times[-10:]
+        self.fps = 1/(sum(self.times)/len(self.times))
+        self.fps_text.text = "FPS: {:.2f}".format(self.fps if self.fps else 0)
+        self.last_time = time.time()
 
         # FOCUS
         if "focus" in elements.keys():
