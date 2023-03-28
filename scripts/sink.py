@@ -42,7 +42,8 @@ class Sink(Network.node):
         self.requires_focus = None
         self.requires_os = None
         self.action = None
-        self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get']
+        self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get', 'stop', 'dab', 'rock_paper_scissor',
+                             'cross_arms', 'pointing_something', 'cross_arms', 't_pose']
         super().__init__(**Network.Args.to_dict())
 
     def startup(self):

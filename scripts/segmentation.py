@@ -63,7 +63,8 @@ class Segmentation(Network.node):
         if len(segmented_depth.nonzero()[0]) < 4096:
             output['mask'] = Signals.NOT_OBSERVED
             self.write('to_visualizer', output)
-            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED})
+            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED,
+                                               'obj_distance': Signals.NOT_OBSERVED})  # TODO MAKE IT BETTER
             logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
             return
 
@@ -74,14 +75,15 @@ class Segmentation(Network.node):
         if distance > 700:
             output['mask'] = Signals.NOT_OBSERVED
             self.write('to_visualizer', output)
-            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED})
+            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED,
+                                               'obj_distance': int(distance)})  # TODO MAKE IT BETTER
             return
 
         output['mask'] = mask
         segmented_pc = RealSense.depth_pointcloud(segmented_depth)
 
         self.write('to_visualizer', output)
-        self.write('to_shape_completion', {'segmented_pc': segmented_pc})
+        self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance)})  # TODO MAKE IT BETTER
 
         point = np.mean(segmented_pc, axis=0, keepdims=True)
         self.write('to_gaze_control', {'point': point @ self.R})

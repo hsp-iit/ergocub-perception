@@ -172,7 +172,8 @@ class Grasping(Network.node):
             output['transform'] = denormalize
 
         output['fps_od'] = 1 / self.timer.compute(stop=True)
-
+        if data['obj_distance'] not in Signals:  # TODO make it better
+            output['obj_distance'] = data['obj_distance']  # TODO make it better
         return output
 
 

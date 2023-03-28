@@ -43,7 +43,7 @@ class Network(BaseConfig):
                                      write_format={k: Signals.NOT_OBSERVED for k in
                                                    ['reconstruction', 'transform', 'scene',
                                                     'hands', 'vertices']}),
-            'rpc': IPCQueue(ipc_key=1234, write_format={'distance': -1, 'hands': np.full([4, 4, 2], -1.)})
+            'rpc': IPCQueue(ipc_key=1234, write_format={'obj_distance': -1, 'hands': np.full([4, 4, 2], -1.)})  # TODO MAKE IT BETTER
         }
 
 
