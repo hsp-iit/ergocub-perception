@@ -1,6 +1,8 @@
 import copy
 import sys
 from pathlib import Path
+
+import numpy as np
 from loguru import logger
 import cv2
 
@@ -49,7 +51,7 @@ class Focus(Network.node):
             output["focus"] = foc
             output["face_bbox"] = face.bbox.reshape(-1)
             output["fps_focus"] = self.fps()
-            output["point"] = face.head_position
+            output["face_point"] = face.head_position
 
         logger.info("FOCUS detected", recurring=True)
 

@@ -1,4 +1,6 @@
 from loguru import logger
+
+from utils.concurrency.utils.signals import Signals
 from utils.logging import setup_logger
 import tensorrt as trt
 # https://github.com/NVIDIA/TensorRT/issues/1945
@@ -22,7 +24,7 @@ class HumanPoseEstimation(Network.node):
 
         rgb = data['rgb']
         bbox = data['bbox']
-        if rgb is None or bbox is None:
+        if rgb in Signals or bbox in Signals:
             return {}
 
         ret = self.hpe_model.estimate(rgb, bbox)

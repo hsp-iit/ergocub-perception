@@ -33,11 +33,11 @@ class Network(BaseConfig):
 
         out_queues = {
             'hd_to_hpe': PyQueue(ip="localhost", port=50000, queue_name='hd_to_hpe',
-                                 write_format={'rgb': None, 'bbox': None}),
+                                 write_format={'rgb': Signals.NOT_OBSERVED, 'bbox': Signals.NOT_OBSERVED}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'bbox': None, 'fps_hd': None}),
+                                  write_format={'bbox': Signals.NOT_OBSERVED, 'fps_hd': Signals.NOT_OBSERVED}),
             'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
-                                                write_format={'bbox': None})
+                                                write_format={'bbox': Signals.NOT_OBSERVED})
         }
 
         max_fps = 20

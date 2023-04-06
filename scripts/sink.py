@@ -26,22 +26,22 @@ class Sink(Network.node):
         self.hands = Signals.NOT_OBSERVED
         self.obj_distance = Signals.NOT_OBSERVED
 
-        self.fps_hd = None
-        self.fps_hpe = None
-        self.fps_ar = None
-        self.fps_focus = None
+        self.fps_hd = Signals.NOT_OBSERVED
+        self.fps_hpe = Signals.NOT_OBSERVED
+        self.fps_ar = Signals.NOT_OBSERVED
+        self.fps_focus = Signals.NOT_OBSERVED
 
-        self.distance = None
-        self.focus = None
-        self.pose = None
-        self.bbox = None
-        self.face_bbox = None
-        self.actions = None
-        self.edges = None
-        self.is_true = None
-        self.requires_focus = None
-        self.requires_os = None
-        self.action = None
+        self.human_distance = Signals.NOT_OBSERVED
+        self.focus = Signals.NOT_OBSERVED
+        self.pose = Signals.NOT_OBSERVED
+        self.bbox = Signals.NOT_OBSERVED
+        self.face_bbox = Signals.NOT_OBSERVED
+        self.actions = Signals.NOT_OBSERVED
+        self.edges = Signals.NOT_OBSERVED
+        self.is_true = Signals.NOT_OBSERVED
+        self.requires_focus = Signals.NOT_OBSERVED
+        self.requires_os = Signals.NOT_OBSERVED
+        self.action = Signals.NOT_OBSERVED
         self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get', 'stop', 'dab', 'rock_paper_scissor',
                              'cross_arms', 'pointing_something', 'cross_arms', 't_pose']
         super().__init__(**Network.Args.to_dict())
@@ -88,46 +88,53 @@ class Sink(Network.node):
                               cv2.LINE_AA)
 
         # HUMAN ########################################################################################################
-        if 'fps_hd' in data.keys():
-            self.fps_hd = data['fps_hd']
-        if self.fps_hd is not None:
+        fps_hd = data.get('fps_hd', Signals.MISSING_VALUE)
+        if fps_hd is not Signals.MISSING_VALUE:
+            self.fps_hd = fps_hd
+        if self.fps_hd not in Signals:
             img = cv2.putText(img, f'FPS HD: {int(self.fps_hd)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
-        if 'fps_hpe' in data.keys():
-            self.fps_hpe = data['fps_hpe']
-        if self.fps_hpe is not None:
+        fps_hpe = data.get('fps_hpe', Signals.MISSING_VALUE)
+        if fps_hpe is not Signals.MISSING_VALUE:
+            self.fps_hpe = fps_hpe
+        if self.fps_hpe not in Signals:
             img = cv2.putText(img, f'FPS HPE: {int(self.fps_hpe)}', (10, 40), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
-        if 'fps_ar' in data.keys():
-            self.fps_ar = data['fps_ar']
-        if self.fps_ar is not None:
+        fps_ar = data.get('fps_ar', Signals.MISSING_VALUE)
+        if fps_ar is not Signals.MISSING_VALUE:
+            self.fps_ar = fps_ar
+        if self.fps_ar not in Signals:
             img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 60), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
-        if 'fps_focus' in data.keys():
-            self.fps_focus = data['fps_focus']
-        if self.fps_focus is not None:
+        fps_focus = data.get('fps_focus', Signals.MISSING_VALUE)
+        if fps_focus is not Signals.MISSING_VALUE:
+            self.fps_focus = fps_focus
+        if self.fps_focus not in Signals:
             img = cv2.putText(img, f'FPS FOCUS: {int(self.fps_focus)}', (10, 80), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
-        if 'human_distance' in data.keys():
-            self.distance = data['human_distance']
-        if self.distance is not None:
-            img = cv2.putText(img, f'DIST: {self.distance:.2f}', (240, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+        human_distance = data.get('human_distance', Signals.MISSING_VALUE)
+        if human_distance is not Signals.MISSING_VALUE:
+            self.human_distance = human_distance
+        if self.human_distance not in Signals:
+            img = cv2.putText(img, f'DIST: {self.human_distance:.2f}', (240, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
                               cv2.LINE_AA)
 
-        if 'focus' in data.keys():
-            self.focus = data['focus']
-        if self.focus is not None:
+        focus = data.get('focus', Signals.MISSING_VALUE)
+        if focus is not Signals.MISSING_VALUE:
+            self.focus = focus
+        if self.focus not in Signals:
             img = cv2.putText(img, "FOCUS" if self.focus else "NOT FOCUS", (460, 20), cv2.FONT_ITALIC, 0.7,
                               (0, 255, 0) if self.focus else (255, 0, 0), 2, cv2.LINE_AA)
 
-        if 'pose' in data.keys():  # and self.hands is None:
-            self.pose = data["pose"]
+        pose = data.get('pose', Signals.MISSING_VALUE)
+        if pose is not Signals.MISSING_VALUE:
+            self.pose = pose
             self.edges = data["edges"]
-        if self.pose is not None:  # and self.hands is None:
+        if self.pose not in Signals:
             size = 150
             img = cv2.rectangle(img, (0, 480-size), (size, 480), (255, 255, 255), cv2.FILLED)
             for edge in self.edges:
@@ -139,37 +146,25 @@ class Sink(Network.node):
                 p1[0] += int(-size/2)
                 img = cv2.line(img, p0, p1, (0, 0, 0), thickness=1, lineType=cv2.LINE_AA)
 
-        if 'bbox' in data:
-            self.bbox = data["bbox"]
-        if self.bbox is not None:  # and self.hands is None:
+        bbox = data.get('bbox', Signals.MISSING_VALUE)
+        if bbox is not Signals.MISSING_VALUE:
+            self.bbox = bbox
+        if self.bbox not in Signals:
             x1, y1, x2, y2 = self.bbox
             img = cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 3)
 
-        if 'focus' in data.keys():
-            self.focus = data["focus"]
-        if self.focus is not None:
-            focus = self.focus
-        else:
-            focus = False
-
-        if 'face_bbox' in data.keys():
-            self.face_bbox = data["face_bbox"]
-        if self.face_bbox is not None:
+        face_bbox = data.get('face_bbox', Signals.MISSING_VALUE)
+        if face_bbox is not Signals.MISSING_VALUE:
+            self.face_bbox = face_bbox
+        if self.face_bbox not in Signals:
             x1, y1, x2, y2 = self.face_bbox
             color = (255, 0, 0) if not focus else (0, 255, 0)
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
 
-        if 'actions' in data.keys():
-            self.actions = data["actions"]
-        if 'is_true' in data.keys():
-            self.is_true = data["is_true"]
-        if 'requires_focus' in data.keys():
-            self.requires_focus = data['requires_focus']
-        if 'requires_os' in data.keys():
-            self.requires_os = data['requires_os']
-        if 'action' in data.keys():
-            self.action = data["action"]
-        if self.action is not None:
+        action = data.get('action', Signals.MISSING_VALUE)
+        if action is not Signals.MISSING_VALUE:
+            self.action = action
+        if self.action not in Signals:
             if self.obj_distance is Signals.NOT_OBSERVED or self.obj_distance/1000 > 1.5:  # No box in 1 meter
                 if self.action < len(self.id_to_action):
                     label = self.id_to_action[self.action] if self.action != -1 else 'none'

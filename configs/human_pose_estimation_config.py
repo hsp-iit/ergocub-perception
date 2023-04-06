@@ -48,14 +48,16 @@ class Network(BaseConfig):
 
         out_queues = {
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                  write_format={'fps_hpe': None, 'human_distance': None, 'pose': None,
-                                                'edges': None}),
+                                  write_format={'fps_hpe': Signals.NOT_OBSERVED, 'human_distance': Signals.NOT_OBSERVED,
+                                                'pose': Signals.NOT_OBSERVED, 'edges': Signals.NOT_OBSERVED}),
             'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
-                                                write_format={'human_distance': None, 'pose': None,
-                                                              'edges': None}),
+                                                write_format={'human_distance': Signals.NOT_OBSERVED,
+                                                              'pose': Signals.NOT_OBSERVED,
+                                                              'edges': Signals.NOT_OBSERVED}),
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=False,
-                                 write_format={'pose': None}),
-            'rpc': IPCQueue(ipc_key=5678, write_format={'human_distance': -1})}
+                                 write_format={'pose': Signals.NOT_OBSERVED,
+                                               'human_distance': Signals.NOT_OBSERVED})}  # TODO MAKE IT BETTER
+            # 'rpc': IPCQueue(ipc_key=5678, write_format={'human_distance': -1})}  # TODO MAKE IT BETTER
 
 
 base_dir = os.path.join('action_rec', 'hpe', 'weights', 'engines', 'docker')

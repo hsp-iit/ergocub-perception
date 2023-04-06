@@ -76,6 +76,12 @@ class Grasping(Network.node):
         if segmented_pc in Signals:
             return {}
 
+        # Add previous to output # TODO MAKE IT BETTER
+        if data['point'] not in Signals:
+            output['point'] = data['point']
+        if data['obj_distance'] not in Signals:  # TODO make it better
+            output['obj_distance'] = data['obj_distance']  # TODO make it better
+
         # Blocking should be fine as the camera pose streamer is much faster than this module
         if 'camera_pose' in data:
             camera_pose = data['camera_pose']
@@ -172,8 +178,6 @@ class Grasping(Network.node):
             output['transform'] = denormalize
 
         output['fps_od'] = 1 / self.timer.compute(stop=True)
-        if data['obj_distance'] not in Signals:  # TODO make it better
-            output['obj_distance'] = data['obj_distance']  # TODO make it better
         return output
 
 

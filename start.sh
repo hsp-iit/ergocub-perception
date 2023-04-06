@@ -99,7 +99,7 @@ tmux split-window -h -t $TMUX_NAME
 # Recorder
 tmux select-pane -T "Recorder"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/recorder.py" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/recorder.py"
 
 tmux split-window -h -t $TMUX_NAME
 

@@ -83,12 +83,15 @@ class Segmentation(Network.node):
         segmented_pc = RealSense.depth_pointcloud(segmented_depth)
 
         self.write('to_visualizer', output)
-        self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance)})  # TODO MAKE IT BETTER
-
         point = np.mean(segmented_pc, axis=0, keepdims=True)
-        self.write('to_gaze_control', {'point': point @ self.R})
+        self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance),
+                                           'point': (point @ self.R).reshape(-1)})  # TODO MAKE IT BETTER
+
+        # self.write('to_gaze_control', {'point': (point @ self.R).reshape(-1)})
         if self.follow_object:
             self.write('to_3d_viz', {'point': point})
+
+        # print((point @ self.R).reshape(-1))  SONO GIUSTI
 
 
 if __name__ == '__main__':

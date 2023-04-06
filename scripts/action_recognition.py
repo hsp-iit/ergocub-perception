@@ -1,6 +1,9 @@
+import numpy as np
 import tensorrt  # Avoid Myelin error (DO NOT REMOVE)
 from configs.action_rec_config import Network, AR, Logging
 import pycuda.autoinit  # Create context on GPU (DO NOT REMOVE)
+
+from utils.concurrency.utils.signals import Signals
 from utils.logging import setup_logger
 
 
@@ -26,6 +29,13 @@ class ActionRecognition(Network.node):
     def loop(self, data):
         elements = {}
 
+        if data['human_distance'] not in Signals:  # TODO make it better
+            elements['human_distance'] = data['human_distance']  # TODO make it better
+        if data['focus'] not in Signals:  # TODO make it better
+            elements['focus'] = data['focus']  # TODO make it better
+        if data['face_point'] not in Signals:  # TODO make it better
+            elements['face_point'] = data['face_point']  # TODO make it better
+
         # Human Console Commands, command[0] is command, else are args
         command = data["command"] if "command" in data.keys() else None
         if command is not None:
@@ -44,7 +54,7 @@ class ActionRecognition(Network.node):
 
         ar_input = {}
         pose = data["pose"]
-        if pose is None:
+        if pose in Signals:
             return elements
 
         ar_input["sk"] = pose.reshape(-1)

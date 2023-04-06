@@ -28,9 +28,14 @@ class HumanDetection(Network.node):
 
         bbox = self.hd_model.estimate(rgb)["bbox"]
 
-        logger.info("FOCUS detected", recurring=True)
+        output = {'fps_hd': self.fps()}
 
-        return {'rgb': rgb, 'bbox': bbox, 'fps_hd': self.fps()}
+        logger.info("HUMAN detected", recurring=True)
+
+        if bbox is None:
+            return output
+
+        return {'rgb': rgb, 'bbox': bbox}
 
 
 if __name__ == '__main__':
