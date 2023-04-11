@@ -35,7 +35,10 @@ class HumanDetection(Network.node):
         if bbox is None:
             return output
 
-        return {'rgb': rgb, 'bbox': bbox}
+        output['rgb'] = rgb
+        output['bbox'] = bbox
+
+        return output
 
 
 if __name__ == '__main__':

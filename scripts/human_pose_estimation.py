@@ -28,7 +28,6 @@ class HumanPoseEstimation(Network.node):
             return {}
 
         ret = self.hpe_model.estimate(rgb, bbox)
-
         logger.info("Human pose estimated!", recurring=True)
 
         ret["fps_hpe"] = self.fps()

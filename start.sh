@@ -169,18 +169,18 @@ then
 fi
 
 tmux select-layout -t $TMUX_NAME tiled
-tmux new-window -t $TMUX_NAME
-tmux rename-window -t $TMUX_NAME gaze
+# tmux new-window -t $TMUX_NAME
+# tmux rename-window -t $TMUX_NAME gaze
 
 # YarpManager
-tmux select-pane -T "iKinGazeCtrl"
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "iKinGazeCtrl --from .yarp/gaze_config.ini"
-tmux split-window -h -t $TMUX_NAME
+# tmux select-pane -T "iKinGazeCtrl"
+# tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+# tmux send-keys -t $TMUX_NAME "iKinGazeCtrl --from .yarp/gaze_config.ini"
+# tmux split-window -h -t $TMUX_NAME
 
-tmux select-pane -T "GazeController"
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/gaze_controller.py"
+# tmux select-pane -T "GazeController"
+# tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+# tmux send-keys -t $TMUX_NAME "python scripts/gaze_controller.py"
 
 tmux select-window -t "components"
 # Attach

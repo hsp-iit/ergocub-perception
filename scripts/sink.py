@@ -36,11 +36,8 @@ class Sink(Network.node):
         self.pose = Signals.NOT_OBSERVED
         self.bbox = Signals.NOT_OBSERVED
         self.face_bbox = Signals.NOT_OBSERVED
-        self.actions = Signals.NOT_OBSERVED
         self.edges = Signals.NOT_OBSERVED
         self.is_true = Signals.NOT_OBSERVED
-        self.requires_focus = Signals.NOT_OBSERVED
-        self.requires_os = Signals.NOT_OBSERVED
         self.action = Signals.NOT_OBSERVED
         self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get', 'stop', 'dab', 'rock_paper_scissor',
                              'cross_arms', 'pointing_something', 'cross_arms', 't_pose']
@@ -158,7 +155,7 @@ class Sink(Network.node):
             self.face_bbox = face_bbox
         if self.face_bbox not in Signals:
             x1, y1, x2, y2 = self.face_bbox
-            color = (255, 0, 0) if not focus else (0, 255, 0)
+            color = (255, 0, 0) if not self.focus else (0, 255, 0)
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 3)
 
         action = data.get('action', Signals.MISSING_VALUE)
