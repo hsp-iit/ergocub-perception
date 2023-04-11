@@ -42,7 +42,8 @@ class Segmentation(Network.node):
         logger.info("Read camera input", recurring=True)
 
         rgb = data['rgb']
-        if rgb in Signals:
+        depth = data['depth']
+        if rgb in Signals or depth in Signals:
             return output
 
         # Segment the rgb and extract the object depth
@@ -54,20 +55,27 @@ class Segmentation(Network.node):
 
         logger.info("RGB segmented", recurring=True)
 
-        segmented_depth = copy.deepcopy(data['depth'])
-        segmented_depth[mask != 1] = 0
+
+        # print(mask)
+        # print(mask.dtype)
+        print((mask != 1).shape)
+        print((mask != 1).dtype)
+        print(depth.dtype)
+        print(depth.shape)
+        if mask not in Signals:
+            depth[mask != 1] = 0
 
         logger.info("Depth segmented", recurring=True)
 
         # There are not enough points
-        if len(segmented_depth.nonzero()[0]) < 4096:
+        if len(depth.nonzero()[0]) < 4096:
             output['mask'] = Signals.NOT_OBSERVED
             self.write('to_visualizer', output)
             self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED})
             logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
             return
 
-        distance = segmented_depth[segmented_depth != 0].min()
+        distance = depth[depth != 0].min()
         output['obj_distance'] = int(distance)
 
         # The box is too distant
@@ -78,7 +86,7 @@ class Segmentation(Network.node):
             return
 
         output['mask'] = mask
-        segmented_pc = RealSense.depth_pointcloud(segmented_depth)
+        segmented_pc = RealSense.depth_pointcloud(depth)
 
         self.write('to_visualizer', output)
         self.write('to_shape_completion', {'segmented_pc': segmented_pc})
