@@ -29,11 +29,11 @@ class GazeController(Network.node):
 
     def loop(self, data):
         point = data['point']
-        if point is Signals.MISSING_VALUE:
+        if point in Signals:
             return
 
         camera_pose = data['camera_pose']
-        if camera_pose is Signals.MISSING_VALUE:
+        if camera_pose in Signals:
             return
 
         point = np.concatenate([point, np.array([[1]])], axis=1).T
