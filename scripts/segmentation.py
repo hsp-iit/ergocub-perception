@@ -111,11 +111,8 @@ class Segmentation(Network.node):
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance),
                                            'point': point.reshape(-1)[:3]})  # TODO MAKE IT BETTER
 
-        # self.write('to_gaze_control', {'point': (point @ self.R).reshape(-1)})
         if self.follow_object:
             self.write('to_3d_viz', {'point': point})
-
-        # print((point @ self.R).reshape(-1))  SONO GIUSTI
 
 
 if __name__ == '__main__':

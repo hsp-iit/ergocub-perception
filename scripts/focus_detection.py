@@ -1,18 +1,11 @@
-import copy
 import sys
 from pathlib import Path
-
 import numpy as np
 from loguru import logger
 import cv2
-from pyquaternion import Quaternion
-
 from grasping.utils.misc import pose_to_matrix
 from utils.concurrency.utils.signals import Signals
-
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-
-# from grasping.utils.avg_timer import Timer
 from utils.logging import setup_logger
 import tensorrt as trt
 # https://github.com/NVIDIA/TensorRT/issues/1945
@@ -44,9 +37,6 @@ class Focus(Network.node):
 
         if rgb in Signals:
             return {}
-
-        # if camera_pose is not Signals.MISSING_VALUE:
-        #     output['camera_pose'] = camera_pose
 
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
         ret = self.focus_model.estimate(rgb)

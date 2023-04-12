@@ -1,12 +1,7 @@
 import os
 from logging import INFO
-
-import numpy as np
-
 from action_rec.focus.gaze_estimation.focus import FocusDetector
-from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.generic_node_fps import GenericNodeFPS
-from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.concurrency.yarp_queue import YarpQueue
@@ -48,11 +43,8 @@ class Network(BaseConfig):
             'to_gaze_control': PyQueue(ip="localhost", port=50000, queue_name='seg_to_gc',
                                        write_format={k: Signals.NOT_OBSERVED for k in
                                                      ['face_point']}),
-            # 'rpc': IPCQueue(ipc_key=1234, write_format={'focus': False}),  # TODO MAKE IT BETTER
             'focus_to_ar': PyQueue(ip="localhost", port=50000, queue_name='focus_to_ar', blocking=False,
                                    write_format={'focus': Signals.NOT_OBSERVED, 'face_point': Signals.NOT_OBSERVED}),
-            # 'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1, 'human_distance': -1., 'focus': False,
-            #                                             'face_point': np.full(3, -1.)})
 
         }
 
