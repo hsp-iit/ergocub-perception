@@ -5,7 +5,9 @@ from pathlib import Path
 import numpy as np
 from loguru import logger
 import cv2
+from pyquaternion import Quaternion
 
+from grasping.utils.misc import pose_to_matrix
 from utils.concurrency.utils.signals import Signals
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
@@ -33,8 +35,8 @@ class Focus(Network.node):
 
     def loop(self, data):
 
-        output = copy.deepcopy(data)
-
+        # output = copy.deepcopy(data)
+        output = {}
         # self.timer.start()
         logger.info("Read camera input", recurring=True)
 
@@ -42,6 +44,9 @@ class Focus(Network.node):
 
         if rgb in Signals:
             return {}
+
+        # if camera_pose is not Signals.MISSING_VALUE:
+        #     output['camera_pose'] = camera_pose
 
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
         ret = self.focus_model.estimate(rgb)
@@ -51,7 +56,13 @@ class Focus(Network.node):
             output["focus"] = foc
             output["face_bbox"] = face.bbox.reshape(-1)
             output["fps_focus"] = self.fps()
-            output["face_point"] = face.head_position
+
+            camera_pose = data['camera_pose']
+            camera_pose = pose_to_matrix(camera_pose)
+            face_position = np.array(face.head_position)[None]
+            face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
+            point = camera_pose @ face_position
+            output["face_point"] = point.reshape(-1)[:3]
 
         logger.info("FOCUS detected", recurring=True)
 

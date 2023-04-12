@@ -30,7 +30,11 @@ class Network(BaseConfig):
         in_queues = {
             'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/Focus/rgbImage:i',
                              data_type='rgb', read_format='rgb', read_default=Signals.USE_LATEST, blocking=False),
-            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='rec_focus', blocking=False)
+            'rec_focus': PyQueue(ip="localhost", port=50000, queue_name='rec_focus', blocking=False),
+            'from_pose_streamer': YarpQueue(remote_port_name='/realsense-holder-publisher/pose:o',
+                                            local_port_name='/VisualPerception/FocusDetection/camera_pose:i',
+                                            data_type='list', read_format='camera_pose',
+                                            read_default=Signals.MISSING_VALUE, blocking=True),
         }
 
         out_queues = {
@@ -46,7 +50,10 @@ class Network(BaseConfig):
                                                      ['face_point']}),
             # 'rpc': IPCQueue(ipc_key=1234, write_format={'focus': False}),  # TODO MAKE IT BETTER
             'focus_to_ar': PyQueue(ip="localhost", port=50000, queue_name='focus_to_ar', blocking=False,
-                                   write_format={'focus': Signals.NOT_OBSERVED, 'face_point': Signals.NOT_OBSERVED})
+                                   write_format={'focus': Signals.NOT_OBSERVED, 'face_point': Signals.NOT_OBSERVED}),
+            # 'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1, 'human_distance': -1., 'focus': False,
+            #                                             'face_point': np.full(3, -1.)})
+
         }
 
         max_fps = 20

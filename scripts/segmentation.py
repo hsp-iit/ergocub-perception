@@ -7,6 +7,7 @@ import numpy as np
 from loguru import logger
 from scipy.spatial.transform import Rotation
 
+from grasping.utils.misc import pose_to_matrix
 from utils.concurrency.utils.signals import Signals
 from grasping.utils.input import RealSense
 
@@ -36,7 +37,8 @@ class Segmentation(Network.node):
         self.seg_model = Segmentator.model(**Segmentator.Args.to_dict())
 
     def loop(self, data):
-        output = copy.deepcopy(data)
+        # output = copy.deepcopy(data)
+        output = {}
 
         self.timer.start()
         logger.info("Read camera input", recurring=True)
@@ -44,6 +46,7 @@ class Segmentation(Network.node):
         rgb = data['rgb']
         depth = data['depth']
         if rgb in Signals or depth in Signals:
+            # self.write('rpc', {})  # TODO REMOVE
             return output
 
         # Segment the rgb and extract the object depth
@@ -74,6 +77,7 @@ class Segmentation(Network.node):
             self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED,
                                                'obj_distance': Signals.NOT_OBSERVED})  # TODO MAKE IT BETTER
             logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
+            # self.write('rpc', {})  # TODO REMOVE
             return
 
         distance = depth[depth != 0].min()
@@ -85,6 +89,7 @@ class Segmentation(Network.node):
             self.write('to_visualizer', output)
             self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED,
                                                'obj_distance': int(distance)})  # TODO MAKE IT BETTER
+            # self.write('rpc', {})  # TODO REMOVE
             return
 
         output['mask'] = mask
@@ -92,8 +97,19 @@ class Segmentation(Network.node):
 
         self.write('to_visualizer', output)
         point = np.mean(segmented_pc, axis=0, keepdims=True)
+
+        if self.follow_object:
+            self.write('to_3d_viz', {'point': point})
+
+        point = (point @ self.R).reshape(-1)
+        camera_pose = data['camera_pose']
+        camera_pose = pose_to_matrix(camera_pose)
+        face_position = np.array(point)[None]
+        face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
+        point = camera_pose @ face_position
+
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance),
-                                           'point': (point @ self.R).reshape(-1)})  # TODO MAKE IT BETTER
+                                           'point': point.reshape(-1)[:3]})  # TODO MAKE IT BETTER
 
         # self.write('to_gaze_control', {'point': (point @ self.R).reshape(-1)})
         if self.follow_object:
