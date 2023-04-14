@@ -31,9 +31,6 @@ class Network(BaseConfig):
     class Args:
         in_queues = {
             'segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc', blocking=True),
-            # 'camera_pose': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',
-            #                          local_port_name='/VisualPerception/ShapeCompletion/camera_pose:i',
-            #                          data_type='list', read_format='camera_pose'),
         }
 
         out_queues = {
@@ -47,7 +44,6 @@ class Network(BaseConfig):
                                                         'hands': np.full([4, 4, 2], -1.),
                                                         'point': np.full(3, -1.)})  # TODO MAKE IT BETTER
         }
-
 
 class Denoiser(BaseConfig):
     model = DbscanDenoiser
