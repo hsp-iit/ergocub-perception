@@ -103,10 +103,11 @@ class Segmentation(Network.node):
 
         point = (point @ self.R).reshape(-1)
         camera_pose = data['camera_pose']
-        camera_pose = pose_to_matrix(camera_pose)
-        face_position = np.array(point)[None]
-        face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
-        point = camera_pose @ face_position
+        if camera_pose not in Signals:
+            camera_pose = pose_to_matrix(camera_pose)
+            face_position = np.array(point)[None]
+            face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
+            point = camera_pose @ face_position
 
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance),
                                            'point': point.reshape(-1)[:3]})  # TODO MAKE IT BETTER

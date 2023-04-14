@@ -48,11 +48,12 @@ class Focus(Network.node):
             output["fps_focus"] = self.fps()
 
             camera_pose = data['camera_pose']
-            camera_pose = pose_to_matrix(camera_pose)
-            face_position = np.array(face.head_position)[None]
-            face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
-            point = camera_pose @ face_position
-            output["face_point"] = point.reshape(-1)[:3]
+            if camera_pose not in Signals:
+                camera_pose = pose_to_matrix(camera_pose)
+                face_position = np.array(face.head_position)[None]
+                face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
+                point = camera_pose @ face_position
+                output["face_point"] = point.reshape(-1)[:3]
 
         logger.info("FOCUS detected", recurring=True)
 
