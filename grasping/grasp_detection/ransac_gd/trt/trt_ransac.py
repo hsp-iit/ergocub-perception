@@ -25,7 +25,7 @@ class TrTRansac:
         aux_points = copy.deepcopy(points)
 
         while len(res_points) != num_planes:
-            if aux_points.shape[0] < 10:
+            if aux_points.shape[0] < 100:
                 return None
             idx = np.random.randint(0, aux_points.shape[0], size=[iterations * 3])
             subsets = aux_points[idx].reshape(iterations, 3, 3)
