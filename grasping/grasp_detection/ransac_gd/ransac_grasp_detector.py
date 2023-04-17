@@ -6,7 +6,6 @@ from vispy.scene import Markers
 from vispy.visuals import LineVisual
 
 from ...utils.misc import plot_plane
-from .trt.trt_ransac import TrTRansac
 
 
 # TODO NOTE
