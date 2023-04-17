@@ -78,3 +78,9 @@ class RANSAC(BaseConfig):
         engine_path = './grasping/grasp_detection/ransac_gd/trt/assets/ransac200_10000_docker.engine'
         tolerance = 0.01
         iterations = 10000
+
+    class Tracker:
+        # 0.2 more sensitive to small movement but tracks better
+        # 0.3 worse tracking but less sensitive to small movements (might be better for closing the loop)
+        update_thr=0.1
+        distance_thr = 0.01

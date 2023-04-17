@@ -83,3 +83,53 @@ class TrTRansac:
         # Technically they are already normalized but since the engine can approximate values
         # to run faster, we normalize them again.
         return [res_planes, res_points]
+    
+class RansacTracker:
+    def __init__(self, update_thr=0.3, distance_thr=0.01, debug=False) -> None:
+        """
+        Stores a box instance and the corresponding point cloud up until the box
+        "fitness" score on the current point cloud is close to the one of the current
+        box (which should have been computed on the current point cloud).
+        If the box moves the previous box score should be lower than the current one.
+        If it is still the scores should be more or less the same. If the current box
+        score is much lower than the previous box score, it is probably an outlier.
+        This is why we keep the sign of 'diff'.
+        
+        update_thr: if the difference between the current and the previous box 
+                    doesn't exceed this value, the return value is the previous box.
+                    Otherwise, the previous box is updated and the return value is the 
+                    current box.
+        distance_thr: used to compute the score of a box with respect to the point cloud.
+                      the points whose distance to the box is less than this value are 
+                      considered "captured" by the box and contribute to its score.
+        """
+        self.update_thr = update_thr
+        self.distance_thr = distance_thr
+        self.debug = debug
+        
+        self.prev_box = None
+        self.prev_points = None
+
+    def __call__(self, box, points):
+        if self.prev_box is not None:
+            if self.debug:
+                print(f'curr: {compute_score(box[0], points, self.distance_thr)}', end=' ')
+                print(f'prev: {compute_score(self.prev_box[0], points, self.distance_thr)}')
+            diff = compute_score(box[0], points, self.distance_thr) - \
+                   compute_score(self.prev_box[0], points, self.distance_thr)
+           
+            if diff < self.update_thr:
+                return self.prev_box, self.prev_points
+
+        self.prev_box = box
+        self.prev_points = points
+        return box, points
+
+def compute_score(planes, pc, threshold):
+    tot = 0 
+    aux_pc = copy.deepcopy(pc)
+    for plane in planes:
+        idx = (np.abs(np.concatenate([aux_pc, np.ones([aux_pc.shape[0], 1])], axis=1) @ plane) < threshold) # 0.01
+        tot += np.sum(idx)
+        aux_pc = aux_pc[~idx]
+    return tot / pc.shape[0]
