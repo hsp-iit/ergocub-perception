@@ -40,7 +40,7 @@ class Network(BaseConfig):
             'to_shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
                                            write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc',
                                                                                            'obj_distance',
-                                                                                           'point']}),  # TODO MAKE IT BETTER
+                                                                                           'point', 'rgb', 'depth']}),  # TODO MAKE IT BETTER
             'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                  write_format={k: Signals.NOT_OBSERVED for k in
                                                ['point']}),
