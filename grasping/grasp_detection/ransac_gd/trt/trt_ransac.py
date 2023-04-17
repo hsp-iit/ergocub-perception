@@ -27,14 +27,11 @@ class TrTRansac:
         while len(res_points) != num_planes:
             if aux_points.shape[0] < 100:
                 return None
-            idx = np.random.randint(0, aux_points.shape[0], size=[iterations * 3])
-            subsets = aux_points[idx].reshape(iterations, 3, 3)
 
             diff = 200 - aux_points.shape[0]
             if diff < 0:
                 inp_points = copy.deepcopy(aux_points)
                 idx = farthest_point_sampler(torch.tensor(inp_points[None]), 200)[0].numpy()
-                # idx = np.random.choice(inp_points.shape[0], 5981, replace=False)
                 inp_points = inp_points[idx]
                 
                 idx = np.random.randint(0, inp_points.shape[0], size=[iterations * 3])
