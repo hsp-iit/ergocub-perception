@@ -139,6 +139,11 @@ dmypy.json
 
 ###########################################
 .idea
+.vscode-server
+.dotnet
+.ssh
+.gnupg
+.vscode
 */__pycache__
 /action_rec/focus/gaze_estimation/assets
 /assets
