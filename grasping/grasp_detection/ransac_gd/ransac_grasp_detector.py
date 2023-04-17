@@ -56,7 +56,7 @@ class RansacGraspDetectorTRT:
         rotation = origin2pose([cst1, cst2])
 
         # Translation
-        x = 0.15
+        x = 0.5
         y = 0.5
 
         lines = []
