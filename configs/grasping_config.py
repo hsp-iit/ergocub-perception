@@ -72,9 +72,9 @@ class ShapeCompletion(BaseConfig):
 
 class GraspDetection(BaseConfig):
     model = RansacGraspDetectorTRT
-
+        
+class RANSAC(BaseConfig):
     class Args:
         engine_path = './grasping/grasp_detection/ransac_gd/trt/assets/ransac200_10000_docker.engine'
-        # RANSAC parameters
-        tolerance = 0.001
+        tolerance = 0.01
         iterations = 10000

@@ -16,12 +16,8 @@ from ...utils.misc import plot_line
 
 
 class RansacGraspDetectorTRT:
-    def __init__(self, engine_path, tolerance, iterations):
-        self.ransac = TrTRansac(engine_path)
-        self.tolerance = tolerance
-        self.iterations = iterations
 
-    def __call__(self, points):
+    def __call__(self, box):
         """
         Get a complete point cloud and return the point cloud with good grasping spot
         Args:
@@ -37,11 +33,7 @@ class RansacGraspDetectorTRT:
             poses: first best center, first best normal, second-best center, second-best normal
         """
 
-        candidates = self.ransac(points, self.tolerance, self.iterations)
-        if candidates is None:
-            return None
-
-        planes, face_points = candidates
+        planes, face_points = box
 
         # Take the normals of the planes and the mean of the extracted points
         normals = planes[..., :3]
