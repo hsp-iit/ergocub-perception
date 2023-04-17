@@ -51,7 +51,7 @@ class Denoiser(BaseConfig):
     class Args:
         # DBSCAN parameters
         eps = 0.05
-        min_samples = 10
+        min_samples = 30
 
 
 class ShapeCompletion(BaseConfig):
