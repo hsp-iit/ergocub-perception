@@ -131,7 +131,7 @@ class Grasping(Network.node):
 
         logger.info("Computed object reconstruction", recurring=True)
 
-        if reconstruction.shape[0] >= 10_000:
+        if reconstruction.shape[0] >= 15_000:
             logger.warning('Corrupted reconstruction - check the input point cloud', recurring=True)
 
             output['fps_od'] = 1 / self.timer.compute(stop=True)
