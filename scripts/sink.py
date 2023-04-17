@@ -71,10 +71,7 @@ class Sink(Network.node):
         if hands is not Signals.MISSING_VALUE:
             self.hands = hands
         if self.hands not in Signals:
-            rot = Rotation.from_matrix(self.hands[..., 0][:-1, :-1]).as_euler('xyz', degrees=True)
-            # print(f'x: {rot[0]}, y: {rot[1]}, z: {rot[2]}' )
-            if 80 < rot[1] < 100:
-                img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
+            img = project_hands(img, self.hands[..., 0], self.hands[..., 1])
 
         obj_distance = data.get('obj_distance', Signals.MISSING_VALUE)
         if obj_distance is not Signals.MISSING_VALUE:

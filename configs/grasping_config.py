@@ -39,7 +39,7 @@ class Network(BaseConfig):
             '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                      write_format={k: Signals.NOT_OBSERVED for k in
                                                    ['reconstruction', 'transform', 'scene',
-                                                    'hands', 'vertices']}),
+                                                    'hands', 'vertices', 'rgb', 'depth']}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'obj_distance': -1,   # TODO MAKE IT BETTER
                                                         'hands': np.full([4, 4, 2], -1.),
                                                         'point': np.full(3, -1.)})  # TODO MAKE IT BETTER
@@ -51,7 +51,7 @@ class Denoiser(BaseConfig):
     class Args:
         # DBSCAN parameters
         eps = 0.05
-        min_samples = 10
+        min_samples = 30
 
 
 class ShapeCompletion(BaseConfig):
@@ -72,9 +72,15 @@ class ShapeCompletion(BaseConfig):
 
 class GraspDetection(BaseConfig):
     model = RansacGraspDetectorTRT
-
+        
+class RANSAC(BaseConfig):
     class Args:
         engine_path = './grasping/grasp_detection/ransac_gd/trt/assets/ransac200_10000_docker.engine'
-        # RANSAC parameters
-        tolerance = 0.001
+        tolerance = 0.01
         iterations = 10000
+
+    class Tracker:
+        # 0.2 more sensitive to small movement but tracks better
+        # 0.3 worse tracking but less sensitive to small movements (might be better for closing the loop)
+        update_thr=0.1
+        distance_thr = 0.01

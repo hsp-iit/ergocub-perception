@@ -43,28 +43,31 @@ class ObjectDetection3DVisualizer(Network.node):
         grid = canvas.central_widget.add_grid()
 
         #  Left Viewbox
-        vb1 = ViewBox()
-        self.vb1 = grid.add_widget(vb1)
+        # vb1 = ViewBox()
+        # self.vb1 = grid.add_widget(vb1)
 
         #  Right Viewbox
         vb2 = ViewBox()
         self.vb2 = grid.add_widget(vb2)
 
         #  Creating and linking the cameras
-        vb1.camera = scene.TurntableCamera(elevation=0, azimuth=0, distance=1)
+        # vb1.camera = scene.TurntableCamera(elevation=0, azimuth=0, distance=1)
         vb2.camera = scene.TurntableCamera(elevation=0, azimuth=0, distance=1)
-        vb1.camera.link(vb2.camera)
+        # vb1.camera.link(vb2.camera)
 
-        self.scene_scatter = Markers(parent=vb1.scene)
-        self.center = Markers(size=10, parent=vb1.scene)
-        self.reconstruction_scatter = Markers(parent=vb1.scene)
-        self.partial_scatter = Markers(parent=vb1.scene)
+        self.scene_scatter = Markers(parent=vb2.scene)
+        self.center = Markers(size=10, parent=vb2.scene)
+        self.reconstruction_scatter = Markers(parent=vb2.scene)
+        self.partial_scatter = Markers(parent=vb2.scene)
 
         # Adding the same element in two viewboxes is not supported
         # You need to create a different object and add it to the second viewport
         # https://github.com/vispy/vispy/issues/1992
         self.r_hand = scene.XYZAxis(parent=vb2.scene, width=10)
         self.l_hand = scene.XYZAxis(parent=vb2.scene, width=10)
+        
+        self.r_center = Markers(parent=vb2.scene)
+        self.l_center = Markers(parent=vb2.scene)
 
         self.box = [SurfacePlot(parent=vb2.scene), SurfacePlot(parent=vb2.scene),
                     SurfacePlot(parent=vb2.scene), SurfacePlot(parent=vb2.scene),
@@ -91,9 +94,8 @@ class ObjectDetection3DVisualizer(Network.node):
         elif rgb is Signals.NOT_OBSERVED or depth is Signals.NOT_OBSERVED:
             self.scene_scatter.parent = None
         else:
-            self.vb1.add(self.scene_scatter)
+            self.vb2.add(self.scene_scatter)
 
-            rgb, depth = data['rgb'], data['depth']
             scene = RealSense.rgb_pointcloud(depth, rgb)
             scene = np.concatenate([np.array(scene.points), np.array(scene.colors)], axis=1)
 
@@ -128,7 +130,7 @@ class ObjectDetection3DVisualizer(Network.node):
         elif reconstruction is Signals.NOT_OBSERVED:
             self.reconstruction_scatter.parent = None
         else:
-            self.vb1.add(self.reconstruction_scatter)
+            self.vb2.add(self.reconstruction_scatter)
 
             idx = np.random.choice(reconstruction.shape[0], 1000, replace=False)
             reconstruction = reconstruction[idx]
@@ -146,10 +148,18 @@ class ObjectDetection3DVisualizer(Network.node):
         elif hands is Signals.NOT_OBSERVED:
             self.r_hand.parent = None
             self.l_hand.parent = None
+            
+            self.r_center.parent = None
+            self.l_center.parent = None
         else:
-            self.vb2.add(self.r_hand)
-            self.vb2.add(self.l_hand)
+            # self.vb2.add(self.r_hand)
+            # self.vb2.add(self.l_hand)
+            
+            self.vb2.add(self.r_center)
+            self.vb2.add(self.l_center)
 
+            # Array of 4 3D points (the center and the 3 unit axis of the current
+            # reference frame i.e. camera frame)
             right_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
             left_hand = np.concatenate([np.zeros([1, 3]), np.eye(3)])
 
@@ -159,8 +169,11 @@ class ObjectDetection3DVisualizer(Network.node):
             right_hand = right_hand @ self.vis_R2
             left_hand = left_hand @ self.vis_R2
 
-            self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
-            self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
+            # self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
+            # self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
+            
+            self.r_center.set_data(right_hand[0:1] - offset, edge_color='red', face_color='red', size=50)
+            self.l_center.set_data(left_hand[0:1] - offset, edge_color='red', face_color='red', size=50)
 
         points = data.get('vertices', Signals.MISSING_VALUE)
         if points is Signals.MISSING_VALUE:
