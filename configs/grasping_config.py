@@ -39,7 +39,7 @@ class Network(BaseConfig):
             '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                      write_format={k: Signals.NOT_OBSERVED for k in
                                                    ['reconstruction', 'transform', 'scene',
-                                                    'hands', 'vertices']}),
+                                                    'hands', 'vertices', 'rgb', 'depth']}),
             'rpc': IPCQueue(ipc_key=1234, write_format={'obj_distance': -1,   # TODO MAKE IT BETTER
                                                         'hands': np.full([4, 4, 2], -1.),
                                                         'point': np.full(3, -1.)})  # TODO MAKE IT BETTER
