@@ -36,9 +36,18 @@ class TrTRansac:
                 idx = farthest_point_sampler(torch.tensor(inp_points[None]), 200)[0].numpy()
                 # idx = np.random.choice(inp_points.shape[0], 5981, replace=False)
                 inp_points = inp_points[idx]
+                
+                idx = np.random.randint(0, inp_points.shape[0], size=[iterations * 3])
+                subsets = inp_points[idx].reshape(iterations, 3, 3)
+                
             elif diff > 0:
+                idx = np.random.randint(0, aux_points.shape[0], size=[iterations * 3])
+                subsets = aux_points[idx].reshape(iterations, 3, 3)
+                
                 inp_points = np.concatenate([aux_points, np.random.random([diff, 3])])
             else:
+                idx = np.random.randint(0, aux_points.shape[0], size=[iterations * 3])
+                subsets = aux_points[idx].reshape(iterations, 3, 3)
                 inp_points = copy.deepcopy(aux_points)
 
             scores, planes = self.ransac(inp_points, subsets, eps)
@@ -51,12 +60,15 @@ class TrTRansac:
             parallel = np.any(np.round((planes @ res_planes.T)) >= 1, axis=1)
             scores[parallel] = 0
 
-            trt_plane = planes[np.argmax(scores)]
 
-            plane_points_idx = (np.abs(
-                np.concatenate([aux_points, np.ones([aux_points.shape[0], 1])], axis=1) @ trt_plane) < eps)
-
+            # Check that we have actually dound planes
             if np.sum(scores) != 0:
+                trt_plane = planes[np.argmax(scores)]
+
+                # Capture the points close to the plane
+                plane_points_idx = (np.abs(
+                    np.concatenate([aux_points, np.ones([aux_points.shape[0], 1])], axis=1) @ trt_plane) < eps)
+                            
                 new_plane = copy.deepcopy(trt_plane)[None]
                 new_plane[..., :3] = new_plane[..., :3] / np.linalg.norm(new_plane[..., :3], axis=1, keepdims=True)
 
