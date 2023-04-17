@@ -147,7 +147,7 @@ class Grasping(Network.node):
 
         try:
             box = self.ransac(reconstruction @ flip_z, RANSAC.Args.tolerance, 
-                              RANSAC.Args.iterations)
+                              RANSAC.Args.iterations, num_planes=6)
             # box, _ = self.rs_tracker(box, reconstruction @ flip_z)
             poses = self.grasp_detector(box)
         except ValueError as e:

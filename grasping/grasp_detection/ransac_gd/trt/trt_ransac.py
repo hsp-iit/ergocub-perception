@@ -14,8 +14,8 @@ class TrTRansac:
     def __init__(self, engine_path):
         self.ransac = TRTRunner(engine_path)
 
-    def __call__(self, points, eps, iterations):
-        res_planes = np.zeros([6, 4])
+    def __call__(self, points, eps, iterations, num_planes=1):
+        res_planes = np.zeros([num_planes, 4])
         res_points = []
         i = 0
 
@@ -24,7 +24,7 @@ class TrTRansac:
         # points such that the input to the engine has always the same size
         aux_points = copy.deepcopy(points)
 
-        while len(res_points) != 6:
+        while len(res_points) != num_planes:
             if aux_points.shape[0] < 10:
                 return None
             idx = np.random.randint(0, aux_points.shape[0], size=[iterations * 3])
