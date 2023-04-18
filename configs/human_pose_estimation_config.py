@@ -50,7 +50,7 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_hpe': Signals.NOT_OBSERVED, 'human_distance': Signals.NOT_OBSERVED,
                                                 'pose': Signals.NOT_OBSERVED, 'edges': Signals.NOT_OBSERVED}),
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_pose_estimation',
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
                                                 write_format={'human_distance': Signals.NOT_OBSERVED,
                                                               'pose': Signals.NOT_OBSERVED,
                                                               'edges': Signals.NOT_OBSERVED}),
@@ -58,6 +58,8 @@ class Network(BaseConfig):
                                  write_format={'pose': Signals.NOT_OBSERVED,
                                                'human_distance': Signals.NOT_OBSERVED})}  # TODO MAKE IT BETTER
             # 'rpc': IPCQueue(ipc_key=5678, write_format={'human_distance': -1})}  # TODO MAKE IT BETTER
+
+    max_fps = 18
 
 
 base_dir = os.path.join('action_rec', 'hpe', 'weights', 'engines', 'docker')

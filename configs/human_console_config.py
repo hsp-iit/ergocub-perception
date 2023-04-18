@@ -15,11 +15,9 @@ class Network(BaseConfig):
 
     class Args:
         in_queues = {
-            'rgb': YarpQueue(remote_port_name='/depthCamera/rgbImage:r', local_port_name='/HumanConsole/rgbImage:i',
-                             data_type='rgb', read_format='rgb', blocking=True),
-            'rec_human_console': PyQueue(ip="localhost", port=50000, queue_name='rec_human_console', blocking=False),
+            # 'rec_human_console': PyQueue(ip="localhost", port=50000, queue_name='rec_human_console', blocking=False),
 
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer', blocking=True),
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer', blocking=False),
         }
 
         out_queues = {
