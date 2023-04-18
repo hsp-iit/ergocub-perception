@@ -65,7 +65,6 @@ class GenericNode(Process, ABC):
     def shutdown(self):
         pass
 
-    @abstractmethod
     def loop(self, data: dict) -> dict:
         pass
 
