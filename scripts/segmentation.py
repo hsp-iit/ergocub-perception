@@ -64,8 +64,7 @@ class Segmentation(Network.node):
         if len(segmented_depth.nonzero()[0]) < 4096:
             output['mask'] = Signals.NOT_OBSERVED
             self.write('to_visualizer', output)
-            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb,
-                                               'obj_distance': Signals.NOT_OBSERVED, 'depth': data['depth']})  # TODO MAKE IT BETTER
+            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb,'depth': data['depth']})
             logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
             # self.write('rpc', {})  # TODO REMOVE
             return
@@ -77,8 +76,9 @@ class Segmentation(Network.node):
         if distance > 700:
             output['mask'] = Signals.NOT_OBSERVED
             self.write('to_visualizer', output)
-            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb,
-                                               'obj_distance': int(distance), 'depth': data['depth']})  # TODO MAKE IT BETTER
+            self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb, 'depth': data['depth']})
+            self.write('to_rpc', {'obj_distance': int(distance)})
+            
             # self.write('rpc', {})  # TODO REMOVE
             return
 
@@ -88,22 +88,17 @@ class Segmentation(Network.node):
         self.write('to_visualizer', output)
         point = np.mean(segmented_pc, axis=0, keepdims=True)
 
-        if self.follow_object:
-            self.write('to_3d_viz', {'point': point})
-
         point = (point @ self.R).reshape(-1)
         camera_pose = data['camera_pose']
         if camera_pose not in Signals:
             camera_pose = pose_to_matrix(camera_pose)
-            face_position = np.array(point)[None]
-            face_position = np.concatenate([face_position, np.array([[1]])], axis=1).T
-            point = camera_pose @ face_position
+            obj_position = np.array(point)[None]
+            obj_position = np.concatenate([obj_position, np.array([[1]])], axis=1).T
+            point = camera_pose @ óbj_position
+            
+            self.write('to_rpc', {'obj_distance': int(distance), 'obj_center': point.reshape(-1)[:3],})
 
-        self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'obj_distance': int(distance), 'rgb': rgb,
-                                           'point': point.reshape(-1)[:3], 'depth': data['depth']})  # TODO MAKE IT BETTER
-
-        if self.follow_object:
-            self.write('to_3d_viz', {'point': point})
+        self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'rgb': rgb, 'depth': data['depth']})
 
 
 if __name__ == '__main__':
