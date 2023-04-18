@@ -2,16 +2,19 @@ from ecub_perception import eCubPerceptionInterface
 import yarp
 import time
 
-class eCubPerceptionServer(eCubPerceptionInterface):
+from configs.rpc_config import Logging, Network, RPC
 
-    def __init__(self, port_name):
+class eCubPerceptionServer(eCubPerceptionInterface, Network.node):
 
-        log_prefix = '[tcpi-python-server::eCubPerceptionServer]'
+    def __init__(self):
+        yarp.Network.init()
+        
+        log_prefix = '[perception-python-server::eCubPerceptionServer]'
 
-        super(eCubPerceptionServer, self).__init__()
+        super(eCubPerceptionServer, self).__init__(**Network.Args.to_dict())
 
         self.rpc_server_ = yarp.RpcServer()
-        if not self.rpc_server_.open(port_name):
+        if not self.rpc_server_.open(RPC.port_name):
             print(log_prefix + " Error: cannot open RPC port.")
             exit(1)
 
@@ -19,40 +22,40 @@ class eCubPerceptionServer(eCubPerceptionInterface):
 
 
     def get_poses(self):
-
-        pose_0 = yarp.Matrix(4, 4)
-        pose_0[0, 3] = 1.0;
-        pose_0[1, 3] = 2.0;
-        pose_0[2, 3] = 3.0;
-
+        hands = self.read('from_grasp_detection')['hands']
         poses = []
-        poses.append(pose_0)
+
+        for h in range(2):
+            pose = yarp.Matrix(4, 4)
+            for i in range(4):
+                for j in range(4):
+                    pose_l[i, j] = hands[i, j, h]
+
+            poses.append(pose)
 
         return poses
 
 
-    def get_position(self):
+    def get_center(self):
+        center = self.read('from_segmentation')['center']
 
         position = yarp.Vector(3)
-        position[0] = 1.0
-        position[1] = 2.0
-        position[2] = 3.0
+        for i in range(3):
+            position[i] = center[i]
 
         return position
 
 
     def get_distance(self):
+        distance = self.read('from_segmentation')['box_distance']
 
-        return 1.0
+        return distance
 
 
 
-def main():
-    log_prefix = '[tcpi-python-server]';
+def main(): 
 
-    yarp.Network.init()
-
-    service = eCubPerceptionServer('/tcpi/python-server/rpc:i')
+    service = eCubPerceptionServer()
 
     # Simulate main thread here
     while True:
