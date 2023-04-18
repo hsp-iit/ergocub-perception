@@ -35,15 +35,18 @@ class Network(BaseConfig):
         }
 
         out_queues = {
-            'to_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
-                                     write_format={'mask': Signals.NOT_OBSERVED}),
             'to_shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
-                                           write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc',
-                                                                                           'obj_distance',
-                                                                                           'point', 'rgb', 'depth']}),  # TODO MAKE IT BETTER
-            'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
-                                 write_format={k: Signals.NOT_OBSERVED for k in
-                                               ['point']}),
+                                           write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc', 'rgb', 'depth']}),
+            
+            'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='seg_to_rpc', write_format={'obj_distance': -1,
+                                                                                                 'obj_center': np.full(3, -1.)})
+            
+            # 'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
+            #                      write_format={k: Signals.NOT_OBSERVED for k in
+            #                                    ['point']}),
+            
+             'to_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+                                     write_format={'mask': Signals.NOT_OBSERVED}),
         }
 
         auto_write = False

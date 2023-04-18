@@ -34,15 +34,14 @@ class Network(BaseConfig):
         }
 
         out_queues = {
+            'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='gd_to_rpc', write_format={'hands': np.full([4, 4, 2], -1.)}),
+            
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={k: Signals.NOT_OBSERVED for k in ['hands', 'fps_od', 'obj_distance']}),
             '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
                                      write_format={k: Signals.NOT_OBSERVED for k in
                                                    ['reconstruction', 'transform', 'scene',
                                                     'hands', 'vertices', 'rgb', 'depth']}),
-            'rpc': IPCQueue(ipc_key=1234, write_format={'obj_distance': -1,   # TODO MAKE IT BETTER
-                                                        'hands': np.full([4, 4, 2], -1.),
-                                                        'point': np.full(3, -1.)})  # TODO MAKE IT BETTER
         }
 
 class Denoiser(BaseConfig):
