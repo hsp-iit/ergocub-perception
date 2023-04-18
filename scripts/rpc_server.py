@@ -37,7 +37,7 @@ class eCubPerceptionServer(eCubPerceptionInterface, Network.node):
 
 
     def get_center(self):
-        center = self.read('from_segmentation')['center']
+        center = self.read('from_segmentation')['obj_center']
 
         position = yarp.Vector(3)
         for i in range(3):
@@ -47,7 +47,7 @@ class eCubPerceptionServer(eCubPerceptionInterface, Network.node):
 
 
     def get_distance(self):
-        distance = self.read('from_segmentation')['box_distance']
+        distance = self.read('from_segmentation')['obj_distance']
 
         return distance
 
