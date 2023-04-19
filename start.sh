@@ -126,9 +126,9 @@ tmux send-keys -t $TMUX_NAME "python scripts/manager.py" Enter
 tmux split-window -h -t $TMUX_NAME
 
 # YarpManager
-tmux select-pane -T "YarpManager"
-tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
-tmux send-keys -t $TMUX_NAME "yarpmanager --from .xml/yarpmanager.ini"
+tmux select-pane -T "Bash"
+# tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+# tmux send-keys -t $TMUX_NAME "yarpmanager --from .xml/yarpmanager.ini"
 tmux split-window -h -t $TMUX_NAME
 
 # Yarp Server
@@ -167,6 +167,13 @@ then
   tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
   tmux send-keys -t $TMUX_NAME "./connect_camera.sh" Enter
 fi
+
+tmux split-window -h -t $TMUX_NAME
+
+# RPC server
+tmux select-pane -T "RPC Server"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/rpc_server.py" Enter
 
 tmux select-layout -t $TMUX_NAME tiled
 # tmux new-window -t $TMUX_NAME

@@ -29,13 +29,6 @@ class ActionRecognition(Network.node):
     def loop(self, data):
         elements = {}
 
-        if data['human_distance'] not in Signals:  # TODO make it better
-            elements['human_distance'] = data['human_distance']  # TODO make it better
-        if data['focus'] not in Signals:  # TODO make it better
-            elements['focus'] = data['focus']  # TODO make it better
-        if data['face_point'] not in Signals:  # TODO make it better
-            elements['face_point'] = data['face_point']  # TODO make it better
-
         # Human Console Commands, command[0] is command, else are args
         command = data["command"] if "command" in data.keys() else None
         if command is not None:

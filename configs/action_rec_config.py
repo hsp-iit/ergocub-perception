@@ -36,7 +36,6 @@ class Network(BaseConfig):
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=True),
             'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
                                      read_format={"command": None}),
-            'focus_to_ar': PyQueue(ip="localhost", port=50000, queue_name='focus_to_ar', blocking=True)
         }
 
         out_queues = {
@@ -47,8 +46,9 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_ar': Signals.NOT_OBSERVED, 'action': Signals.NOT_OBSERVED}),
 
-            'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1, 'human_distance': -1., 'focus': False,
-                                                        'face_point': np.full(3, -1.)})}
+            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', blocking=False,
+                                    write_format={'action': -1}),
+        }
 
         max_fps = 12
 

@@ -5,6 +5,7 @@ from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
+import numpy as np
 
 
 class Logging(BaseConfig):
@@ -39,7 +40,7 @@ class Network(BaseConfig):
                                            write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc', 'rgb', 'depth']}),
             
             'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='seg_to_rpc', write_format={'obj_distance': -1,
-                                                                                                 'obj_center': np.full(3, -1.)})
+                                                                                                 'obj_center': np.full(3, -1.)}),
             
             # 'to_3d_viz': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
             #                      write_format={k: Signals.NOT_OBSERVED for k in
