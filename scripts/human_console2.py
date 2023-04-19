@@ -9,6 +9,10 @@ import time
 setup_logger(level=Logging.level)
 
 
+class SSException(Exception):
+    pass
+
+
 @logger.catch(reraise=True)
 class HumanConsole(Network.node):
 
@@ -18,9 +22,9 @@ class HumanConsole(Network.node):
         while True:
             data = self.read("human_console_visualizer", blocking=True)
             values = data.get("actions", Signals.NOT_OBSERVED)
-            if values not in Signals:
+            if values not in Signals and len(values) > 0:
                 self.values = list(values.keys())
-            break
+                break
         self.actions = Signals.NOT_OBSERVED
         self.log = ""
         self.input_type = "skeleton"
@@ -37,13 +41,12 @@ class HumanConsole(Network.node):
                         [sg.Column(self.layout2)],
                         [sg.Column(self.layout3)],
                         [sg.Column(self.layout4)]]
-        self.window = sg.Window('Horizontal Bar', self.layout5)
+        self.window = sg.Window('Few-Shot Console', self.layout5)
 
     def loop(self, data):
         # EXIT IF NECESSARY
         event, val = self.window.read(timeout=10)
-        print(event, val)
-        # print(data.keys())
+        # print(event, val)
         if event == sg.WIN_CLOSED:
             exit()
 
@@ -53,7 +56,7 @@ class HumanConsole(Network.node):
             self.actions = actions
         if self.actions not in Signals:
             if self.values != list(self.actions.keys()):
-                exit()
+                raise SSException("Support set has changed!")
             for key in self.actions:
                 self.window[key].update(self.actions[key])
 
@@ -101,7 +104,7 @@ class HumanConsole(Network.node):
             self.loop(res)
             self.window["log"].update("{:.2f}%".format((i / (self.window_size - 1)) * 100))
             # Check if the sample is good w.r.t. input type
-            good = self.input_type in ["skeleton", "hybrid"] and "pose" in res.keys() and res["pose"] is not None
+            good = self.input_type in ["skeleton", "hybrid"] and "pose" in res.keys() and res["pose"] not in Signals
             good = good or self.input_type == "rgb"
             if good:
                 if self.input_type in ["skeleton", "hybrid"]:
@@ -126,20 +129,11 @@ class HumanConsole(Network.node):
 
 
 if __name__ == "__main__":
-    # Example usage
-    # v = {'stand': 0.5,
-    #           'hello': 0.3,
-    #           'handshake': 0.8,
-    #           'lift': 0.3,
-    #           'get': 0.8,
-    #           'stop': 0.3,
-    #           'dab': 0.8,
-    #           'rock_paper_scissor': 0.3,
-    #           'cross_arms': 0.8,
-    #           'pointing_something': 0.8,
-    #           'cross_arms2': 0.3,
-    #           't_pose': 0.8,
-    #           }
-    h = HumanConsole()
-    h.run()
-    h.close()
+    while True:
+        try:
+            h = HumanConsole()
+            h.run()
+        except SSException as e:
+            h.window.close()
+            print(e)
+            continue
