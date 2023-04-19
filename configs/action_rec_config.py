@@ -39,7 +39,7 @@ class Network(BaseConfig):
         }
 
         out_queues = {
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
                                                 write_format={'fps_ar': Signals.NOT_OBSERVED, 'actions':
                                                     Signals.NOT_OBSERVED, 'is_true': Signals.NOT_OBSERVED,
                                                               'log': Signals.NOT_OBSERVED}),

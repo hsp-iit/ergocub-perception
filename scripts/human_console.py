@@ -1,6 +1,9 @@
 # import cv2
 # os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH")
 from vispy import app, scene, visuals
+
+from utils.concurrency.utils.signals import Signals
+
 app.use_app('glfw')  # Set backend
 from vispy.scene.visuals import Text, Image
 import numpy as np
@@ -152,35 +155,33 @@ class VISPYVisualizer(Network.node):
         b4.add(self.log_text)
 
         # Variables
-        self.fps = None
-        self.rgb = None
-        self.bbox = None
-        self.face_bbox = None
-        self.focus = None
-        self.dist = None
-        self.pose = None
-        self.edges = None
-        self.actions = None
-        self.is_true = None
-        self.requires_focus = None
-        self.log = None
-        self.requires_os = None
+        self.fps = Signals.NOT_OBSERVED
+        self.rgb = Signals.NOT_OBSERVED
+        self.bbox = Signals.NOT_OBSERVED
+        self.face_bbox = Signals.NOT_OBSERVED
+        self.focus = Signals.NOT_OBSERVED
+        self.human_distance = Signals.NOT_OBSERVED
+        self.actions = Signals.NOT_OBSERVED
+        self.is_true = Signals.NOT_OBSERVED
+        self.log = Signals.NOT_OBSERVED
         self.last_time = time.time()
         self.times = []
 
-    def loop(self, elements):
-        if not elements:
+    def loop(self, data):
+        if not data:
             return
 
         # LOG
-        if "log" in elements.keys():
-            self.log = elements["log"]
+        log = data.get('log', Signals.MISSING_VALUE)
+        if log is not Signals.MISSING_VALUE:
+            self.log = log
+        if self.log not in Signals:
             if self.log is not None and self.log != ' ':
                 self.log_text.text = self.log
 
         # # FPS
-        # if "fps_ar" in elements.keys():
-        #     self.fps = elements["fps_ar"]
+        # if "fps_ar" in data.keys():
+        #     self.fps = data["fps_ar"]
         #     self.fps_text.text = "FPS: {:.2f}".format(self.fps if self.fps else 0)
         # CONSOLE FPS
         self.times.append(time.time() - self.last_time)
@@ -190,30 +191,31 @@ class VISPYVisualizer(Network.node):
         self.last_time = time.time()
 
         # FOCUS
-        if "focus" in elements.keys():
-            self.focus = elements["focus"]
-            if self.focus:
-                self.focus_text.text = "FOCUS"
-                self.focus_text.color = "green"
-            else:
-                self.focus_text.text = "NOT FOC."
-                self.focus_text.color = "red"
+        focus = data.get('focus', Signals.MISSING_VALUE)
+        if focus is not Signals.MISSING_VALUE:
+            self.focus = focus
+        if self.focus not in Signals:
+            self.focus_text.text = "FOCUS"
+            self.focus_text.color = "green"
+        else:
+            self.focus_text.text = "NOT FOC."
+            self.focus_text.color = "red"
 
         # DIST
-        if "human_distance" in elements.keys():
-            self.dist = elements["human_distance"] if elements["human_distance"] != -1 else None
-            self.distance_text.text = "DIST: {:.2f}m".format(self.dist) if self.dist is not None else "DIST:"
+        human_distance = data.get('human_distance', Signals.MISSING_VALUE)
+        if human_distance is not Signals.MISSING_VALUE:
+            self.human_distance = human_distance
+        if self.human_distance not in Signals:
+            self.distance_text.text = "DIST: {:.2f}m".format(self.human_distance) if self.human_distance is not None else "DIST:"
 
         # ACTIONS
-        if "actions" in elements.keys():
-            self.actions = elements["actions"]
-            if "is_true" in elements.keys():
-                self.is_true = elements["is_true"]
-            if "requires_focus" in elements.keys():
-                self.requires_focus = elements["requires_focus"]
-            if "requires_os" in elements.keys():
-                self.requires_os = elements["requires_os"]
-
+        actions = data.get('actions', Signals.MISSING_VALUE)
+        if actions is not Signals.MISSING_VALUE:
+            self.actions = actions
+        is_true = data.get('is_true', Signals.MISSING_VALUE)
+        if is_true is not Signals.MISSING_VALUE:
+            self.is_true = is_true
+        if self.actions not in Signals:
             # Actions
             if self.actions is not None and len(self.actions) > 0:
                 act_vert_off = 0.5/len(self.actions)
@@ -283,9 +285,9 @@ class VISPYVisualizer(Network.node):
         now = time.time()
         self.log_text.text = "WAIT..."
         while (time.time() - now) < 3:
-            elements = self.read("human_console_visualizer")
-            elements.update(self.read("rgb"))
-            self.loop(elements)
+            data = self.read("human_console_visualizer")
+            data.update(self.read("rgb"))
+            self.loop(data)
 
         self.log_text.text = "GO!"
         data = [[] for _ in range(self.window_size)]
