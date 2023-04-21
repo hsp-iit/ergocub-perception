@@ -42,8 +42,8 @@ class HumanConsole(Network.node):
         self.layout2 = [[sg.Text("log", key="log")]]
         self.layout3 = [[sg.Input('', enable_events=True, key='TO_LEARN', font=('Arial Bold', 20), expand_x=True, justification='left'), sg.Button("Add action", key="ADD")]]
         self.layout4 = [[sg.Button("Debug", key=f"DEBUG")]]
-        self.layout5 = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse(file_types=(("Support Set", "*.pkl"),))],
-                        [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs(file_types=(("Support Set", "*.pkl"),))]]
+        self.layout5 = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),))],
+                        [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),))]]
         self.layout6 = [[sg.Column(self.layout1)],
                         [sg.Column(self.layout2)],
                         [sg.Column(self.layout3)],
