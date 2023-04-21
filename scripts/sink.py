@@ -39,8 +39,6 @@ class Sink(Network.node):
         self.edges = Signals.NOT_OBSERVED
         self.is_true = Signals.NOT_OBSERVED
         self.action = Signals.NOT_OBSERVED
-        self.id_to_action = ['stand', 'hello', 'handshake', 'lift', 'get', 'stop', 'dab', 'rock_paper_scissor',
-                             'cross_arms', 'pointing_something', 'cross_arms', 't_pose']
         super().__init__(**Network.Args.to_dict())
 
     def startup(self):
@@ -160,15 +158,12 @@ class Sink(Network.node):
             self.action = action
         if self.action not in Signals:
             if self.obj_distance is Signals.NOT_OBSERVED or self.obj_distance/1000 > 1.5:  # No box in 1 meter
-                if self.action < len(self.id_to_action):
-                    label = self.id_to_action[self.action] if self.action != -1 else 'none'
-                else:
-                    label = "unknown"
-                if label != 'none':
-                    textsize = cv2.getTextSize(label, cv2.FONT_ITALIC, 1, 2)[0]
+                if self.action != 'none':
+                    print(self.action)
+                    textsize = cv2.getTextSize(self.action, cv2.FONT_ITALIC, 1, 2)[0]
                     textX = int((img.shape[1] - textsize[0]) / 2)
                     text_color = (0, 255, 0)
-                    img = cv2.putText(img, label, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
+                    img = cv2.putText(img, self.action, (textX, 450), cv2.FONT_ITALIC, 1, text_color, 2, cv2.LINE_AA)
 
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 

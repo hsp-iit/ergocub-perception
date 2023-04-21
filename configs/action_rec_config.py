@@ -46,7 +46,7 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_ar': Signals.NOT_OBSERVED, 'action': Signals.NOT_OBSERVED}),
 
-            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', write_format={'action': -1}),
+            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', write_format={'action': "none"}),
         }
 
         max_fps = 12

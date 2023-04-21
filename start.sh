@@ -5,9 +5,9 @@ TMUX_NAME=perception-tmux
 DOCKER_CONTAINER_NAME=ergocub_perception_container
 
 echo "Start this script inside the ergoCub visual perception rooot folder"
-usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)] [-r repeater]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-i ip_address] [-n nameserver] [-y (to start yarp server] [-s (to start source)] [-r repeater] [-b (just bash)]" 1>&2; exit 1; }
 
-while getopts i:yshn:r flag
+while getopts i:ysbhn:r flag
 do
     case "${flag}" in
         i) SERVER_IP=${OPTARG};;
@@ -15,6 +15,7 @@ do
         y) START_YARP_SERVER='1';;
         r) REPEATER='1';;
         s) START_SOURCE='1';;
+        b) JUST_BASH='1';;
         h) usage;;
         *) usage;;
     esac
@@ -34,9 +35,16 @@ tmux set-option -t $TMUX_NAME status-left-length 140
 tmux set -t $TMUX_NAME -g pane-border-status top
 tmux set -t $TMUX_NAME -g mouse on
 
-tmux rename-window -t $TMUX_NAME components
+# Just bash?
+if [ -n "$JUST_BASH" ] # Variable is non-null
+then
+  tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+  tmux a -t $TMUX_NAME
+  exit 0
+fi
 
 # Human Detection
+tmux rename-window -t $TMUX_NAME components
 tmux select-pane -T "Human Detection"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/human_detection.py" Enter

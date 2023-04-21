@@ -59,21 +59,21 @@ class ActionRecognition(Network.node):
         elements["is_true"] = is_true
 
         # Filter action with os and consistency window
-        elements["action"] = -1
+        elements["action"] = "none"
         if len(elements["actions"]) > 0:
             best_action = max(elements["actions"], key=elements["actions"].get)
-            best_index = list(elements["actions"].keys()).index(best_action)
             # Reject low os
             if is_true < self.os_score_thr:
-                best_index = -1
+                best_action = "none"
             # Consistency window
             if len(self.last_n_actions) > self.consistency_window_length:
                 self.last_n_actions = self.last_n_actions[1:]
-            self.last_n_actions.append(best_index)
+            self.last_n_actions.append(best_action)
+            print(self.last_n_actions)
 
             # BEFORE it was considering an action only all the n detected action was that action
             if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
-                elements["action"] = best_index
+                elements["action"] = best_action
             # NOW it takes the action higher frequency in last n frames
             # max_f = 0
             # for i in self.last_n_actions:
