@@ -24,7 +24,7 @@ class ActionRecognition(Network.node):
 
     def startup(self):
         self.ar = AR.model(**AR.Args.to_dict())
-        self.ar.load()
+        # self.ar.load()
 
     def loop(self, data):
         elements = {}
@@ -41,9 +41,9 @@ class ActionRecognition(Network.node):
             elif command[0] == "debug":
                 elements["log"] = self.ar.save_ss_image()
             elif command[0] == "save":
-                elements["log"] = self.ar.save()
+                elements["log"] = self.ar.save(command[1])
             elif command[0] == "load":
-                self.ar.load()
+                self.ar.load(command[1])
 
         ar_input = {}
         pose = data["pose"]

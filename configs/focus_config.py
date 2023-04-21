@@ -37,12 +37,7 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'focus': Signals.NOT_OBSERVED, 'face_bbox': Signals.NOT_OBSERVED,
                                                 'fps_focus': Signals.NOT_OBSERVED}),
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
-                                                write_format={'focus': Signals.NOT_OBSERVED,
-                                                              'face_bbox': Signals.NOT_OBSERVED,
-                                                              'fps_focus': Signals.NOT_OBSERVED}),
-            'focus_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='focus_to_rpc', blocking=False,
-                                    write_format={'focus': False, 'face_point': np.full(3, -1.)}),
+            'focus_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='focus_to_rpc', write_format={'focus': False, 'face_point': np.full(3, -1.)}),
 
         }
 

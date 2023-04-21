@@ -92,10 +92,10 @@ class Segmentation(Network.node):
             camera_pose = pose_to_matrix(camera_pose)
             obj_position = np.array(point)[None]
             obj_position = np.concatenate([obj_position, np.array([[1]])], axis=1).T
-            point = camera_pose @ óbj_position
+            point = camera_pose @ obj_position
             
             output['obj_center'] = point.reshape(-1)[:3]
-            self.write('to_rpc', {'obj_distance': int(distance)})  #TODO TEST
+            self.write('to_rpc', {'obj_distance': int(distance), 'obj_center': point.reshape(-1)[:3]})  #TODO TEST
         else:
             self.write('to_rpc', {'obj_distance': int(distance), 'obj_center':  np.full(3, -100.)})
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'rgb': rgb, 'depth': data['depth']})

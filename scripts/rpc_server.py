@@ -66,7 +66,7 @@ class eCubPerceptionServer(eCubPerceptionInterface):
         return face_position
 
     def get_action(self):
-        action = self.asd.read('ar_to_rpc')['act']
+        action = self.asd.read('ar_to_rpc')['action']
 
         return action
 
