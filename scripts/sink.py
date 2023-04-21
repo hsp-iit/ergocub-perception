@@ -159,7 +159,6 @@ class Sink(Network.node):
         if self.action not in Signals:
             if self.obj_distance is Signals.NOT_OBSERVED or self.obj_distance/1000 > 1.5:  # No box in 1 meter
                 if self.action != 'none':
-                    print(self.action)
                     textsize = cv2.getTextSize(self.action, cv2.FONT_ITALIC, 1, 2)[0]
                     textX = int((img.shape[1] - textsize[0]) / 2)
                     text_color = (0, 255, 0)

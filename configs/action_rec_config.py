@@ -86,3 +86,4 @@ class AR(BaseConfig):
         acquisition_time = 3
         consistency_window_length = 4
         os_score_thr = 0.5
+        fs_score_thr = 0.5

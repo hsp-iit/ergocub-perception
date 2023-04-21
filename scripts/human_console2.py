@@ -6,6 +6,10 @@ import PySimpleGUI as sg
 import numpy as np
 import time
 
+
+sg.theme('DarkTeal9')
+
+
 setup_logger(level=Logging.level)
 
 
@@ -20,6 +24,8 @@ class HumanConsole(Network.node):
         super().__init__(**Network.Args.to_dict())
         self.acquisition_time = 2
         self.values = None
+        self.last_os_thr = 0.5
+        self.last_fs_thr = 0.5
         while True:
             print("Trying to get list of actions...")
             data = self.read("human_console_visualizer", blocking=True)
@@ -33,28 +39,31 @@ class HumanConsole(Network.node):
         self.log = ""
         self.input_type = "skeleton"
         self.window_size = 16
-        self.layout1 = [[sg.Button("Delete", key=f"DELETE-{key}"),
+        self.lay_actions = [[sg.In(size=(3,1), key=f'DELETEID-{key}'),
+                         sg.Button("Delete", key=f"DELETE-{key}"),
                          sg.Button("Add", key=f"AUG-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"OS-{key}"),
-                         sg.Text(key, key="action")]
-                        for key in self.values]
-        self.layout2 = [[sg.Text("log", key="log")]]
-        self.layout3 = [[sg.Input('', enable_events=True, key='TO_LEARN', font=('Arial Bold', 20), expand_x=True, justification='left'), sg.Button("Add action", key="ADD")]]
-        self.layout4 = [[sg.Button("Debug", key=f"DEBUG")]]
-        self.layout5 = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),))],
+                         sg.Text(key, key="action")] 
+                         for key in self.values]
+        self.lay_thrs = [[sg.Text('FS threshold'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='FS-THR')],
+                         [sg.Text('OS threshold'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='OS-THR')]]
+        self.lay_log = [[sg.Text("log", key="log")]]
+        self.lay_add = [[sg.Input('', enable_events=True, key='TO_LEARN', font=('Arial Bold', 20), expand_x=True, justification='left'), sg.Button("Add action", key="ADD")]]
+        self.lay_debug = [[sg.Button("Debug", key=f"DEBUG")]]
+        self.lay_io = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),))],
                         [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),))]]
-        self.layout6 = [[sg.Column(self.layout1)],
-                        [sg.Column(self.layout2)],
-                        [sg.Column(self.layout3)],
-                        [sg.Column(self.layout4)],
-                        [sg.Column(self.layout5)]]
-        self.window = sg.Window('Few-Shot Console', self.layout6)
+        self.lay_final = [[sg.Column(self.lay_actions)],
+                        [sg.Column(self.lay_thrs)],
+                        [sg.Column(self.lay_log)],
+                        [sg.Column(self.lay_add)],
+                        [sg.Column(self.lay_debug)],
+                        [sg.Column(self.lay_io)]]
+        self.window = sg.Window('Few-Shot Console', self.lay_final)
 
     def loop(self, data):
         # EXIT IF NECESSARY
         event, val = self.window.read(timeout=10)
-        # print(event, val)
         if event == sg.WIN_CLOSED:
             exit()
 
@@ -89,7 +98,11 @@ class HumanConsole(Network.node):
         # REMOVE ACTION
         if "DELETE" in event:
             action = event.split('-')[1]
-            self.write("console_to_ar", {"command": ("remove_action", action)})
+            id_to_remove = val[f"DELETEID-{action}"]
+            if id_to_remove == "":
+                self.write("console_to_ar", {"command": ("remove_action", action)})
+            else:
+                self.write("console_to_ar", {"command": ("remove_example", action, int(id_to_remove))})
 
         # ADD ACTION
         if "ADD" in event:
@@ -109,11 +122,21 @@ class HumanConsole(Network.node):
 
         # LOAD
         if "LOAD" in event:
+            self.log = "Loading support set..."
+            self.window["log"].update(self.log)           
             self.write("console_to_ar", {"command": ("load", val["LOAD"])})
 
         # SAVE
         if "SAVE" in event:
             self.write("console_to_ar", {"command": ("save", val["SAVE"])})
+
+        if event == "__TIMEOUT__":
+            if val['FS-THR'] != self.last_fs_thr:
+                self.last_fs_thr = val['FS-THR']
+                self.write("console_to_ar", {"command": ("fs-thr", val['FS-THR']/100)})
+            if val['OS-THR'] != self.last_os_thr:
+                self.last_os_thr = val['OS-THR']
+                self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)})
 
     def add_action(self, action_name):
         now = time.time()

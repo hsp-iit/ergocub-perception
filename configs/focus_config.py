@@ -41,7 +41,7 @@ class Network(BaseConfig):
 
         }
 
-        max_fps = 20
+        max_fps = 30
 
 
 class FOCUS(BaseConfig):

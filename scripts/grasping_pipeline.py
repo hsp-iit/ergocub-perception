@@ -49,7 +49,7 @@ class Grasping(Network.node):
         self.pcr_encoder = ShapeCompletion.Encoder.model(**ShapeCompletion.Encoder.Args.to_dict())
         self.pcr_decoder = ShapeCompletion.Decoder.model(**ShapeCompletion.Decoder.Args.to_dict())
         self.ransac = TrTRansac(RANSAC.Args.engine_path)
-        self.partial_rs_tracker = RansacTracker(**RANSAC.Tracker.to_dict(), debug=True)
+        self.partial_rs_tracker = RansacTracker(**RANSAC.Tracker.to_dict(), debug=False)
         self.grasp_detector = GraspDetection.model()
 
     def loop(self, data):
