@@ -100,25 +100,20 @@ class ActionRecognizer:
         self.support_set[inp["flag"]]["features"].append(self.ar.features_extractor["sk"](torch.FloatTensor(inp['data']['sk']).cuda()))
         return "Action {} learned successfully".format(inp["flag"])
 
-    def save(self):
-        save_loc = os.path.join(self.support_set_path, self.input_type)
-        if not os.path.exists(save_loc):
-            os.mkdir(save_loc)
-        with open(os.path.join(save_loc, "support_set.pkl"), 'wb') as outfile:
+    def save(self, save_path):
+        with open(save_path, 'wb') as outfile:
             pkl.dump(self.support_set, outfile)
-        return "Classes saved successfully in " + save_loc
+        return "Classes saved successfully in " + save_path
 
-    def load(self):
-        load_loc = os.path.join(self.support_set_path, self.input_type)
-
-        with open(os.path.join(load_loc, "support_set.pkl"), 'rb') as pkl_file:
+    def load(self, load_path):
+        with open(os.path.join(load_path), 'rb') as pkl_file:
             self.support_set = pkl.load(pkl_file)
         for action in self.support_set.keys():
             self.support_set[action]["features"] = []
             for demonstration in self.support_set[action]["sk"]:
                 f = self.ar.features_extractor["sk"](torch.FloatTensor(demonstration).cuda())
                 self.support_set[action]["features"].append(f)
-        return f"Loaded {len(self.support_set)} classes from {load_loc}"
+        return f"Loaded {len(self.support_set)} classes from {load_path}"
 
     def save_ss_image(self):
         import numpy as np

@@ -46,7 +46,7 @@ class Segmentation(Network.node):
         rgb = data['rgb']
         segmented_depth = copy.deepcopy(data['depth'])
         if rgb in Signals or segmented_depth in Signals:
-            # self.write('rpc', {})  # TODO REMOVE
+            self.write('to_rpc', {})  # TODO TEST
             return output
 
         # Segment the rgb and extract the object depth
@@ -66,7 +66,7 @@ class Segmentation(Network.node):
             self.write('to_visualizer', output)
             self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb,'depth': data['depth']})
             logger.warning('Warning: not enough input points. Skipping reconstruction', recurring=True)
-            # self.write('rpc', {})  # TODO REMOVE
+            self.write('to_rpc', {})  # TODO TEST
             return
 
         distance = segmented_depth[segmented_depth != 0].min()
@@ -78,8 +78,6 @@ class Segmentation(Network.node):
             self.write('to_visualizer', output)
             self.write('to_shape_completion', {'segmented_pc': Signals.NOT_OBSERVED, 'rgb': rgb, 'depth': data['depth']})
             self.write('to_rpc', {'obj_distance': int(distance)})
-            
-            # self.write('rpc', {})  # TODO REMOVE
             return
 
         output['mask'] = mask
@@ -94,10 +92,12 @@ class Segmentation(Network.node):
             camera_pose = pose_to_matrix(camera_pose)
             obj_position = np.array(point)[None]
             obj_position = np.concatenate([obj_position, np.array([[1]])], axis=1).T
-            point = camera_pose @ óbj_position
+            point = camera_pose @ obj_position
             
-            self.write('to_rpc', {'obj_distance': int(distance), 'obj_center': point.reshape(-1)[:3],})
-
+            output['obj_center'] = point.reshape(-1)[:3]
+            self.write('to_rpc', {'obj_distance': int(distance), 'obj_center': point.reshape(-1)[:3]})  #TODO TEST
+        else:
+            self.write('to_rpc', {'obj_distance': int(distance), 'obj_center':  np.full(3, -100.)})
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'rgb': rgb, 'depth': data['depth']})
 
 

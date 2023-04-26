@@ -11,7 +11,7 @@ setup_logger(**Logging.Logger.Params.to_dict())
 
 
 class ActionRecognition(Network.node):
-    def __init__(self, input_type, window_size, acquisition_time, consistency_window_length, os_score_thr):
+    def __init__(self, input_type, window_size, acquisition_time, consistency_window_length, os_score_thr, fs_score_thr):
         super().__init__(**Network.Args.to_dict())
         self.input_type = input_type
         self.window_size = window_size
@@ -20,21 +20,15 @@ class ActionRecognition(Network.node):
         self.last_n_actions = []
         self.consistency_window_length = consistency_window_length
         self.os_score_thr = os_score_thr
+        self.fs_score_thr = fs_score_thr
         self.ar = None
 
     def startup(self):
         self.ar = AR.model(**AR.Args.to_dict())
-        self.ar.load()
+        # self.ar.load()
 
     def loop(self, data):
         elements = {}
-
-        if data['human_distance'] not in Signals:  # TODO make it better
-            elements['human_distance'] = data['human_distance']  # TODO make it better
-        if data['focus'] not in Signals:  # TODO make it better
-            elements['focus'] = data['focus']  # TODO make it better
-        if data['face_point'] not in Signals:  # TODO make it better
-            elements['face_point'] = data['face_point']  # TODO make it better
 
         # Human Console Commands, command[0] is command, else are args
         command = data["command"] if "command" in data.keys() else None
@@ -48,9 +42,13 @@ class ActionRecognition(Network.node):
             elif command[0] == "debug":
                 elements["log"] = self.ar.save_ss_image()
             elif command[0] == "save":
-                elements["log"] = self.ar.save()
+                elements["log"] = self.ar.save(command[1])
             elif command[0] == "load":
-                self.ar.load()
+                self.ar.load(command[1])
+            elif command[0] == "fs-thr":
+                self.fs_score_thr = command[1]
+            elif command[0] == "os-thr":
+                self.os_score_thr = command[1]
 
         ar_input = {}
         pose = data["pose"]
@@ -66,21 +64,23 @@ class ActionRecognition(Network.node):
         elements["is_true"] = is_true
 
         # Filter action with os and consistency window
-        elements["action"] = -1
+        elements["action"] = "none"
         if len(elements["actions"]) > 0:
             best_action = max(elements["actions"], key=elements["actions"].get)
-            best_index = list(elements["actions"].keys()).index(best_action)
-            # Reject low os
+            # Reject low fs score
+            if elements["actions"][best_action] < self.fs_score_thr:
+                best_action = "none"
+            # Reject low os score
             if is_true < self.os_score_thr:
-                best_index = -1
+                best_action = "none"
             # Consistency window
             if len(self.last_n_actions) > self.consistency_window_length:
                 self.last_n_actions = self.last_n_actions[1:]
-            self.last_n_actions.append(best_index)
+            self.last_n_actions.append(best_action)
 
             # BEFORE it was considering an action only all the n detected action was that action
             if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
-                elements["action"] = best_index
+                elements["action"] = best_action
             # NOW it takes the action higher frequency in last n frames
             # max_f = 0
             # for i in self.last_n_actions:
@@ -98,5 +98,6 @@ if __name__ == "__main__":
                           window_size=AR.Main.window_size,
                           acquisition_time=AR.Main.acquisition_time,
                           consistency_window_length=AR.Main.consistency_window_length,
-                          os_score_thr=AR.Main.os_score_thr)
+                          os_score_thr=AR.Main.os_score_thr,
+                          fs_score_thr=AR.Main.fs_score_thr)
     m.run()

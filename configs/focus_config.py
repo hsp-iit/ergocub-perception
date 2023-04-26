@@ -6,6 +6,7 @@ from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
+import numpy as np
 
 
 class Logging(BaseConfig):
@@ -36,19 +37,11 @@ class Network(BaseConfig):
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'focus': Signals.NOT_OBSERVED, 'face_bbox': Signals.NOT_OBSERVED,
                                                 'fps_focus': Signals.NOT_OBSERVED}),
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
-                                                write_format={'focus': Signals.NOT_OBSERVED,
-                                                              'face_bbox': Signals.NOT_OBSERVED,
-                                                              'fps_focus': Signals.NOT_OBSERVED}),
-            'to_gaze_control': PyQueue(ip="localhost", port=50000, queue_name='seg_to_gc',
-                                       write_format={k: Signals.NOT_OBSERVED for k in
-                                                     ['face_point']}),
-            'focus_to_ar': PyQueue(ip="localhost", port=50000, queue_name='focus_to_ar', blocking=False,
-                                   write_format={'focus': Signals.NOT_OBSERVED, 'face_point': Signals.NOT_OBSERVED}),
+            'focus_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='focus_to_rpc', write_format={'focus': False, 'face_point': np.full(3, -1.)}),
 
         }
 
-        max_fps = 20
+        max_fps = 30
 
 
 class FOCUS(BaseConfig):

@@ -36,19 +36,18 @@ class Network(BaseConfig):
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=True),
             'console_to_ar': PyQueue(ip="localhost", port=50000, queue_name='console_to_ar',
                                      read_format={"command": None}),
-            'focus_to_ar': PyQueue(ip="localhost", port=50000, queue_name='focus_to_ar', blocking=True)
         }
 
         out_queues = {
-            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
+            'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
                                                 write_format={'fps_ar': Signals.NOT_OBSERVED, 'actions':
                                                     Signals.NOT_OBSERVED, 'is_true': Signals.NOT_OBSERVED,
                                                               'log': Signals.NOT_OBSERVED}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_ar': Signals.NOT_OBSERVED, 'action': Signals.NOT_OBSERVED}),
 
-            'rpc': IPCQueue(ipc_key=5678, write_format={'action': -1, 'human_distance': -1., 'focus': False,
-                                                        'face_point': np.full(3, -1.)})}
+            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', write_format={'action': "none"}),
+        }
 
         max_fps = 12
 
@@ -87,3 +86,4 @@ class AR(BaseConfig):
         acquisition_time = 3
         consistency_window_length = 4
         os_score_thr = 0.5
+        fs_score_thr = 0.5
