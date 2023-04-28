@@ -120,31 +120,7 @@ class ActionRecognizer:
         import cv2
         import pickle
         import imageio
-        #
-        # ss = self.support_set_data
-        #
-        # labels = self.support_set_labels
-        # if len(ss) == 0:
-        #     return "Support set is empty"
-        # if self.input_type in ["hybrid", "rgb"]:
-        #     ss_rgb = ss["rgb"].detach().cpu().numpy()
-        #     ss_rgb = ss_rgb.swapaxes(-2, -3).swapaxes(-1, -2)
-        #     ss_rgb = (ss_rgb - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
-        #     ss_rgb = (ss_rgb * 255).astype(np.uint8)
-        #     way, shot, seq_len, height, width, _ = ss_rgb.shape
-        #     # Flat image
-        #     # ss_rgb = ss_rgb.swapaxes(0, 2)
-        #     # ss_rgb = ss_rgb.reshape(seq_len, shot, way*height, width, 3)
-        #     sequences = []
-        #     for w in range(way):
-        #         for s in range(shot):
-        #             support_class = ss_rgb[w][s].swapaxes(0, 1).reshape(height, seq_len * width, 3)
-        #             support_class = cv2.putText(support_class, f"{labels[w]}, {s}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
-        #                                         2,
-        #                                         (255, 255, 255), 3, 2)
-        #             sequences.append(support_class)
-        #     ss_rgb = np.concatenate(sequences, axis=0)
-        #     cv2.imwrite("SUPPORT_SET.png", ss_rgb)
+        
         if self.input_type in ["hybrid", "skeleton"]:  # TODO MAKE IT BETTER
             with open(os.path.join("action_rec", "hpe", "assets", "skeleton_types.pkl"), "rb") as input_file:
                 edges = pickle.load(input_file)['smpl+head_30']['edges']
@@ -154,7 +130,7 @@ class ActionRecognizer:
                 if len(self.support_set[k]["sk"]) > max_num_support:
                     max_num_support = len(self.support_set[k]["sk"])
             # Write gif
-            size = 250
+            size = 100
             support_gifs = []
             for class_name in self.support_set.keys():
                 sks = np.stack(self.support_set[class_name]["sk"])
@@ -165,15 +141,15 @@ class ActionRecognizer:
                 class_gif = []
                 for i in range(sks.shape[1]):  # Repeat 16 times
                     class_visual = np.zeros((size*2, size*max_num_support))
-                    class_visual = cv2.putText(class_visual, class_name, (30, int(size/2)), cv2.FONT_HERSHEY_SIMPLEX, 3,
-                                               (255, 255, 255), 2, 2)
+                    class_visual = cv2.putText(class_visual, class_name, (30, int(size/2)), cv2.FONT_HERSHEY_SIMPLEX, int(size/100),
+                                               (255, 255, 255), int(size/100), 2)
                     for j in range(sks.shape[0]):
                         class_visual = cv2.putText(class_visual, f"{j}", (int((size*j) + size/2), int(size*(4/5))),
                                                    cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                                   (255, 255, 255), 2, 2)
-                        for point in sks[j][i]:
-                            class_visual = cv2.circle(class_visual, (int(point[0] + j*size),  # x
-                                                                     int(point[1] + size)), 1, (255, 0, 0))  # y
+                                                   (255, 255, 255), int(size/100), 2)
+                        # for point in sks[j][i]:
+                        #     class_visual = cv2.circle(class_visual, (int(point[0] + j*size),  # x
+                        #                                              int(point[1] + size)), 1, (255, 0, 0))  # y
                         for edge in edges:
                             class_visual = cv2.line(class_visual,
                                                     (int(sks[j][i][edge[0]][0] + j*size),  # x1
