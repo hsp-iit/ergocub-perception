@@ -38,7 +38,7 @@ class Network(BaseConfig):
             
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={k: Signals.NOT_OBSERVED for k in ['hands', 'fps_od', 'obj_distance']}),
-            '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='3d_visualizer',
+            '3d_visualizer': PyQueue(ip="localhost", port=50000, queue_name='grasping_to_3d_visualizer',
                                      write_format={k: Signals.NOT_OBSERVED for k in
                                                    ['reconstruction', 'transform', 'scene',
                                                     'hands', 'vertices', 'rgb', 'depth']}),
