@@ -79,8 +79,8 @@ class ActionRecognition(Network.node):
             self.last_n_actions.append(best_action)
 
             # BEFORE it was considering an action only all the n detected action was that action
-            if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
-                elements["action"] = best_action
+            # if all([elem == self.last_n_actions[-1] for elem in self.last_n_actions]):
+                # elements["action"] = best_action
             # NOW it takes the action higher frequency in last n frames
             # max_f = 0
             # for i in self.last_n_actions:
@@ -90,6 +90,10 @@ class ActionRecognition(Network.node):
             #         best_index = i
             # elements["action"] = best_index
             # LATEST it detect an action if it appears at least K times over N times
+            for action in list(set(self.last_n_actions)):
+                freq = self.last_n_actions.count(action)
+                if freq > self.consistency_minimum_detection:
+                    elements["action"] = action
 
             
         elements["fps_ar"] = self.fps()
