@@ -120,6 +120,9 @@ class ActionRecognizer:
         import cv2
         import pickle
         import imageio
+
+        if len(self.support_set) == 0:
+            return "Support Set has no actions!"
         
         if self.input_type in ["hybrid", "skeleton"]:  # TODO MAKE IT BETTER
             with open(os.path.join("action_rec", "hpe", "assets", "skeleton_types.pkl"), "rb") as input_file:

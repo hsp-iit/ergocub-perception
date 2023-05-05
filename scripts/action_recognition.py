@@ -11,14 +11,14 @@ setup_logger(**Logging.Logger.Params.to_dict())
 
 
 class ActionRecognition(Network.node):
-    def __init__(self, input_type, window_size, acquisition_time, consistency_window_length, os_score_thr, fs_score_thr):
+    def __init__(self, input_type, consistency_window_length, consistency_minimum_detection, os_score_thr, fs_score_thr):
         super().__init__(**Network.Args.to_dict())
         self.input_type = input_type
-        self.window_size = window_size
         self.fps_s = []
         self.last_poses = []
         self.last_n_actions = []
         self.consistency_window_length = consistency_window_length
+        self.consistency_minimum_detection = consistency_minimum_detection
         self.os_score_thr = os_score_thr
         self.fs_score_thr = fs_score_thr
         self.ar = None
@@ -89,15 +89,17 @@ class ActionRecognition(Network.node):
             #         max_f = freq
             #         best_index = i
             # elements["action"] = best_index
+            # LATEST it detect an action if it appears at least K times over N times
+
+            
         elements["fps_ar"] = self.fps()
         return elements
 
 
 if __name__ == "__main__":
     m = ActionRecognition(input_type=AR.Main.input_type,
-                          window_size=AR.Main.window_size,
-                          acquisition_time=AR.Main.acquisition_time,
                           consistency_window_length=AR.Main.consistency_window_length,
+                          consistency_minimum_detection=AR.Main.consistency_minimum_detection,
                           os_score_thr=AR.Main.os_score_thr,
                           fs_score_thr=AR.Main.fs_score_thr)
     m.run()

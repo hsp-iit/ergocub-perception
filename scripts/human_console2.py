@@ -69,7 +69,6 @@ class HumanConsole(Network.node):
         self.lay_final = [[sg.Column(self.lay_left),
                           sg.VerticalSeparator(),
                           sg.Column(self.lay_right)]]
-        print(spawn_location)
         if spawn_location is not None:
             self.window = sg.Window('Few-Shot Console', self.lay_final, location=spawn_location)
         else:
@@ -107,6 +106,9 @@ class HumanConsole(Network.node):
         if self.log not in Signals:
             if self.log is not None and self.log != ' ':
                 self.window["log"].update(self.log)
+
+            if 'SUPPORT_SET' in self.log:
+                raise SSException("Loading new support set gif")
 
         # REMOVE ACTION
         if "DELETE" in event:

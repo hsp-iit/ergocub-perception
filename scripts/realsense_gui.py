@@ -26,7 +26,7 @@ sg.set_options(font=('Helvetica', 12))
 # Define the layout of the interface
 layout = [
     [sg.Text('Exposure', size=(10, 1)),
-     sg.Slider(range=(0, 2), resolution=0.01, default_value=50, orientation='h', size=(20, 15), key='exposure_sl',
+     sg.Slider(range=(0, 4), resolution=0.01, default_value=50, orientation='h', size=(20, 15), key='exposure_sl',
                enable_events=True,
                border_width=0), sg.Spin(values=[i for i in range(1000)], initial_value=50, size=(8, 4),
                                         enable_events=True, key="exposure_tb")],

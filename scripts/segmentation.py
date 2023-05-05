@@ -99,6 +99,7 @@ class Segmentation(Network.node):
             print(output['obj_center'])
 
         else:
+            print("No camera pose! Giving default values...")
             self.write('to_rpc', {'obj_distance': int(distance), 'obj_center':  np.full(3, 0.3)})
         self.write('to_shape_completion', {'segmented_pc': segmented_pc, 'rgb': rgb, 'depth': data['depth']})
 
