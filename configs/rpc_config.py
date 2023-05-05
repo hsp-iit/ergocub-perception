@@ -14,10 +14,12 @@ class Network(BaseConfig):
 
     class Args:
         in_queues = {
-            'from_segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_rpc', blocking=True),
-            'from_grasp_detection': PyQueue(ip="localhost", port=50000, queue_name='gd_to_rpc', blocking=True),
-            'focus_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='focus_to_rpc', blocking=True),
-            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', blocking=True),
+            'from_segmentation': PyQueue(ip="localhost", port=50000, queue_name='seg_to_rpc', blocking=False, read_format={"obj_distance": Signals.USE_LATEST,
+                                                                                                                          "obj_center": Signals.USE_LATEST}),
+            'from_grasp_detection': PyQueue(ip="localhost", port=50000, queue_name='gd_to_rpc', blocking=False, read_format={"hands": Signals.USE_LATEST}),
+            'focus_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='focus_to_rpc', blocking=False, read_format={"focus": Signals.USE_LATEST,
+                                                                                                                        "face_point": Signals.USE_LATEST}),
+            'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', blocking=False, read_format={"action": Signals.USE_LATEST}),
         }
         
 class RPC:

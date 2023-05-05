@@ -159,7 +159,10 @@ class Grasping(Network.node):
             box = self.ransac(reconstruction @ flip_z, RANSAC.Args.tolerance, 
                               RANSAC.Args.iterations, num_planes=6)
             # box, _ = self.rs_tracker(box, reconstruction @ flip_z)
-            poses = self.grasp_detector(box)
+            if box is not None:
+                poses = self.grasp_detector(box)
+            else:
+                poses = None
         except ValueError as e:
             poses = None
             logger.warning(repr(e))

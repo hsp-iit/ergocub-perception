@@ -5,6 +5,7 @@ from configs.human_console_config import Logging, Network
 import PySimpleGUI as sg
 import numpy as np
 import time
+import cv2
 
 
 sg.theme('DarkTeal9')
@@ -20,7 +21,7 @@ class SSException(Exception):
 @logger.catch(reraise=True)
 class HumanConsole(Network.node):
 
-    def __init__(self):
+    def __init__(self, spawn_location=None):
         super().__init__(**Network.Args.to_dict())
         self.acquisition_time = 2
         self.values = None
@@ -51,16 +52,27 @@ class HumanConsole(Network.node):
         self.lay_log = [[sg.Text("log", key="log")]]
         self.lay_add = [[sg.Input('', enable_events=True, key='TO_LEARN', font=('Arial Bold', 20), expand_x=True, justification='left'), sg.Button("Add action", key="ADD")]]
         self.lay_debug = [[sg.Button("Debug", key=f"DEBUG")]]
-        self.lay_io = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),))],
-                        [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),))]]
-        self.lay_final = [[sg.Column(self.lay_actions)],
+        self.lay_io = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),),
+                                                                                                           initial_folder="./action_rec/ar/saved")],
+                        [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),),
+                                                                                                            initial_folder="./action_rec/ar/saved")]]
+        self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET")]]
+
+        self.lay_left = [[sg.Column(self.lay_actions)],
                         [sg.Column(self.lay_thrs)],
                         [sg.Column(self.lay_log)],
                         [sg.Column(self.lay_add)],
                         [sg.Column(self.lay_debug)],
+                        [sg.HorizontalSeparator()],
                         [sg.Column(self.lay_io)]]
-        self.window = sg.Window('Few-Shot Console', self.lay_final)
-
+        self.lay_right = [[sg.Column(self.lay_support, scrollable=True,  vertical_scroll_only=True)]]
+        self.lay_final = [[sg.Column(self.lay_left),
+                          sg.VerticalSeparator(),
+                          sg.Column(self.lay_right)]]
+        if spawn_location is not None:
+            self.window = sg.Window('Few-Shot Console', self.lay_final, location=spawn_location)
+        else:
+            self.window = sg.Window('Few-Shot Console', self.lay_final)
     def loop(self, data):
         # EXIT IF NECESSARY
         event, val = self.window.read(timeout=10)
@@ -94,6 +106,9 @@ class HumanConsole(Network.node):
         if self.log not in Signals:
             if self.log is not None and self.log != ' ':
                 self.window["log"].update(self.log)
+
+            if 'SUPPORT_SET' in self.log:
+                raise SSException("Loading new support set gif")
 
         # REMOVE ACTION
         if "DELETE" in event:
@@ -136,7 +151,11 @@ class HumanConsole(Network.node):
                 self.write("console_to_ar", {"command": ("fs-thr", val['FS-THR']/100)})
             if val['OS-THR'] != self.last_os_thr:
                 self.last_os_thr = val['OS-THR']
-                self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)})
+                self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)}) 
+        
+        # UPDATE SUPPORT SET
+        self.window["SUPPORT_SET"].UpdateAnimation("SUPPORT_SET.gif", time_between_frames=100)
+
 
     def add_action(self, action_name):
         now = time.time()
@@ -180,11 +199,13 @@ class HumanConsole(Network.node):
 
 
 if __name__ == "__main__":
+    loc = None
     while True:
         try:
-            h = HumanConsole()
+            h = HumanConsole(spawn_location=loc)
             h.run()
         except SSException as e:
+            loc = h.window.current_location(more_accurate=True)
             h.window.close()
             print(e)
             continue

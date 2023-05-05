@@ -123,6 +123,13 @@ tmux select-pane -T "Human Console"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/human_console2.py"
 
+tmux split-window -h -t $TMUX_NAME
+
+# REALSENSE GUI
+tmux select-pane -T "RealSense GUI"
+tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
+tmux send-keys -t $TMUX_NAME "python scripts/realsense_gui.py"
+
 tmux select-layout -t $TMUX_NAME tiled
 tmux new-window -t $TMUX_NAME
 tmux rename-window -t $TMUX_NAME communication
@@ -181,6 +188,7 @@ tmux split-window -h -t $TMUX_NAME
 tmux select-pane -T "RPC Server"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/rpc_server.py" Enter
+tmux split-window -h -t $TMUX_NAME
 
 tmux select-layout -t $TMUX_NAME tiled
 # tmux new-window -t $TMUX_NAME

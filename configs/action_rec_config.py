@@ -42,7 +42,7 @@ class Network(BaseConfig):
             'human_console_visualizer': PyQueue(ip="localhost", port=50000, queue_name='human_console_visualizer',
                                                 write_format={'fps_ar': Signals.NOT_OBSERVED, 'actions':
                                                     Signals.NOT_OBSERVED, 'is_true': Signals.NOT_OBSERVED,
-                                                              'log': Signals.NOT_OBSERVED}),
+                                                              'log': Signals.USE_LATEST}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'fps_ar': Signals.NOT_OBSERVED, 'action': Signals.NOT_OBSERVED}),
 
@@ -82,8 +82,8 @@ class AR(BaseConfig):
 
     class Main:
         input_type = 'skeleton'
-        window_size = 4
         acquisition_time = 3
-        consistency_window_length = 4
+        consistency_window_length = 16
+        consistency_minimum_detection = 12
         os_score_thr = 0.5
         fs_score_thr = 0.5
