@@ -29,10 +29,10 @@ class Network(BaseConfig):
                                local_port_name='/Segmentation/depthImage:i',
                                data_type='depth', read_format='depth', read_default=Signals.USE_LATEST, blocking=False),
             'segmentation_in': PyQueue(ip="localhost", port=50000, queue_name='segmentation_in', blocking=False),
-            'from_pose_streamer': YarpQueue(remote_port_name='/realsense-holder-publisher/pose:o',
+            'from_pose_streamer': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',  # realsense-holder-publisher
                                             local_port_name='/VisualPerception/Segmentation/camera_pose:i',
                                             data_type='list', read_format='camera_pose',
-                                            read_default=Signals.MISSING_VALUE, blocking=True),
+                                            read_default=Signals.MISSING_VALUE, blocking=False),
         }
 
         out_queues = {
