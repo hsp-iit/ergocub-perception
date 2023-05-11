@@ -34,7 +34,7 @@ class Network(BaseConfig):
         }
 
         out_queues = {
-            'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='gd_to_rpc', write_format={'hands': np.full([4, 4, 2], -1.)}),
+            'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='gd_to_rpc', write_format={'hands_root_frame': np.full([4, 4, 2], -1.)}),
             
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={k: Signals.NOT_OBSERVED for k in ['hands', 'fps_od', 'obj_distance']}),
