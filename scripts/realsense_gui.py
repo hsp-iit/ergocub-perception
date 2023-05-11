@@ -4,9 +4,9 @@ from yarp import IFrameGrabberControls
 
 props = yarp.Property()
 props.put('device', 'RGBDSensorClient')
-props.put('localImagePort', '/RSGui/rgbImage:i')
-props.put('localDepthPort', '/RSGui/depthImage:i')
-props.put('localRpcPort', '/RSGui/rpc:i')
+props.put('localImagePort', '/RealsenseGUI/rgbImage:i')
+props.put('localDepthPort', '/RealsenseGUI/depthImage:i')
+props.put('localRpcPort', '/RealsenseGUI/rpc:i')
 
 props.put('remoteImagePort', '/depthCamera/rgbImage:o')
 props.put('remoteDepthPort', '/depthCamera/depthImage:o')
@@ -14,8 +14,8 @@ props.put('remoteRpcPort', '/depthCamera/rpc:i')
 
 driver = yarp.PolyDriver(props)
 
-yarp.Network.disconnect('/depthCamera/rgbImage:o', '/RSGui/rgbImage:i')
-yarp.Network.disconnect('/depthCamera/depthImage:o', '/RSGui/depthImage:i')
+yarp.Network.disconnect('/depthCamera/rgbImage:o', '/RealsenseGUI/rgbImage:i')
+yarp.Network.disconnect('/depthCamera/depthImage:o', '/RealsenseGUI/depthImage:i')
 
 iface = driver.viewIFrameGrabberControls()
 
