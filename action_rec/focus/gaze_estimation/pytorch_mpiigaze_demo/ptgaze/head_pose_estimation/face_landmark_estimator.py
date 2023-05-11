@@ -36,7 +36,7 @@ class LandmarkEstimator:
                 max_num_faces=config.face_detector.mediapipe_max_num_faces,
                 static_image_mode=config.face_detector.
                 mediapipe_static_image_mode,
-                min_detection_confidence=0.5, min_tracking_confidence=0.5)
+                min_detection_confidence=0.2, min_tracking_confidence=0.2)
         else:
             raise ValueError
 

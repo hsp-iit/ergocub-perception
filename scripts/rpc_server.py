@@ -24,7 +24,8 @@ class eCubPerceptionServer(eCubPerceptionInterface):
 
 
     def get_poses(self):
-        hands = self.asd.read('from_grasp_detection')['hands']
+        hands = self.asd.read('from_grasp_detection')['hands_root_frame']
+        print(hands)
         poses = []
 
         for h in range(2):
