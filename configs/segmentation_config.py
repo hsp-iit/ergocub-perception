@@ -32,12 +32,12 @@ class Network(BaseConfig):
             'from_pose_streamer': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',  # realsense-holder-publisher
                                             local_port_name='/VisualPerception/Segmentation/camera_pose:i',
                                             data_type='list', read_format='camera_pose',
-                                            read_default=Signals.MISSING_VALUE, blocking=False),
+                                            read_default=Signals.MISSING_VALUE, blocking=True),
         }
 
         out_queues = {
             'to_shape_completion': PyQueue(ip="localhost", port=50000, queue_name='seg_to_sc',
-                                           write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc', 'rgb', 'depth']}),
+                                           write_format={k: Signals.NOT_OBSERVED for k in ['segmented_pc', 'rgb', 'depth', 'camera_pose']}),
             
             'to_rpc': PyQueue(ip="localhost", port=50000, queue_name='seg_to_rpc', write_format={'obj_distance': -1,
                                                                                                  'obj_center': np.full(3, -1.)}),

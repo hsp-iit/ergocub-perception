@@ -58,7 +58,7 @@ class TrTRansac:
             scores[parallel] = 0
 
 
-            # Check that we have actually dound planes
+            # Check that we have actually found planes
             if np.sum(scores) != 0:
                 trt_plane = planes[np.argmax(scores)]
 
@@ -74,8 +74,10 @@ class TrTRansac:
 
                 new_points = copy.deepcopy(aux_points[plane_points_idx])
                 res_points.append(new_points)
-
-            aux_points = aux_points[~plane_points_idx]
+            try:
+                aux_points = aux_points[~plane_points_idx]
+            except IndexError as e:
+                return None
 
         # Technically they are already normalized but since the engine can approximate values
         # to run faster, we normalize them again.

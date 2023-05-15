@@ -61,11 +61,6 @@ class Grasping(Network.node):
         if segmented_pc in Signals:
             return {}
 
-        # Blocking should be fine as the camera pose streamer is much faster than this module
-        if 'camera_pose' in data:
-            camera_pose = data['camera_pose']
-            camera_pose = pose_to_matrix(camera_pose)
-
         # Setup transformations
         R = Rotation.from_euler('xyz', [180, 0, 0], degrees=True).as_matrix()
         flip_z = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]])
@@ -180,9 +175,31 @@ class Grasping(Network.node):
 
         output['hands'] = hands_camera_frame
 
-        if 'camera_pose' in data:
-            hands_root_frame = np.stack([camera_pose @ compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
-                                         camera_pose @ compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
+        camera_pose = data['camera_pose']
+        if camera_pose not in Signals:
+            right_hand = compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]).T
+            left_hand = compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R]).T
+            right_hand = camera_pose @ right_hand
+            left_hand = camera_pose @ left_hand
+            
+            #    right_hand = np.array([[1, 0, 0, 0.35], 
+            #                        [0, 1, 0, -0.2], 
+            #                        [0, 0, 1, 0.35],
+            #                        [0, 0, 0, 1]])
+            
+            # left_hand = np.array([[1, 0, 0, 0.35], 
+            #                        [0, 1, 0, 0.2], 
+            #                        [0, 0, 1, 0.35],
+            #                        [0, 0, 0, 1]])
+            
+            # import open3d as o3d
+            # o3d.visualization.draw([o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5),
+            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(camera_pose[:3, :3], center=(0, 0, 0)).translate(camera_pose[:-1, 3]),
+            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(left_hand[:3, :3], center=(0, 0, 0)).translate(left_hand[:-1, 3]),
+            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(right_hand[:3, :3], center=(0, 0, 0)).translate(right_hand[:-1, 3])])
+            
+            hands_root_frame = np.stack([right_hand,
+                                         left_hand], axis=-1)
             output['hands_root_frame'] = hands_root_frame
         # hands_normalized = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis]]),
         #                              compose_transformations([poses[3].T, poses[2][np.newaxis]])], axis=-1)

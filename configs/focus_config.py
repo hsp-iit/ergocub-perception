@@ -30,7 +30,7 @@ class Network(BaseConfig):
             'from_pose_streamer': YarpQueue(remote_port_name='/ergocub-rs-pose/pose:o',  # realsense-holder-publisher
                                             local_port_name='/VisualPerception/FocusDetection/camera_pose:i',
                                             data_type='list', read_format='camera_pose',
-                                            read_default=Signals.MISSING_VALUE, blocking=False),
+                                            read_default=Signals.MISSING_VALUE, blocking=True),
         }
 
         out_queues = {

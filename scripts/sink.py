@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from loguru import logger
 from scipy.spatial.transform import Rotation
-
+import copy
 from utils.concurrency.utils.signals import Signals
 
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
@@ -49,7 +49,7 @@ class Sink(Network.node):
         rgb = data.get('rgb', None)
         if rgb is not None:
             self.img = data['rgb']
-        img = self.img
+        img = copy.deepcopy(self.img)
 
         # GRASPING #####################################################################################################
         mask = data.get('mask', Signals.MISSING_VALUE)
