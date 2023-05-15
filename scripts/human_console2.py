@@ -40,7 +40,9 @@ class HumanConsole(Network.node):
         self.log = ""
         self.input_type = "skeleton"
         self.window_size = 16
-        self.lay_actions = [[sg.In(size=(3,1), key=f'DELETEID-{key}'),
+        self.lay_actions = [[
+                            # sg.In(size=(3,1), key=f'DELETEID-{key}'),
+                             sg.Listbox(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}'),  # TODO TEST
                          sg.Button("Delete", key=f"DELETE-{key}"),
                          sg.Button("Add", key=f"AUG-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),
@@ -113,11 +115,20 @@ class HumanConsole(Network.node):
         # REMOVE ACTION
         if "DELETE" in event:
             action = event.split('-')[1]
-            id_to_remove = val[f"DELETEID-{action}"]
-            if id_to_remove == "":
-                self.write("console_to_ar", {"command": ("remove_action", action)})
+            if len(val[f"DELETEID-{action}"]) == 0:
+                self.window["log"].update("Please select all or the id of the action to remove")
             else:
-                self.write("console_to_ar", {"command": ("remove_example", action, int(id_to_remove))})
+                id_to_remove = val[f"DELETEID-{action}"][0]
+                if id_to_remove == "all":
+                    self.write("console_to_ar", {"command": ("remove_action", action)})
+                else:
+                    try:
+                        self.write("console_to_ar", {"command": ("remove_example", action, int(id_to_remove))})
+                    except TypeError:
+                        print(val)
+                        print(id_to_remove)
+                        print(type(id_to_remove))
+                        self.window["log"].update("Only integer values are accepted")
 
         # ADD ACTION
         if "ADD" in event:
