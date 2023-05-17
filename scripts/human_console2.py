@@ -42,7 +42,7 @@ class HumanConsole(Network.node):
         self.window_size = 16
         self.lay_actions = [[
                             # sg.In(size=(3,1), key=f'DELETEID-{key}'),
-                             sg.Listbox(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}'),  # TODO TEST
+                             sg.Listbox(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}', default_values="all"),  # TODO TEST
                          sg.Button("Delete", key=f"DELETE-{key}"),
                          sg.Button("Add", key=f"AUG-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),

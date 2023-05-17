@@ -91,6 +91,8 @@ class ActionRecognizer:
         try:
             for key in self.support_set[flag].keys():
                 self.support_set[flag][key].pop(ss_id)
+                if len(self.support_set[flag][key]) == 0:
+                    self.support_set.pop(flag)
         except IndexError as e:
             return f"Cannot remove {ss_id} from action {flag}"
         return "Example {} of action {} removed".format(flag, ss_id)
