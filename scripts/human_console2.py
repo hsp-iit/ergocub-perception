@@ -57,7 +57,7 @@ class HumanConsole(Network.node):
                        [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
         self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
 
-        self.lay_left = [[sg.Text("Scores"), sg.HorizontalSeparator()],
+        self.lay_left = [[sg.HorizontalSeparator(), sg.Text("Scores"), sg.HorizontalSeparator()],
                          [sg.Text('Few Shot', size=(20, 1)), sg.Text('Open Set', size=(20, 1))],
                          [sg.Column(self.lay_actions)],
                          [sg.Text("Thresholds"), sg.HorizontalSeparator()],
