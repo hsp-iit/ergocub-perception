@@ -41,33 +41,31 @@ class HumanConsole(Network.node):
         self.input_type = "skeleton"
         self.window_size = 16
         self.lay_actions = [[
-                         sg.Button("Delete", key=f"DELETE-{key}"),
-                         sg.Combo(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}', default_value="all", readonly=True),
-                         sg.VerticalSeparator(),
-                         sg.Button("Add", key=f"AUG-{key}"),
-                         sg.VerticalSeparator(),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"OS-{key}"),
                          sg.Text(key, key="action")] 
                          for key in self.values]
-        self.lay_thrs = [[sg.Text('FS threshold'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='FS-THR')],
-                         [sg.Text('OS threshold'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='OS-THR')]]
-        self.lay_log = [[sg.Text("log", key="log")]]
-        self.lay_add = [[sg.Input('', enable_events=True, key='TO_LEARN', font=('Arial Bold', 20), expand_x=True, justification='left'), sg.Button("Add action", key="ADD")]]
-        self.lay_debug = [[sg.Button("Debug", key=f"DEBUG")]]
-        self.lay_io = [[sg.Text('Load'), sg.In(size=(25,1), enable_events=True, key='LOAD'), sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),),
-                                                                                                           initial_folder="./action_rec/ar/saved")],
-                        [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),),
-                                                                                                            initial_folder="./action_rec/ar/saved")]]
+        self.lay_thrs = [[sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='FS-THR'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='OS-THR')]]
+        self.lay_commands = [[sg.Button("Remove", key=f"DELETE", size=(6, 1)),
+                              sg.Combo(self.values, size=(20,1), enable_events=False, key=f'DELETEACTION', readonly=True),
+                              sg.Combo(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID', readonly=True)],
+                             [sg.Button("Add", key=f"ADD", size=(6, 1)),
+                              sg.Combo(self.values, size=(20,1), enable_events=False, key=f'ADDACTION')],
+                             [sg.Button("Debug", key=f"DEBUG", size=(6, 1))],
+                             [sg.Text("", key="log")]]
+        self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
+                       [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
         self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
 
-        self.lay_left = [[sg.Column(self.lay_actions)],
-                        [sg.Column(self.lay_thrs)],
-                        [sg.Column(self.lay_log)],
-                        [sg.Column(self.lay_add)],
-                        [sg.Column(self.lay_debug)],
-                        [sg.HorizontalSeparator()],
-                        [sg.Column(self.lay_io)]]
+        self.lay_left = [[sg.Text("Scores"), sg.HorizontalSeparator()],
+                         [sg.Text('Few Shot', size=(20, 1)), sg.Text('Open Set', size=(20, 1))],
+                         [sg.Column(self.lay_actions)],
+                         [sg.Text("Thresholds"), sg.HorizontalSeparator()],
+                         [sg.Column(self.lay_thrs)],
+                         [sg.Text("SS Modifiers"), sg.HorizontalSeparator()],
+                         [sg.Column(self.lay_commands)],
+                         [sg.Text("SS I/O"), sg.HorizontalSeparator()],
+                         [sg.Column(self.lay_io)]]
         self.lay_right = [[sg.Column(self.lay_support, scrollable=True,  vertical_scroll_only=True, expand_x=True, expand_y=True)]]
         self.lay_final = [[sg.Column(self.lay_left, expand_x=True, expand_y=True),
                           sg.VerticalSeparator(),
@@ -115,31 +113,25 @@ class HumanConsole(Network.node):
 
         # REMOVE ACTION
         if "DELETE" in event:
-            action = event.split('-')[1]
-            if len(val[f"DELETEID-{action}"]) == 0:
+            action = val["DELETEACTION"]
+            id_to_remove = val["DELETEID"]
+            if len(id_to_remove) == 0:
                 self.window["log"].update("Please select all or the id of the action to remove")
+            if len(action) == 0:
+                self.window["log"].update("Please select the action")
             else:
-                id_to_remove = val[f"DELETEID-{action}"]
                 if id_to_remove == "all":
                     self.write("console_to_ar", {"command": ("remove_action", action)})
                 else:
-                    try:
-                        self.write("console_to_ar", {"command": ("remove_example", action, int(id_to_remove))})
-                    except TypeError:
-                        print(val)
-                        print(id_to_remove)
-                        print(type(id_to_remove))
-                        self.window["log"].update("Only integer values are accepted")
+                    self.write("console_to_ar", {"command": ("remove_example", action, int(id_to_remove))})
 
         # ADD ACTION
         if "ADD" in event:
-            action = val["TO_LEARN"]
-            self.add_action(action)
-
-        # AUG ACTION
-        if "AUG" in event:
-            action = event.split('-')[1]
-            self.add_action(action)
+            action = val["ADDACTION"]
+            if len(action) == 0:
+                self.window["log"].update("Please select an existing action or write a new one")
+            else:
+                self.add_action(action)
 
         # DEBUG
         if "DEBUG" in event:
