@@ -41,10 +41,11 @@ class HumanConsole(Network.node):
         self.input_type = "skeleton"
         self.window_size = 16
         self.lay_actions = [[
-                            # sg.In(size=(3,1), key=f'DELETEID-{key}'),
-                             sg.Listbox(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}', default_values="all"),  # TODO TEST
                          sg.Button("Delete", key=f"DELETE-{key}"),
+                         sg.Combo(["all", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], size=(3,1), enable_events=False, key=f'DELETEID-{key}', default_value="all", readonly=True),
+                         sg.VerticalSeparator(),
                          sg.Button("Add", key=f"AUG-{key}"),
+                         sg.VerticalSeparator(),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"OS-{key}"),
                          sg.Text(key, key="action")] 
@@ -58,7 +59,7 @@ class HumanConsole(Network.node):
                                                                                                            initial_folder="./action_rec/ar/saved")],
                         [sg.Text('Save'), sg.In(size=(25,1), enable_events=True, key='SAVE'), sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),),
                                                                                                             initial_folder="./action_rec/ar/saved")]]
-        self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET")]]
+        self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
 
         self.lay_left = [[sg.Column(self.lay_actions)],
                         [sg.Column(self.lay_thrs)],
@@ -67,14 +68,14 @@ class HumanConsole(Network.node):
                         [sg.Column(self.lay_debug)],
                         [sg.HorizontalSeparator()],
                         [sg.Column(self.lay_io)]]
-        self.lay_right = [[sg.Column(self.lay_support, scrollable=True,  vertical_scroll_only=True)]]
-        self.lay_final = [[sg.Column(self.lay_left),
+        self.lay_right = [[sg.Column(self.lay_support, scrollable=True,  vertical_scroll_only=True, expand_x=True, expand_y=True)]]
+        self.lay_final = [[sg.Column(self.lay_left, expand_x=True, expand_y=True),
                           sg.VerticalSeparator(),
-                          sg.Column(self.lay_right)]]
+                          sg.Column(self.lay_right, expand_x=True, expand_y=True)]]
         if spawn_location is not None:
-            self.window = sg.Window('Few-Shot Console', self.lay_final, location=spawn_location)
+            self.window = sg.Window('Few-Shot Console', self.lay_final, location=spawn_location, resizable=True, finalize=True)
         else:
-            self.window = sg.Window('Few-Shot Console', self.lay_final)
+            self.window = sg.Window('Few-Shot Console', self.lay_final, resizable=True, finalize=True)
     def loop(self, data):
         # EXIT IF NECESSARY
         event, val = self.window.read(timeout=10)
@@ -118,7 +119,7 @@ class HumanConsole(Network.node):
             if len(val[f"DELETEID-{action}"]) == 0:
                 self.window["log"].update("Please select all or the id of the action to remove")
             else:
-                id_to_remove = val[f"DELETEID-{action}"][0]
+                id_to_remove = val[f"DELETEID-{action}"]
                 if id_to_remove == "all":
                     self.write("console_to_ar", {"command": ("remove_action", action)})
                 else:
