@@ -43,7 +43,7 @@ class HumanConsole(Network.node):
         self.lay_actions = [[
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"FS-{key}"),
                          sg.ProgressBar(1, orientation='h', size=(20, 20), key=f"OS-{key}"),
-                         sg.Text(key, key="action")] 
+                         sg.Text(key, key=f"ACTION-{key}")] 
                          for key in self.values]
         self.lay_thrs = [[sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='FS-THR'), sg.Slider(range=(0, 100), size=(20, 20), orientation='h', key='OS-THR')]]
         self.lay_commands = [[sg.Button("Remove", key=f"DELETE", size=(6, 1)),
@@ -53,11 +53,11 @@ class HumanConsole(Network.node):
                               sg.Combo(self.values, size=(20,1), enable_events=False, key=f'ADDACTION')],
                              [sg.Button("Debug", key=f"DEBUG", size=(6, 1))],
                              [sg.Text("", key="log")]]
-        self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
-                       [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
+        self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), key="LOAD", initial_folder="./action_rec/ar/saved", enable_events=True), 
+                        sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), key="SAVE", initial_folder="./action_rec/ar/saved", enable_events=True)]]
         self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
 
-        self.lay_left = [[sg.HorizontalSeparator(), sg.Text("Scores"), sg.HorizontalSeparator()],
+        self.lay_left = [[sg.Text("Scores"), sg.HorizontalSeparator()],
                          [sg.Text('Few Shot', size=(20, 1)), sg.Text('Open Set', size=(20, 1))],
                          [sg.Column(self.lay_actions)],
                          [sg.Text("Thresholds"), sg.HorizontalSeparator()],
@@ -97,8 +97,14 @@ class HumanConsole(Network.node):
                     self.window[f"FS-{key}"].update(self.actions[key])
                     if key == best_action:
                         self.window[f"OS-{key}"].update(self.is_true[0])
+                        if self.actions[best_action] > val['FS-THR']/100 and self.is_true[0] > val['OS-THR']/100:
+                            self.window[f"ACTION-{best_action}"].update(text_color="red")
+                        else:
+                            self.window[f"ACTION-{best_action}"].update(text_color="white")
                     else:
-                        self.window[f"OS-{key}"].update(0.)                   
+                        self.window[f"OS-{key}"].update(0.)
+                        self.window[f"ACTION-{key}"].update(text_color="white")
+
 
         # LOG
         log = data.get('log', Signals.MISSING_VALUE)
@@ -131,7 +137,9 @@ class HumanConsole(Network.node):
             if len(action) == 0:
                 self.window["log"].update("Please select an existing action or write a new one")
             else:
+                [self.window[key].update(disabled=True) for key in ["LOAD", "DELETE", "DEBUG", "DELETEACTION", "ADDACTION", "DELETEID", "OS-THR", "FS-THR", "ADD"]]
                 self.add_action(action)
+                [self.window[key].update(disabled=False) for key in ["SAVE", "DELETE", "DEBUG", "DELETEACTION", "ADDACTION", "DELETEID", "OS-THR", "FS-THR", "ADD"]]
 
         # DEBUG
         if "DEBUG" in event:
