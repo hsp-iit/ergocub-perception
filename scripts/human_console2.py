@@ -53,8 +53,8 @@ class HumanConsole(Network.node):
                               sg.Combo(self.values, size=(20,1), enable_events=False, key=f'ADDACTION')],
                              [sg.Button("Debug", key=f"DEBUG", size=(6, 1))],
                              [sg.Text("", key="log")]]
-        self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), key="LOAD", initial_folder="./action_rec/ar/saved", enable_events=True), 
-                        sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), key="SAVE", initial_folder="./action_rec/ar/saved", enable_events=True)]]
+        self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
+                       [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
         self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
 
         self.lay_left = [[sg.Text("Scores"), sg.HorizontalSeparator()],
