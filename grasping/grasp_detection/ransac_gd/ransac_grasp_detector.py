@@ -16,7 +16,7 @@ from ...utils.misc import plot_line
 
 class RansacGraspDetectorTRT:
 
-    def __call__(self, box):
+    def __call__(self, box, align=None):
         """
         Get a complete point cloud and return the point cloud with good grasping spot
         Args:
@@ -44,13 +44,16 @@ class RansacGraspDetectorTRT:
             return None
 
         # Rotation
-        align_hand = True  # Hand aligned with the front normal of the box
+        align_hand = False  # Hand aligned with the front normal of the box
 
         right_normal, front_normal = normals[[right, front]]
         x_axis, y_axis, z_axis = np.eye(3)
 
         cst1 = {'from': z_axis, 'to': -right_normal}
-        cst2 = {'from': x_axis, 'to': -front_normal} if align_hand else {'from': y_axis, 'to': -y_axis}
+        if align is not None:
+            cst2 = {'from': y_axis, 'to': align}
+        else:
+            cst2 = {'from': y_axis, 'to': -y_axis}
 
         # the z axis is rotated to the normal of the left plane
         rotation = origin2pose([cst1, cst2])

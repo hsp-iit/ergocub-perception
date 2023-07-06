@@ -149,11 +149,11 @@ def project_hands(rgb, right_t, left_t):
 
     res = copy.deepcopy(rgb)
     for i in range(3):
-        res = cv2.line(res, points2d[0], points2d[i + 1], color=np.eye(3)[i] * 255, thickness=10)
+        res = cv2.line(res, points2d[0], points2d[0] + (((points2d[i + 1] - points2d[0]) / np.linalg.norm(points2d[i + 1] - points2d[0])) * 100).astype(int), color=np.eye(3)[i] * 255, thickness=10)
 
     points2d = project_pc(left_hand)
     for i in range(3):
-        res = cv2.line(res, points2d[0], points2d[i + 1], color=np.eye(3)[i] * 255, thickness=10)
+        res = cv2.line(res, points2d[0], points2d[0] + (((points2d[i + 1] - points2d[0]) / np.linalg.norm(points2d[i + 1] - points2d[0])) * 100).astype(int), color=np.eye(3)[i] * 255, thickness=10)
 
     res = cv2.addWeighted(rgb, 0.7, res, 0.3, 0)
     # res = cv2.cvtColor(res, cv2.COLOR_RGB2BGR)

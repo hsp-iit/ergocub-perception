@@ -55,7 +55,7 @@ class Grasping(Network.node):
     def loop(self, data):
         output = data
 
-        self.timer.start()
+        self.timer.start()        
         # Input
         segmented_pc = data['segmented_pc']
         if segmented_pc in Signals:
@@ -100,7 +100,8 @@ class Grasping(Network.node):
         #   so we don't recompute everything and just return the old outputs
         if not np.all(aux == size_pc):
             logger.info('Using previous iteration output', recurring=True)
-            output = self.prev_output
+            if self.prev_output is not None:
+                output = self.prev_output
             output['rgb'] = data['rgb']
             output['depth'] = data['depth']
             output['fps_od'] = 1 / self.timer.compute(stop=True)
@@ -110,16 +111,6 @@ class Grasping(Network.node):
         mean = np.mean(size_pc, axis=0)
         var = np.sqrt(np.max(np.sum((size_pc - mean) ** 2, axis=1)))
         
-        
-        # if self.old_mean is not None:
-        #     print(np.linalg.norm(mean - self.old_mean))
-        #     print(np.linalg.norm(var - self.old_var))
-        #     if np.linalg.norm(mean - self.old_mean) < 0.05:
-        #         mean = self.old_mean
-        #     if np.linalg.norm(var - self.old_var) < 0.05:
-        #         var = self.old_var
-            
-        # self.old_mean = mean
         # self.old_var = var
         
         normalized_pc = (size_pc - mean) / (var * 2)
@@ -153,56 +144,61 @@ class Grasping(Network.node):
         try:
             box = self.ransac(reconstruction @ flip_z, RANSAC.Args.tolerance, 
                               RANSAC.Args.iterations, num_planes=6)
-            # box, _ = self.rs_tracker(box, reconstruction @ flip_z)
-            if box is not None:
-                poses = self.grasp_detector(box)
-            else:
-                poses = None
         except ValueError as e:
             poses = None
             logger.warning(repr(e))
-
-        logger.info("Hand poses computed", recurring=True)
-
-        if poses is None:
-            logger.warning('Corrupted reconstruction - check the input point cloud', recurring=True)
+            
+        if box is None:
+            logger.warning('Couldn\'t fit RANSAC planes', recurring=True)
             output['fps_od'] = 1 / self.timer.compute(stop=True)
             self.prev_output = copy.deepcopy(output)
             return output
 
-        hands_camera_frame = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]),
-                          compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])], axis=-1)
+        # if data['camera_pose'] not in Signals:
+        #     poses = self.grasp_detector(box, align=data['camera_pose'][2, :-1])
+        # else:
+        poses = self.grasp_detector(box)
+            
+        if poses is None:
+            logger.warning('Couldn\'t compute grasp poses', recurring=True)
+            output['fps_od'] = 1 / self.timer.compute(stop=True)
+            self.prev_output = copy.deepcopy(output)
+            return output
 
-        output['hands'] = hands_camera_frame
+        logger.info("Hand poses computed", recurring=True)
 
         camera_pose = data['camera_pose']
         if camera_pose not in Signals:
             right_hand = compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R]).T
             left_hand = compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R]).T
-            right_hand = camera_pose @ right_hand
-            left_hand = camera_pose @ left_hand
             
-            #    right_hand = np.array([[1, 0, 0, 0.35], 
-            #                        [0, 1, 0, -0.2], 
-            #                        [0, 0, 1, 0.35],
-            #                        [0, 0, 0, 1]])
-            
-            # left_hand = np.array([[1, 0, 0, 0.35], 
-            #                        [0, 1, 0, 0.2], 
-            #                        [0, 0, 1, 0.35],
-            #                        [0, 0, 0, 1]])
+            right_hand_root = camera_pose @ right_hand @ np.array([[1, 0, 0, 0.05], 
+                                                                   [0, 0, -1, 0], 
+                                                                   [0, 1, 0, 0], 
+                                                                   [0, 0, 0, 1]])
+            left_hand_root = camera_pose @ left_hand @ np.array([[1, 0, 0, 0.05], 
+                                                                 [0, 0, -1, 0], 
+                                                                 [0, 1, 0, 0], 
+                                                                 [0, 0, 0, 1]])
             
             # import open3d as o3d
             # o3d.visualization.draw([o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5),
             # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(camera_pose[:3, :3], center=(0, 0, 0)).translate(camera_pose[:-1, 3]),
-            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(left_hand[:3, :3], center=(0, 0, 0)).translate(left_hand[:-1, 3]),
-            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(right_hand[:3, :3], center=(0, 0, 0)).translate(right_hand[:-1, 3])])
+            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(left_hand_root[:3, :3], center=(0, 0, 0)).translate(left_hand_root[:-1, 3]),
+            # o3d.geometry.TriangleMesh.create_coordinate_frame(origin=[0, 0, 0], size=0.5).rotate(right_hand_root[:3, :3], center=(0, 0, 0)).translate(right_hand_root[:-1, 3])])
             
-            hands_root_frame = np.stack([right_hand,
-                                         left_hand], axis=-1)
+            hands_root_frame = np.stack([right_hand_root,
+                                         left_hand_root], axis=-1)
             output['hands_root_frame'] = hands_root_frame
-        # hands_normalized = np.stack([compose_transformations([poses[1].T, poses[0][np.newaxis]]),
-        #                              compose_transformations([poses[3].T, poses[2][np.newaxis]])], axis=-1)
+        else:
+            
+            right_hand_camera = compose_transformations([poses[1].T, poses[0][np.newaxis] * (var * 2) + mean, R])
+            left_hand_camera = compose_transformations([poses[3].T, poses[2][np.newaxis] * (var * 2) + mean, R])
+            
+            hands_camera_frame = np.stack([right_hand_camera,
+                                           left_hand_camera], axis=-1)
+            
+            output['hands'] = hands_camera_frame
 
         if Logging.debug:
             output['planes'] = poses[4]
