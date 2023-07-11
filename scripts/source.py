@@ -11,7 +11,6 @@ from utils.logging import setup_logger
 setup_logger(level=Logging.level)
 
 
-@logger.catch(reraise=True)
 class Source(Network.node):
     def __init__(self):
         super().__init__(**Network.Args.to_dict())

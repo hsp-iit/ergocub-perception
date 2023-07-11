@@ -18,7 +18,6 @@ from utils.logging import setup_logger
 setup_logger(**Logging.Logger.Args.to_dict())
 
 
-@logger.catch(reraise=True)
 class Recorder(Network.node):
     def __init__(self):
         super().__init__(**Network.Args.to_dict())
