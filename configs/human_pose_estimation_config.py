@@ -1,9 +1,7 @@
 import os
 from logging import INFO
 from action_rec.hpe.hpe import HumanPoseEstimator
-from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.generic_node_fps import GenericNodeFPS
-from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig

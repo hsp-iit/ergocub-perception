@@ -8,7 +8,6 @@ from grasping.segmentation.fcn.fcn_segmentator_trt import FcnSegmentatorTRT
 from grasping.shape_completion.confidence_pcr.decoder import ConfidencePCRDecoder
 from grasping.shape_completion.confidence_pcr.encoder import ConfidencePCRDecoderTRT
 from utils.concurrency.generic_node import GenericNode
-from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig
