@@ -18,9 +18,9 @@ from utils.logging import setup_logger
 import tensorrt as trt
 # https://github.com/NVIDIA/TensorRT/issues/1945
 import torch
-import pycuda.autoinit
 
 from configs.grasping_config import Denoiser, ShapeCompletion, RANSAC, GraspDetection, Network, Logging
+import pycuda.autoinit
 from grasping.grasp_detection.ransac_gd.trt.trt_ransac import TrTRansac, RansacTracker
 
 setup_logger(**Logging.Logger.Params.to_dict())
