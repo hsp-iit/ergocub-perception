@@ -44,7 +44,7 @@ RUN /home/${USER}/mambaforge/bin/mamba create -y -n ergocub \
     cudatoolkit=11.8 einops tqdm opencv matplotlib pyquaternion vispy pysimplegui timm dgl yarp -c rapidsai -c nvidia -c pytorch -c robotology -c dglteam/label/cu118
 
 RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-pyindex nvidia-tensorrt \
-    pycuda open3d omegaconf mediapipe pyrealsense2
+    polygraphy pycuda open3d omegaconf mediapipe pyrealsense2
 
 # # After this you will need the password to run sudo
 RUN sudo mv /etc/sudoers.bak /etc/sudoers
