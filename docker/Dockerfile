@@ -9,9 +9,10 @@ ENV CONDA_MD5=aef279d6baea7f67940f16aad17ebe5f6aac97487c7c03466ff01f4819e5a651
 
 ENV PYTHONDONTWRITEBYTECODE=true
 
-RUN apt update \
-    && apt install --no-install-recommends -y -qq sudo git \
-    && rm -rf /var/lib/apt/lists/*
+RUN ln -fs /usr/share/zoneinfo/Europe/Rome /etc/localtime && \
+    apt update &&\
+    apt install --no-install-recommends -y -qq sudo git cmake && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN addgroup ${USER} \
     && useradd -ms /bin/bash ${USER} -g ${USER} \
@@ -36,18 +37,26 @@ RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends wget 
 
 # # Installing python packages
 # Can't use env.yml because cuda install asks to accept agreement
-RUN sudo ln -fs /usr/share/zoneinfo/Europe/Rome /etc/localtime && \
-    sudo apt update && DEBIAN_FRONTEND=noninteractive sudo apt install ffmpeg libsm6 libxext6 -y
+RUN sudo apt update && DEBIAN_FRONTEND=noninteractive sudo apt install ffmpeg libsm6 libxext6 -y
 
 RUN /home/${USER}/mambaforge/bin/mamba create -y -n ergocub \
     python=3.10 loguru pytorch torchvision pytorch-cuda=11.8 cuml=23.06 \
-    cudatoolkit=11.8 einops tqdm opencv matplotlib pyquaternion vispy pysimplegui timm dgl yarp -c rapidsai -c nvidia -c pytorch -c robotology -c dglteam/label/cu118
+    cudatoolkit=11.8 einops tqdm opencv matplotlib pyquaternion vispy pysimplegui timm dgl swig=4.0.2 ycm-cmake-modules=0.15.1 yarp=3.8.1 -c rapidsai -c nvidia -c pytorch -c robotology -c dglteam/label/cu118
 
-RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-pyindex nvidia-tensorrt \
-    polygraphy pycuda open3d omegaconf mediapipe pyrealsense2
+RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-pyindex && \ 
+    /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-tensorrt polygraphy pycuda open3d omegaconf mediapipe pyrealsense2
+
+RUN echo "mamba activate ergocub" >> /home/${USER}/.bashrc
+
+# Install the RPC Interface
+RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd ergocub-rpc-interfaces && \
+    cd ecub_perception && cd cpp_library && mkdir build && cd build && \
+    PATH="/home/ergocub/mambaforge/envs/ergocub/":$PATH cmake .. && sudo make install && \
+    cd ../../python_library && mkdir build && cd build && \
+    PATH="/home/ergocub/mambaforge/envs/ergocub/bin":$PATH cmake .. && sudo make install
 
 # # After this you will need the password to run sudo
 RUN sudo mv /etc/sudoers.bak /etc/sudoers
-RUN echo "mamba activate ergocub" >> /home/${USER}/.bashrc
+
 
 CMD ["bash"]

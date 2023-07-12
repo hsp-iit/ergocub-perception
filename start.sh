@@ -24,7 +24,7 @@ done
 # Start the container with the right options
 docker run --gpus=all -v "$(pwd)":/home/ergocub/perception -itd --rm \
 --gpus=all \
---env DISPLAY=:0 \
+--env DISPLAY=$DISPLAY \
 --env PYTHONPATH=/home/ergocub/perception \
 --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
 --ipc=host \
