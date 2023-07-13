@@ -1,3 +1,4 @@
+
 FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
 
 ENV USER=ergocub
@@ -40,13 +41,16 @@ RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends wget 
 RUN sudo apt update && DEBIAN_FRONTEND=noninteractive sudo apt install ffmpeg libsm6 libxext6 -y
 
 RUN /home/${USER}/mambaforge/bin/mamba create -y -n ergocub \
-    python=3.10 loguru pytorch torchvision pytorch-cuda=11.8 cuml=23.06 \
-    cudatoolkit=11.8 einops tqdm opencv matplotlib pyquaternion vispy pysimplegui timm dgl swig=4.0.2 ycm-cmake-modules=0.15.1 yarp=3.8.1 -c rapidsai -c nvidia -c pytorch -c robotology -c dglteam/label/cu118
+    python=3.10 loguru cuml=23.06 cudatoolkit=11.8 einops tqdm opencv matplotlib pyquaternion vispy pysimplegui dgl swig=4.0.2 \
+    ycm-cmake-modules=0.15.1 yarp=3.8.1 -c conda-forge -c rapidsai -c nvidia -c pytorch -c dglteam/label/cu118
 
 RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-pyindex && \ 
-    /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-tensorrt polygraphy pycuda open3d omegaconf mediapipe pyrealsense2
+    /home/${USER}/mambaforge/envs/ergocub/bin/pip install nvidia-tensorrt polygraphy pycuda open3d omegaconf mediapipe pyrealsense2 && \
+    /home/${USER}/mambaforge/envs/ergocub/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118 && \
+    /home/${USER}/mambaforge/envs/ergocub/bin/pip install timm
 
 RUN echo "mamba activate ergocub" >> /home/${USER}/.bashrc
+# RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/" >> /home/${USER}/.bashrc
 
 # Install the RPC Interface
 RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd ergocub-rpc-interfaces && \
@@ -54,6 +58,9 @@ RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd er
     PATH="/home/ergocub/mambaforge/envs/ergocub/":$PATH cmake .. && sudo make install && \
     cd ../../python_library && mkdir build && cd build && \
     PATH="/home/ergocub/mambaforge/envs/ergocub/bin":$PATH cmake .. && sudo make install
+
+# Cleanup
+RUN /home/${USER}/mambaforge/bin/mamba clean --all -y
 
 # # After this you will need the password to run sudo
 RUN sudo mv /etc/sudoers.bak /etc/sudoers
