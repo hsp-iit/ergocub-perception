@@ -6,12 +6,12 @@ base_dir = "action_rec"
 # LEGACY
 class FocusModelConfig:
     def __init__(self):
-        self.name = 'resnet18'
+        self.name = 'resnet18'  # 'resnet_preact'  # RESNET PREACT FOR MPIIGaze, resnet18 for ETH-XGaze
 
 
 class FaceDetectorConfig:
     def __init__(self):
-        self.mode = 'mediapipe'
+        self.mode = 'dlib'  # mediapipe
         self.dlib_model_path = "action_rec/focus/gaze_estimation/assets/shape_predictor_68_face_landmarks.dat"
         self.mediapipe_max_num_faces = 1
         self.mediapipe_static_image_mode = False
@@ -32,8 +32,8 @@ class FocusConfig:
         self.face_detector = FaceDetectorConfig()
         self.gaze_estimator = GazeEstimatorConfig()
         self.model = FocusModelConfig()
-        self.mode = 'ETH-XGaze'
-        self.device = 'cuda'
+        self.mode = 'ETH-XGaze'  # 'MPIIGaze'  # 
+        self.device = 'cpu'  # cuda
         self.area_thr = 0.03  # head bounding box must be over this value to be close
         self.close_thr = -0.95  # When close, z value over this thr is considered focus
         self.dist_thr = 0.3  # when distant, roll under this thr is considered focus
