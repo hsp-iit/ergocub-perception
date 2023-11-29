@@ -6,23 +6,23 @@ base_dir = "action_rec"
 # LEGACY
 class FocusModelConfig:
     def __init__(self):
-        self.name = 'resnet18'  # 'resnet_preact'  # RESNET PREACT FOR MPIIGaze, resnet18 for ETH-XGaze
+        self.name = 'resnet18'
 
 
 class FaceDetectorConfig:
     def __init__(self):
-        self.mode = 'dlib'  # mediapipe
-        self.dlib_model_path = "action_rec/focus/gaze_estimation/assets/shape_predictor_68_face_landmarks.dat"
+        self.mode = 'mediapipe'  # dlib
+        # self.dlib_model_path = "action_rec/focus/gaze_estimation/assets/shape_predictor_68_face_landmarks.dat"
         self.mediapipe_max_num_faces = 1
         self.mediapipe_static_image_mode = False
 
 
 class GazeEstimatorConfig:
     def __init__(self):
-        self.camera_params = os.path.join(base_dir, "focus", "gaze_estimation", "assets", "camera_params.yaml")
-        self.normalized_camera_params = os.path.join(base_dir, "focus", "gaze_estimation", "assets", 'eth-xgaze.yaml')
+        self.camera_params = os.path.join(base_dir, "focus", "assets", "camera_params.yaml")
+        self.normalized_camera_params = os.path.join(base_dir, "focus", "assets", 'eth-xgaze.yaml')
         self.normalized_camera_distance = 0.6
-        self.checkpoint = os.path.join(base_dir, "focus", "gaze_estimation", "weights", "raw", 'eth-xgaze_resnet18.pth')
+        self.checkpoint = os.path.join(base_dir, "focus", "weights", 'eth-xgaze_resnet18.pth')
         self.image_size = [224, 224]
 
 
@@ -39,4 +39,4 @@ class FocusConfig:
         self.dist_thr = 0.3  # when distant, roll under this thr is considered focus
         self.foc_rot_thr = 0.7  # when close, roll above this thr is considered not focus
         self.patience = 3  # result is based on the majority of previous observations
-        self.sample_params_path = os.path.join(base_dir, "focus", "gaze_estimation", "assets", "sample_params.yaml")
+        self.sample_params_path = os.path.join(base_dir, "focus", "assets", "sample_params.yaml")

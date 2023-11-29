@@ -61,7 +61,7 @@ RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd er
 
 # Add the last two packages
 RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install imageio
-RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install dlib
+RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install ptgaze
 
 # Cleanup
 RUN /home/${USER}/mambaforge/bin/mamba clean --all -y

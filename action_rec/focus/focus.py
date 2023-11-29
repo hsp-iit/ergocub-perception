@@ -1,11 +1,11 @@
 import cv2
-from action_rec.focus.gaze_estimation.pytorch_mpiigaze_demo.ptgaze.gaze_estimator import GazeEstimator
-# from ptgaze.gaze_estimator import GazeEstimator
+# from action_rec.focus.gaze_estimation.pytorch_mpiigaze_demo.ptgaze.gaze_estimator import GazeEstimator
+from ptgaze.gaze_estimator import GazeEstimator
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation
 import yaml
 import numpy as np
-from action_rec.focus.gaze_estimation.configuration import FocusConfig  # TODO CHANGE THIS
+from action_rec.focus.configuration import FocusConfig  # TODO CHANGE THIS
 
 
 class FocusDetector:
