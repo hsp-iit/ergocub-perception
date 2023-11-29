@@ -7,10 +7,11 @@ from grasping.utils.misc import pose_to_matrix
 from utils.concurrency.utils.signals import Signals
 sys.path.insert(0, Path(__file__).parent.parent.as_posix())
 from utils.logging import setup_logger
-import tensorrt as trt
-# https://github.com/NVIDIA/TensorRT/issues/1945
-import torch
-import pycuda.autoinit
+# NOTE when importing this packages we obtain a segfault.
+# import tensorrt as trt
+# # https://github.com/NVIDIA/TensorRT/issues/1945
+# import torch
+# import pycuda.autoinit
 
 from configs.focus_config import FOCUS, Network, Logging
 

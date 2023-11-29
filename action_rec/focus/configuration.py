@@ -32,8 +32,8 @@ class FocusConfig:
         self.face_detector = FaceDetectorConfig()
         self.gaze_estimator = GazeEstimatorConfig()
         self.model = FocusModelConfig()
-        self.mode = 'ETH-XGaze'  # 'MPIIGaze'  # 
-        self.device = 'cpu'  # cuda
+        self.mode = 'ETH-XGaze'  # 'MPIIGaze'
+        self.device = 'cuda'  # cpu
         self.area_thr = 0.03  # head bounding box must be over this value to be close
         self.close_thr = -0.95  # When close, z value over this thr is considered focus
         self.dist_thr = 0.3  # when distant, roll under this thr is considered focus
