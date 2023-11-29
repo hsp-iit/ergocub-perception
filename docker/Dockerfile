@@ -59,6 +59,10 @@ RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd er
     cd ../../python_library && mkdir build && cd build && \
     PATH="/home/ergocub/mambaforge/envs/ergocub/bin":$PATH cmake .. && sudo make install
 
+# Add the last two packages
+RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install imageio
+RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install dlib
+
 # Cleanup
 RUN /home/${USER}/mambaforge/bin/mamba clean --all -y
 
