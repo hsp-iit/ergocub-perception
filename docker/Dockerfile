@@ -62,6 +62,9 @@ RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd er
 # Add the last two packages
 RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install imageio
 RUN /home/${USER}/mambaforge/envs/ergocub/bin/pip install ptgaze
+# The following two lines replace np.float with float in ptgaze (note: np.float64 -> float64 -> np.float64)
+RUN find /home/ergocub/mambaforge/envs/ergocub/lib/python3.10/site-packages/ptgaze \( -type d -name .git -prune \) -o -type f -print0 | xargs -0 sed -i 's/np\.float/float/g'
+RUN find /home/ergocub/mambaforge/envs/ergocub/lib/python3.10/site-packages/ptgaze \( -type d -name .git -prune \) -o -type f -print0 | xargs -0 sed -i 's/float64/np.float64/g'
 
 # Cleanup
 RUN /home/${USER}/mambaforge/bin/mamba clean --all -y
