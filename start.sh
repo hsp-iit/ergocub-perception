@@ -44,6 +44,7 @@ then
   exit 0
 fi
 
+# COMPONENTS #######################################################################
 # Human Detection
 tmux rename-window -t $TMUX_NAME components
 tmux select-pane -T "Human Detection"
@@ -91,6 +92,8 @@ tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "cd perception" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/segmentation.py" Enter
 
+
+# I/O #######################################################################
 tmux select-layout -t $TMUX_NAME tiled
 tmux new-window -t $TMUX_NAME
 tmux rename-window -t $TMUX_NAME input/output
@@ -101,6 +104,7 @@ tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "cd perception" Enter
 if [ -n "$START_SOURCE" ] # Variable is non-null
 then
+  tmux send-keys -t $TMUX_NAME "sleep 5" Enter  # Wait for manager to start
   tmux send-keys -t $TMUX_NAME "python scripts/source.py" Enter
 fi
 tmux split-window -h -t $TMUX_NAME
@@ -143,6 +147,7 @@ tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "cd perception" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/realsense_gui.py"
 
+# COMMUNICATION #######################################################################
 tmux select-layout -t $TMUX_NAME tiled
 tmux new-window -t $TMUX_NAME
 tmux rename-window -t $TMUX_NAME communication
