@@ -9,7 +9,7 @@ def create_model(config: DictConfig) -> torch.nn.Module:
     mode = config.mode
     if mode in ['MPIIGaze', 'MPIIFaceGaze']:
         module = importlib.import_module(
-            f'ptgaze.models.{mode.lower()}.{config.model.name}')
+            f'action_rec.focus.gaze_estimation.pytorch_mpiigaze_demo.ptgaze.models.{mode.lower()}.{config.model.name}')
         model = module.Model(config)
     elif mode == 'ETH-XGaze':
         model = timm.create_model(config.model.name, num_classes=2)
