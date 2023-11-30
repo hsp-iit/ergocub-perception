@@ -152,8 +152,8 @@ class ObjectDetection3DVisualizer(Network.node):
             self.r_center.parent = None
             self.l_center.parent = None
         else:
-            # self.vb2.add(self.r_hand)
-            # self.vb2.add(self.l_hand)
+            self.vb2.add(self.r_hand)
+            self.vb2.add(self.l_hand)
             
             self.vb2.add(self.r_center)
             self.vb2.add(self.l_center)
@@ -169,8 +169,8 @@ class ObjectDetection3DVisualizer(Network.node):
             right_hand = right_hand @ self.vis_R2
             left_hand = left_hand @ self.vis_R2
 
-            # self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
-            # self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
+            self.r_hand.set_data(right_hand[[0, 1, 0, 2, 0, 3]] - offset)
+            self.l_hand.set_data(left_hand[[0, 1, 0, 2, 0, 3]] - offset)
             
             self.r_center.set_data(right_hand[0:1] - offset, edge_color='red', face_color='red', size=50)
             self.l_center.set_data(left_hand[0:1] - offset, edge_color='red', face_color='red', size=50)

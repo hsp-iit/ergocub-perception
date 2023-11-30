@@ -86,7 +86,7 @@ class RealSense:
                                                                     depth_scale=1000)
 
         if intrinsics is None:
-            intrinsics = ecub_intrinsics
+            intrinsics = d435_intrinsics
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])
@@ -104,7 +104,7 @@ class RealSense:
         depth_image = o3d.geometry.Image(depth_image)
 
         if intrinsics is None:
-            intrinsics = ecub_intrinsics
+            intrinsics = d435_intrinsics
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])

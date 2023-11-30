@@ -74,10 +74,10 @@ class TrTRansac:
 
                 new_points = copy.deepcopy(aux_points[plane_points_idx])
                 res_points.append(new_points)
-            try:
-                aux_points = aux_points[~plane_points_idx]
-            except IndexError as e:
-                return None
+        try:
+            aux_points = aux_points[~plane_points_idx]
+        except IndexError as e:
+            return [res_planes, res_points]
 
         # Technically they are already normalized but since the engine can approximate values
         # to run faster, we normalize them again.

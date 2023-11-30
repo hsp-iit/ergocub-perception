@@ -72,10 +72,14 @@ class RealSense:
                                                                     depth_scale=1000)
 
         if intrinsics is None:
+            
             intrinsics = {'fx': 612.7910766601562, 'fy': 611.8779296875, 'ppx': 321.7364196777344,
                           'ppy': 245.0658416748047, 'width': 640, 'height': 480}
             # intrinsics = {'fx': 618.0714111328125, 'fy': 617.783447265625, 'ppx': 305.902252197265625,
             #               'ppy': 246.352935791015625, 'width': 640, 'height': 480}
+            # intrinsics = {'fx': 386.7283935546875, 'fy': 386.7283935546875, 'ppx': 319.5572509765625,
+            #   'ppy': 236.9881744384765625, 'width': 640, 'height': 480}
+            
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])
@@ -97,6 +101,9 @@ class RealSense:
                           'ppy': 245.0658416748047, 'width': 640, 'height': 480}
             # intrinsics = {'fx': 618.0714111328125, 'fy': 617.783447265625, 'ppx': 305.902252197265625,
             #               'ppy': 246.352935791015625, 'width': 640, 'height': 480}
+            # intrinsics = {'fx': 386.7283935546875, 'fy': 386.7283935546875, 'ppx': 319.5572509765625,
+            #   'ppy': 236.9881744384765625, 'width': 640, 'height': 480}
+            
 
         camera = o3d.camera.PinholeCameraIntrinsic(intrinsics['width'], intrinsics['height'], intrinsics['fx'],
                                                    intrinsics['fy'], intrinsics['ppx'], intrinsics['ppy'])
