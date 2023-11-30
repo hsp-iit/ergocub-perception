@@ -1,6 +1,6 @@
 import os
 from logging import INFO
-from action_rec.focus.gaze_estimation.focus import FocusDetector
+from action_rec.focus.focus import FocusDetector
 from utils.concurrency.generic_node_fps import GenericNodeFPS
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
@@ -53,5 +53,4 @@ class FOCUS(BaseConfig):
         dist_thr = 0.3  # when distant, roll under this thr is considered focus
         foc_rot_thr = 0.7  # when close, roll above this thr is considered not focus
         patience = 16  # result is based on the majority of previous observations
-        sample_params_path = os.path.join("action_rec", "focus", "gaze_estimation", "assets",
-                                          "sample_params.yaml")
+        sample_params_path = os.path.join("action_rec", "focus", "assets", "sample_params.yaml")

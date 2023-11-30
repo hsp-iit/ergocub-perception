@@ -13,7 +13,7 @@ if __name__ == '__main__':
     #                          input_metadata=TensorMetadata.from_feed_dict({'input': np.zeros([1, 3, 192, 256], dtype=np.float32)}))
 
     # config = CreateConfig(fp16=True, tf32=True)
-    config = CreateConfig(fp16=True, tf32=True, max_workspace_size=10000 << 40)
+    config = CreateConfig(fp16=True, tf32=True)  #, max_workspace_size=10000 << 40)
 
     build_engine = EngineFromNetwork(NetworkFromOnnxPath(onnx_file), config=config)
     engine = build_engine()

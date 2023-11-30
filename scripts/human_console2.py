@@ -18,7 +18,6 @@ class SSException(Exception):
     pass
 
 
-@logger.catch(reraise=True)
 class HumanConsole(Network.node):
 
     def __init__(self, spawn_location=None):

@@ -17,7 +17,6 @@ from configs.sink_config import Logging, Network
 setup_logger(level=Logging.level)
 
 
-@logger.catch(reraise=True)
 class Sink(Network.node):
     def __init__(self):
         self.img = np.zeros([480, 640, 3], dtype=np.uint8)

@@ -31,7 +31,6 @@ def get_color(value):
     raise Exception("Wrong argument:", value)
 
 
-@logger.catch(reraise=True)
 class VISPYVisualizer(Network.node):
 
     def printer(self, x):

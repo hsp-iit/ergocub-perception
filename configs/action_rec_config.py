@@ -4,9 +4,7 @@ from logging import INFO
 import numpy as np
 
 from action_rec.ar.ar import ActionRecognizer
-from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.generic_node_fps import GenericNodeFPS
-from utils.concurrency.ipc_queue import IPCQueue
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig
