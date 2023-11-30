@@ -59,9 +59,9 @@ RUN echo "mamba activate ergocub" >> /home/${USER}/.bashrc
 # Install the RPC Interface
 RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd ergocub-rpc-interfaces && \
     cd ecub_perception && cd cpp_library && mkdir build && cd build && \
-    PATH="/home/ergocub/mambaforge/envs/ergocub/":$PATH cmake .. && sudo make install && \
+    cmake -DCMAKE_INSTALL_PREFIX=/home/ergocub/mambaforge/envs/ergocub .. && sudo make install && \
     cd ../../python_library && mkdir build && cd build && \
-    PATH="/home/ergocub/mambaforge/envs/ergocub/bin":$PATH cmake .. && sudo make install
+    PATH="/home/ergocub/mambaforge/envs/ergocub/bin":$PATH cmake -DCMAKE_INSTALL_PREFIX=/home/ergocub/mambaforge/envs/ergocub .. && sudo make install
 
 # Cleanup
 RUN /home/${USER}/mambaforge/bin/mamba clean --all -y
