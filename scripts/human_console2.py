@@ -6,6 +6,7 @@ import PySimpleGUI as sg
 import numpy as np
 import time
 import cv2
+import os
 
 
 sg.theme('DarkTeal9')
@@ -54,7 +55,10 @@ class HumanConsole(Network.node):
                              [sg.Text("", key="log")]]
         self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
                        [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
-        self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
+        if os.path.exists('SUPPORT_SET.gif'):
+            self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
+        else:
+            self.lay_support = [[]]
 
         self.lay_left = [[sg.Text("Scores"), sg.HorizontalSeparator()],
                          [sg.Text('Few Shot', size=(20, 1)), sg.Text('Open Set', size=(20, 1))],
@@ -165,7 +169,8 @@ class HumanConsole(Network.node):
                 self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)}) 
         
         # UPDATE SUPPORT SET
-        self.window["SUPPORT_SET"].UpdateAnimation("SUPPORT_SET.gif", time_between_frames=100)
+        if self.lay_support != [[]]:
+            self.window["SUPPORT_SET"].UpdateAnimation("SUPPORT_SET.gif", time_between_frames=100)
 
 
     def add_action(self, action_name):
