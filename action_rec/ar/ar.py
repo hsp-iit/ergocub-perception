@@ -33,7 +33,8 @@ class ActionRecognizer:
         self.way = way
         self.shot = shot
         self.n_joints = n_joints if input_type == "skeleton" else 0
-        self.support_set_path = support_set_path
+        if support_set_path is not None:
+            self.load(support_set_path)
 
     def inference(self, data):
         """
