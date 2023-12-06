@@ -137,7 +137,7 @@ tmux split-window -h -t $TMUX_NAME
 tmux select-pane -T "Human Console"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "cd perception" Enter
-tmux send-keys -t $TMUX_NAME "python scripts/human_console2.py"
+tmux send-keys -t $TMUX_NAME "python scripts/human_console2.py" Enter
 
 tmux split-window -h -t $TMUX_NAME
 
