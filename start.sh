@@ -188,13 +188,12 @@ fi
 if [ -n "$START_YARP_SERVER" ] # Variable is non-null
 then
   tmux send-keys -t $TMUX_NAME "yarpserver --write" Enter
-else
-  tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
+# else
+#   tmux send-keys -t $TMUX_NAME "yarp detect --write" Enter
 fi
 
 if [ -n "$REPEATER" ] # Variable is non-null
 then
-  tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
   tmux split-window -h -t $TMUX_NAME
   tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
   tmux send-keys -t $TMUX_NAME "yarp repeat /depthCamera/depthImage:r" Enter
