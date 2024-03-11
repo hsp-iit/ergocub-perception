@@ -57,6 +57,15 @@ class eCubPerceptionServer(eCubPerceptionInterface):
     def is_focused(self):
         return self.asd.read('focus_to_rpc')['focus']
 
+    def get_human_position(self):
+        center = self.asd.read('hpe_to_rpc')['human_position']
+
+        human_position = yarp.Vector(3)
+        for i in range(3):
+            human_position[i] = center[i]
+            
+        return human_position
+
     def get_face_position(self):
         center = self.asd.read('focus_to_rpc')['face_point']
 
