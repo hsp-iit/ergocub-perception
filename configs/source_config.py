@@ -3,7 +3,7 @@ from logging import INFO
 from utils.concurrency.generic_node import GenericNode
 from utils.concurrency.yarp_queue import YarpQueue
 from utils.confort import BaseConfig
-from utils.input import RealSense
+from utils.input import RealSense, WebCam
 from utils.winrealsesnse import WinRealSense
 import pyrealsense2 as rs
 
@@ -26,7 +26,7 @@ class Network(BaseConfig):
 
 
 class Input(BaseConfig):
-    camera = RealSense
+    camera = WebCam
 
     class Params:
         rgb_res = (640, 480)
