@@ -25,8 +25,14 @@ Run
 to remove the container and the tmux session.
 You can then erase the "onnxs" folder in the root directory.
 
+### Other files
+Other files are needed, you can find them [here](https://drive.google.com/file/d/1iJc_2rBkVeslFHP0jOLU87y6tR2fGLfZ/view?usp=sharing).
+
 ### Test installation
 To test the installation, launch:
 ```
 ./start.sh -ys
 ```
+
+### Run with webcam
+In order to test the pipeline with the webcam, follow [.](https://askubuntu.com/questions/1405903/capturing-webcam-video-with-opencv-in-wsl2).

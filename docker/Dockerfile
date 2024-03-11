@@ -56,6 +56,9 @@ RUN find /home/ergocub/mambaforge/envs/ergocub/lib/python3.10/site-packages/ptga
 RUN echo "mamba activate ergocub" >> /home/${USER}/.bashrc
 # RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/" >> /home/${USER}/.bashrc
 
+# Tapullo
+RUN echo "Forcing docker to rebuild from here"
+
 # Install the RPC Interface
 RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd ergocub-rpc-interfaces && \
     cd ecub_perception && cd cpp_library && mkdir build && cd build && \
@@ -65,7 +68,8 @@ RUN git clone https://github.com/ergoCub-HSP/ergocub-rpc-interfaces.git && cd er
 
 # Cleanup
 RUN /home/${USER}/mambaforge/bin/mamba clean --all -y
-
+# TODO test
+RUN sudo usermod -aG video ergocub  
 # # After this you will need the password to run sudo
 RUN sudo mv /etc/sudoers.bak /etc/sudoers
 
