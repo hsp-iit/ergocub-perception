@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pyrealsense2 as rs
+import numpy as np
 
 
 # YCB
@@ -18,6 +19,28 @@ ecub_intrinsics = {'fx': 386.7283935546875, 'fy': 386.7283935546875, 'ppx': 319.
 
 d435_intrinsics = {'fx': 612.7910766601562, 'fy': 611.8779296875, 'ppx': 321.7364196777344,
                           'ppy': 245.0658416748047, 'width': 640, 'height': 480}
+
+class WebCam:
+    def __init__(self, **kwargs):
+        self.vid = cv2.VideoCapture(0)
+        W=640
+        H=480
+        self.vid.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
+        #self.vid.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('Y','U','Y','V'))
+        self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, W)
+        self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, H)
+        self.vid.set(cv2.CAP_PROP_FPS, 30)
+        self.fake_depth = np.zeros((H, W))
+
+    def read(self):
+        while True:
+            ret, frame = self.vid.read()
+            if not ret:
+                print("Busy wait")
+            else:
+                break
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), self.fake_depth
+
 
 class RealSense:
     """" rgb_res = (width, height)"""
