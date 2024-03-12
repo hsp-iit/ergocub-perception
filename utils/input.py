@@ -33,10 +33,14 @@ class WebCam:
         self.fake_depth = np.zeros((H, W))
 
     def read(self):
+        i = 0
         while True:
             ret, frame = self.vid.read()
             if not ret:
+                i += 1
                 print("Busy wait")
+                if i > 10:
+                    exit()
             else:
                 break
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), self.fake_depth

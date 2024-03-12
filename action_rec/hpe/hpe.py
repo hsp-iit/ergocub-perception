@@ -145,11 +145,13 @@ class HumanPoseEstimator:
 
         human_distance = np.sqrt(
             np.sum(np.square(np.array([0, 0, 0]) - np.array(pred3d[0])))) * 2.5
+        human_position = pred3d[0, :]
         pred3d = pred3d - pred3d[0, :]
 
         return {"pose": pred3d,
                 "edges": edges,
-                "human_distance": human_distance}
+                "human_distance": human_distance,
+                "human_position": human_position}
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from utils.concurrency.generic_node_fps import GenericNodeFPS
 from utils.concurrency.py_queue import PyQueue
 from utils.concurrency.utils.signals import Signals
 from utils.confort import BaseConfig
+import numpy as np
 
 input_type = "skeleton"  # rgb, skeleton or hybrid
 seq_len = 8 if input_type != "skeleton" else 16
@@ -52,7 +53,8 @@ class Network(BaseConfig):
                                                 write_format={'pose': Signals.NOT_OBSERVED}),  # TO ADD ACTION
             'hpe_to_ar': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_ar', blocking=False,
                                  write_format={'pose': Signals.NOT_OBSERVED,
-                                               'human_distance': Signals.NOT_OBSERVED})}
+                                               'human_distance': Signals.NOT_OBSERVED}),
+            'hpe_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_rpc', write_format={'human_position': np.full(3, -1.)}),}
 
     max_fps = 18
 
