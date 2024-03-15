@@ -35,4 +35,4 @@ To test the installation, launch:
 ```
 
 ### Run with webcam
-In order to test the pipeline with the webcam, follow [.](https://askubuntu.com/questions/1405903/capturing-webcam-video-with-opencv-in-wsl2).
+In order to test the pipeline with the webcam, follow [this](https://askubuntu.com/questions/1405903/capturing-webcam-video-with-opencv-in-wsl2).
