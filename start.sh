@@ -28,8 +28,6 @@ docker run --gpus=all -v "$(pwd)":/home/ergocub/perception -itd --rm \
 --env PYTHONPATH=/home/ergocub/perception \
 --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
 --ipc=host \
---device=/dev/video0:/dev/video0 \
---device=/dev/video1:/dev/video1 \
 --network=host --name $DOCKER_CONTAINER_NAME ar0s/ergocub-perception-image bash
 
 # Create tmux session
