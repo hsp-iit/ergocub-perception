@@ -178,13 +178,8 @@ class ActionRecognizer:
             # NOTE the following solves the flicckering gif bug of pysimplegui
             for k in range(len(support_gifs)):
                 if k%2 == 0:
-                    support_gifs[k][-1][-1] = 1
-                    support_gifs[k][-1][0] = 1
-                    support_gifs[k][0][0] = 1
-                else:
-                    support_gifs[k][-1][-1] = 0
-                    support_gifs[k][-1][0] = 0
-                    support_gifs[k][0][0] = 0
+                    support_gifs[k][support_gifs[k] == 1] = 254
+                    support_gifs[k][support_gifs[k] == 0] = 1
             imageio.mimsave('SUPPORT_SET.gif', support_gifs, fps=12)
 
         return "Support set image save to SUPPORT_SET.gif"
