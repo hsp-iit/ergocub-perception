@@ -110,7 +110,8 @@ def main():
 
     service = eCubPerceptionServer()
     print('''
-    [wave|shake|release|grasp]
+    [auto|manual]
+    from manual: [wave|shake|release|grasp]
     ''')
 
     # Simulate main thread here
@@ -135,11 +136,11 @@ def main():
             service.focus = False
             service.center = [-1, -1, -1]
 
-        if cmd == 'override':
+        if cmd == 'manual':
             print('manual control')
             service.manual = True
 
-        if cmd == 'deoverride':
+        if cmd == 'auto':
             print('automatic')
             service.manual = False
 
