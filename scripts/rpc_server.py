@@ -22,41 +22,16 @@ class eCubPerceptionServer(eCubPerceptionInterface):
 
         self.asd = Network.node(**Network.Args.to_dict())
 
+        self.action = 'none'
+        self.distance = -1
+        self.focus = False
+        self.center = [-1, -1, -1]
 
-    def get_poses(self):
-        hands = self.asd.read('from_grasp_detection')['hands_root_frame']
-        print(hands)
-        poses = []
+        self.manual = False
 
-        for h in range(2):
-            pose = yarp.Matrix(4, 4)
-            for i in range(4):
-                for j in range(4):
-                    pose[i, j] = hands[i, j, h]
-
-            poses.append(pose)
-
-        return poses
-
-
-    def get_center(self):
-        center = self.asd.read('from_segmentation')['obj_center']
-
-        position = yarp.Vector(3)
-        for i in range(3):
-            position[i] = center[i]
-
-        return position
-
-
-    def get_distance(self):
-        distance = self.asd.read('from_segmentation')['obj_distance']
-
-        return distance
-
-    def is_focused(self):
-        return self.asd.read('focus_to_rpc')['focus']
-
+    ############################################################
+    ####################### Unchanged ##########################
+    ############################################################
     def get_human_position(self):
         center = self.asd.read('hpe_to_rpc')['human_position']
 
@@ -75,20 +50,98 @@ class eCubPerceptionServer(eCubPerceptionInterface):
 
         return face_position
 
+    def get_poses(self):
+        hands = self.asd.read('from_grasp_detection')['hands_root_frame']
+        print(hands)
+        poses = []
+
+        for h in range(2):
+            pose = yarp.Matrix(4, 4)
+            for i in range(4):
+                for j in range(4):
+                    pose[i, j] = hands[i, j, h]
+
+            poses.append(pose)
+
+        return poses
+
+    ############################################################
+    ##################### Manual Control #######################
+    ############################################################
+
+    def get_distance(self):
+        if self.manual:
+            distance = self.distance
+        else:
+            distance = self.asd.read('from_segmentation')['obj_distance']
+
+        return distance
+
+    def is_focused(self):
+        if self.manual:
+            focus =  self.focus
+        else:
+            focus = self.asd.read('focus_to_rpc')['focus']
+
+        return focus
+
     def get_action(self):
-        action = self.asd.read('ar_to_rpc')['action']
+        if self.manual:
+            action = self.action 
+        else:
+            action = self.asd.read('ar_to_rpc')['action']
 
         return action
 
+    def get_center(self):
+        if self.manual:
+            center = self.center
+        else:
+            center = self.asd.read('from_segmentation')['obj_center']
+
+        position = yarp.Vector(3)
+        for i in range(3):
+            position[i] = center[i]
+
+        return position
 
 
 def main(): 
 
     service = eCubPerceptionServer()
+    print('''
+    [wave|shake|release|grasp]
+    ''')
 
     # Simulate main thread here
     while True:
-        time.sleep(1)
+        cmd = input()
+
+        if cmd in ['wave', 'shake', 'release']:
+            service.focus = True
+            service.action = cmd
+
+            time.sleep(3)
+
+            service.focus = False
+            service.action = 'none'
+
+        elif cmd in ['grasp']:
+            service.distance = 300
+            service.focus = True
+            service.center = [0.40270819, -0.00950576,  0.30577174]
+            time.sleep(4)
+            service.distance = -1
+            service.focus = False
+            service.center = [-1, -1, -1]
+
+        if cmd == 'override':
+            print('manual control')
+            service.manual = True
+
+        if cmd == 'deoverride':
+            print('automatic')
+            service.manual = False
 
 
 if __name__ == '__main__':
