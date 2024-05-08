@@ -81,7 +81,7 @@ class AR(BaseConfig):
     class Main:
         input_type = 'skeleton'
         acquisition_time = 3
-        consistency_window_length = 16
-        consistency_minimum_detection = 12
+        consistency_window_length = 4
+        consistency_minimum_detection = 3
         os_score_thr = 0.5
         fs_score_thr = 0.5
