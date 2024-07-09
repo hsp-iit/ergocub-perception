@@ -148,10 +148,16 @@ class HumanPoseEstimator:
         human_position = pred3d[0, :]
         pred3d = pred3d - pred3d[0, :]
 
+        # Compute human occupancy
+        pred3d_0 = pred3d - pred3d[0]
+        x_min, x_max, z_min, z_max = min(pred3d_0[:, 0]), max(pred3d_0[:, 0]), min(pred3d_0[:, 2]), max(pred3d_0[:, 2])
+        human_occupancy = (x_min, x_max, z_min, z_max)
+
         return {"pose": pred3d,
                 "edges": edges,
                 "human_distance": human_distance,
-                "human_position": human_position}
+                "human_position": human_position,
+                "human_occupancy": human_occupancy}
 
 
 if __name__ == "__main__":
