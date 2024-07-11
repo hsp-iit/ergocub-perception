@@ -2,6 +2,10 @@ import PySimpleGUI as sg
 import yarp
 from yarp import IFrameGrabberControls
 
+EXPOSURE=1
+GAIN=8
+HUE=4
+
 props = yarp.Property()
 props.put('device', 'RGBDSensorClient')
 props.put('localImagePort', '/RealsenseGUI/rgbImage:i')
@@ -38,8 +42,15 @@ layout = [
                border_width=0), sg.InputText(size=(5, 1), key='hue_tb')]
 ]
 
+# Default Camera Parameters tested in roboarena
+
+iface.setFeature(EXPOSURE, 0.75 / 100.)
+iface.setFeature(GAIN, 35 / 100.)
+iface.setFeature(HUE, 55 / 100.)
+
+
 # Create the window
-window = sg.Window('Sliders Example', layout)
+window = sg.Window('Realsense Parameters', layout)
 
 # Event loop
 while True:
@@ -50,15 +61,15 @@ while True:
         value = values[event]
         window.Element("exposure_tb").Update(value)
         window.Element("exposure_sl").Update(value)
-        iface.setFeature(1, value / 100.)
+        iface.setFeature(EXPOSURE, value / 100.)
 
     elif event == 'gain_sl':
         value = values['gain_sl']
-        iface.setFeature(8, value / 100.)
+        iface.setFeature(GAIN, value / 100.)
 
     elif event == 'hue_sl':
         value = values['hue_sl']
-        iface.setFeature(4, value / 100.)
+        iface.setFeature(HUE, value / 100.)
 
     # # Update the slider values based on their text inputs
     # for key in ('exposure', 'gain', 'hue'):
