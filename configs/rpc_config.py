@@ -22,7 +22,7 @@ class Network(BaseConfig):
                                                                                                                         "face_point": Signals.USE_LATEST}),
             'ar_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='ar_to_rpc', blocking=False, read_format={"action": Signals.USE_LATEST}),
             'hpe_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_rpc', blocking=False, read_format={"human_position": Signals.USE_LATEST, 
-                                                                                                                    'human_occupancy': Signals.USE_LATEST}),
+                                                                                                                    'human_occupancy': Signals.USE_LATEST, 'human_pixels':Signals.USE_LATEST}),
         }
         
 class RPC:

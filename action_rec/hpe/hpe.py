@@ -142,7 +142,7 @@ class HumanPoseEstimator:
             edges = None
 
         pred3d = pred3d[0]  # Remove batch dimension
-
+        pred2d = pred2d[0]
         human_distance = np.sqrt(
             np.sum(np.square(np.array([0, 0, 0]) - np.array(pred3d[0])))) * 2.5
         human_position = pred3d[0, :]
@@ -152,12 +152,18 @@ class HumanPoseEstimator:
         pred3d_0 = pred3d - pred3d[0]
         x_min, x_max, z_min, z_max = min(pred3d_0[:, 0]), max(pred3d_0[:, 0]), min(pred3d_0[:, 2]), max(pred3d_0[:, 2])
         human_occupancy = (x_min, x_max, z_min, z_max)
+        index_min = np.argmin(pred3d_0[:, 0])
+        index_max = np.argmax(pred3d_0[:, 0])
+        human_pixels = [-1,-1,-1,-1]
+        print("got here zeroooooo", pred3d_0)
+        print(" got hereeeee1", human_position)
 
         return {"pose": pred3d,
                 "edges": edges,
                 "human_distance": human_distance,
                 "human_position": human_position,
-                "human_occupancy": human_occupancy}
+                "human_occupancy": human_occupancy,
+                "human_pixels": human_pixels}
 
 
 if __name__ == "__main__":

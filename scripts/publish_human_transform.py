@@ -37,6 +37,7 @@ class DetectedHumanFramePublisher(Node):
         pelvis_pose_vec = yarp_vector_to_numpy(pelvis_pose)
         extremes_vec = yarp_vector_to_numpy(extremes)
         if pelvis_pose_vec.any() and pelvis_pose_vec[2] != -1:
+            
             final_vec = numpy.zeros(shape = (4,))
             final_vec[1] = -pelvis_pose_vec[0]-extremes_vec[0]
             final_vec[2] = -pelvis_pose_vec[0]-extremes_vec[1]

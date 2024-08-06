@@ -37,7 +37,7 @@ class Network(BaseConfig):
                                   write_format={'bbox': Signals.NOT_OBSERVED, 'fps_hd': Signals.NOT_OBSERVED}),
         }
 
-        max_fps = 20
+        max_fps = 40
 
 
 class HD(BaseConfig):

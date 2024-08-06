@@ -28,6 +28,7 @@ class eCubPerceptionServer(eCubPerceptionInterface):
         self.center = [-1, -1, -1]
 
         self.human_occupancy = [-1, -1, -1, -1]
+        self.human_pixels = [-1, -1, -1, -1]
         self.manual = False
 
     ############################################################
@@ -115,6 +116,18 @@ class eCubPerceptionServer(eCubPerceptionInterface):
         occ = yarp.Vector(4)
         for i in range(4):
             occ[i] = human_occupancy[i]
+
+        return occ
+    
+    def get_human_pixels(self):
+        if self.manual:
+            human_pixels = self.human_pixels
+        else:
+            human_pixels = self.asd.read('hpe_to_rpc')['human_pixels']
+
+        occ = yarp.Vector(4)
+        for i in range(4):
+            occ[i] = human_pixels[i]
 
         return occ
 
