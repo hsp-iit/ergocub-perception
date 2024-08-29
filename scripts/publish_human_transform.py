@@ -7,6 +7,7 @@ from tf2_ros import TransformBroadcaster
 from ecub_perception import eCubPerceptionInterface
 import yarp
 import time
+from ergocub_navigation.srv import GetHumanExtremes
 #import tcpi
 #from configs.rpc_config import Logging, Network, RPC
 
@@ -25,7 +26,62 @@ class DetectedHumanFramePublisher(Node):
         self.service.yarp().attachAsClient(self.rpc_client)
         self.service.yarp().setStreamingMode(False)
 
-        self.timer = self.create_timer(0.1, self.pub_human_transform)
+        self.srv = self.create_service(GetHumanExtremes, 'human_pose_service', self.human_extremes_callback)
+        #self.timer = self.create_timer(0.1, self.pub_human_transform)
+    def human_extremes_callback(self, request, response):
+        pelvis_pose = self.service.get_human_position()
+        extremes = self.service.get_human_occupancy()
+
+        print("Pelvis: " + str(yarp_vector_to_numpy(pelvis_pose)))
+        print("Extremes: " + str(yarp_vector_to_numpy(extremes)))
+        pelvis_pose_vec = yarp_vector_to_numpy(pelvis_pose)
+        extremes_vec = yarp_vector_to_numpy(extremes)
+        if pelvis_pose_vec.any() and pelvis_pose_vec[2] != -1:
+            
+            final_vec = numpy.zeros(shape = (4,))
+            final_vec[1] = -pelvis_pose_vec[0]-extremes_vec[0]
+            final_vec[2] = -pelvis_pose_vec[0]-extremes_vec[1]
+            final_vec[0] = pelvis_pose_vec[2]
+            final_vec[3] = 0.0
+        
+            t1 = TransformStamped()
+            t1.header.stamp = self.get_clock().now().to_msg()
+            t1.header.frame_id = 'head_laser_frame'
+            t1.child_frame_id = 'human_left_frame'
+            t1.transform.translation.x = final_vec[0]
+            t1.transform.translation.y = final_vec[1]
+            t1.transform.translation.z = final_vec[3]
+
+            t2 = TransformStamped()
+            t2.header.stamp = self.get_clock().now().to_msg()
+            t2.header.frame_id = 'head_laser_frame'
+            t2.child_frame_id = 'human_right_frame'
+            t2.transform.translation.x = final_vec[0]
+            t2.transform.translation.y = final_vec[2]
+            t2.transform.translation.z = final_vec[3]
+
+            response.left_transform = t1
+            response.right_transform = t2
+            return response
+        else:
+            t1 = TransformStamped()
+            t1.header.stamp = self.get_clock().now().to_msg()
+            t1.header.frame_id = 'head_laser_frame'
+            t1.child_frame_id = 'human_left_frame'
+            t1.transform.translation.x = 1000
+            t1.transform.translation.y = 1000
+            t1.transform.translation.z = 1000
+
+            t2 = TransformStamped()
+            t2.header.stamp = self.get_clock().now().to_msg()
+            t2.header.frame_id = 'head_laser_frame'
+            t2.child_frame_id = 'human_right_frame'
+            t2.transform.translation.x = 1000
+            t2.transform.translation.y = 1000
+            t2.transform.translation.z = 1000
+            response.left_transform = t1
+            response.right_transform = t2
+            return response
     
     def pub_human_transform(self):
 
@@ -62,6 +118,9 @@ class DetectedHumanFramePublisher(Node):
 
             self.tf_broadcaster.sendTransform(t1)
             self.tf_broadcaster.sendTransform(t2)
+    
+
+
 
 
 def yarp_matrix_to_numpy(yarp_matrix):
@@ -89,10 +148,9 @@ def main():
 
     node = DetectedHumanFramePublisher()
   
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+    print("\nSpinning")
+    rclpy.spin(node)
+
     rclpy.shutdown()
 
 if __name__ == '__main__':
