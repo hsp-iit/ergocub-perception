@@ -35,7 +35,7 @@ class HumanPoseEstimator:
 
         self.necessary_percentage_visible_joints = necessary_percentage_visible_joints
 
-    def estimate(self, rgb, bbox):
+    def estimate(self, rgb, bbox, yarp_read_time):
 
         x1, y1, x2, y2 = bbox
 
@@ -167,7 +167,8 @@ class HumanPoseEstimator:
                 "human_distance": human_distance,
                 "human_position": human_position,
                 "human_occupancy": human_occupancy,
-                "human_pixels": human_pixels}
+                "human_pixels": human_pixels,
+                "yarp_read_time": yarp_read_time}
 
 
 if __name__ == "__main__":

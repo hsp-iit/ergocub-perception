@@ -32,7 +32,7 @@ class HumanPoseEstimation(Network.node):
         if rgb in Signals or bbox in Signals:
             return {}
 
-        ret = self.hpe_model.estimate(rgb, bbox)
+        ret = self.hpe_model.estimate(rgb, bbox, yarp_read_time)
         logger.info("Human pose estimated!", recurring=True)
         bottle = self.direct_human_data_port.prepare()
         bottle.clear()
