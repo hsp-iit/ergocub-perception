@@ -56,8 +56,8 @@ class Network(BaseConfig):
                                                'human_distance': Signals.NOT_OBSERVED}),
             'hpe_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_rpc', write_format={'human_position': np.full(3, -1.),
                                                                                                      'human_occupancy': np.full(4, -1.),
-                                                                                                     'human_pixels': np.full(4, -1.)}),
-                                                                                                     'yarp_read_time': 0.}),
+                                                                                                     'human_pixels': np.full(4, -1.),
+                                                                                                     'yarp_read_time': 0.})}
 
     max_fps = 40
 

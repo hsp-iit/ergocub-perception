@@ -26,8 +26,8 @@ class DetectedHumanFramePublisher(Node):
         self.service.yarp().attachAsClient(self.rpc_client)
         self.service.yarp().setStreamingMode(False)
 
-        self.srv = self.create_service(GetHumanExtremes, 'human_pose_service', self.human_extremes_callback)
-        #self.timer = self.create_timer(0.1, self.pub_human_transform)
+        #self.srv = self.create_service(GetHumanExtremes, 'human_pose_service', self.human_extremes_callback)
+        self.timer = self.create_timer(0.1, self.pub_human_transform)
     def human_extremes_callback(self, request, response):
         pelvis_pose = self.service.get_human_position()
         extremes = self.service.get_human_occupancy()
@@ -105,7 +105,7 @@ class DetectedHumanFramePublisher(Node):
             t1.header.frame_id = 'head_laser_frame'
             t1.child_frame_id = 'human_left_frame'
             t1.transform.translation.x = final_vec[0]
-            t1.transform.translation.y = final_vec[1]
+            t1.transform.translation.y = final_vec[1]*2
             t1.transform.translation.z = final_vec[3]
 
             t2 = TransformStamped()
@@ -113,7 +113,7 @@ class DetectedHumanFramePublisher(Node):
             t2.header.frame_id = 'head_laser_frame'
             t2.child_frame_id = 'human_right_frame'
             t2.transform.translation.x = final_vec[0]
-            t2.transform.translation.y = final_vec[2]
+            t2.transform.translation.y = final_vec[2]*2
             t2.transform.translation.z = final_vec[3]
 
             self.tf_broadcaster.sendTransform(t1)

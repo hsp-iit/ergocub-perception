@@ -8,6 +8,7 @@ import torch
 import pycuda.autoinit
 from configs.human_pose_estimation_config import HPE, Network, Logging
 import yarp
+import math
 setup_logger(**Logging.Logger.Params.to_dict())
 yarp.Network.init()
 
@@ -39,6 +40,9 @@ class HumanPoseEstimation(Network.node):
             bottle.addFloat64(ret["human_position"][i])
         for i in range(4): 
             bottle.addFloat64(ret["human_occupancy"][i])
+        split_time = math.modf(yarp_read_time)
+        bottle.addInt64(int(split_time[1]))
+        bottle.addInt64(int(split_time[0]*1e9))
         self.direct_human_data_port.write()
 
         ret["fps_hpe"] = self.fps()
