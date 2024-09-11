@@ -98,6 +98,8 @@ class YarpQueue:
         else:
             data = self.port.read(False)
 
+        yarp_read_time = yarp.Time.now()
+
         if data is not None:
 
             if self.type == 'rgb':
@@ -115,6 +117,7 @@ class YarpQueue:
             data = {}
 
         msg.update(data)
+        msg["yarp_read_time"] = yarp_read_time
 
         return msg
 

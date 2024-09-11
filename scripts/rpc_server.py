@@ -124,12 +124,13 @@ class eCubPerceptionServer(eCubPerceptionInterface):
             human_pixels = self.human_pixels
         else:
             human_pixels = self.asd.read('hpe_to_rpc')['human_pixels']
+            yarp_read_time = self.asd.read('hpe_to_rpc')['yarp_read_time']
 
         occ = yarp.Vector(4)
         for i in range(4):
             occ[i] = human_pixels[i]
 
-        return occ
+        return occ  # TODO RETURN ALSO yarp_read_time
 
 
 def main(): 

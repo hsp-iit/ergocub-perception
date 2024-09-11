@@ -26,6 +26,8 @@ class HumanPoseEstimation(Network.node):
 
         rgb = data['rgb']
         bbox = data['bbox']
+        yarp_read_time = data['yarp_read_time']
+
         if rgb in Signals or bbox in Signals:
             return {}
 
@@ -40,6 +42,7 @@ class HumanPoseEstimation(Network.node):
         self.direct_human_data_port.write()
 
         ret["fps_hpe"] = self.fps()
+        ret['yarp_read_time'] = yarp_read_time
 
         return ret
 
