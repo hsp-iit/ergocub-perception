@@ -3,97 +3,39 @@ from geometry_msgs.msg import TransformStamped
 import numpy
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from tf2_ros import TransformBroadcaster
-from ecub_perception import eCubPerceptionInterface
 import yarp
-import time
-from ergocub_navigation.srv import GetHumanExtremes
-#import tcpi
-#from configs.rpc_config import Logging, Network, RPC
 
 
 
-class DetectedHumanFramePublisher(Node):
+class HumanTransformPublisher(Node):
     def __init__(self):
-        super().__init__('detected_human_frame_publisher')
-        
+        super().__init__('HumanTfPublisher')
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.rpc_client = yarp.RpcClient()
-        if not self.rpc_client.open('/eCubPerception/rpc:o'):
-            print(" Error: cannot open RPC port.")
-            exit(1)
-        self.service = eCubPerceptionInterface()
-        self.service.yarp().attachAsClient(self.rpc_client)
-        self.service.yarp().setStreamingMode(False)
 
-        #self.srv = self.create_service(GetHumanExtremes, 'human_pose_service', self.human_extremes_callback)
-        self.timer = self.create_timer(0.1, self.pub_human_transform)
-    def human_extremes_callback(self, request, response):
-        pelvis_pose = self.service.get_human_position()
-        extremes = self.service.get_human_occupancy()
 
-        print("Pelvis: " + str(yarp_vector_to_numpy(pelvis_pose)))
-        print("Extremes: " + str(yarp_vector_to_numpy(extremes)))
-        pelvis_pose_vec = yarp_vector_to_numpy(pelvis_pose)
-        extremes_vec = yarp_vector_to_numpy(extremes)
-        if pelvis_pose_vec.any() and pelvis_pose_vec[2] != -1:
-            
-            final_vec = numpy.zeros(shape = (4,))
-            final_vec[1] = -pelvis_pose_vec[0]-extremes_vec[0]
-            final_vec[2] = -pelvis_pose_vec[0]-extremes_vec[1]
-            final_vec[0] = pelvis_pose_vec[2]
-            final_vec[3] = 0.0
+class DetectedHumanFramePublisher(yarp.BottleCallback):
+    def __init__(self):
+        super().__init__()
         
-            t1 = TransformStamped()
-            t1.header.stamp = self.get_clock().now().to_msg()
-            t1.header.frame_id = 'head_laser_frame'
-            t1.child_frame_id = 'human_left_frame'
-            t1.transform.translation.x = final_vec[0]
-            t1.transform.translation.y = final_vec[1]
-            t1.transform.translation.z = final_vec[3]
-
-            t2 = TransformStamped()
-            t2.header.stamp = self.get_clock().now().to_msg()
-            t2.header.frame_id = 'head_laser_frame'
-            t2.child_frame_id = 'human_right_frame'
-            t2.transform.translation.x = final_vec[0]
-            t2.transform.translation.y = final_vec[2]
-            t2.transform.translation.z = final_vec[3]
-
-            response.left_transform = t1
-            response.right_transform = t2
-            return response
-        else:
-            t1 = TransformStamped()
-            t1.header.stamp = self.get_clock().now().to_msg()
-            t1.header.frame_id = 'head_laser_frame'
-            t1.child_frame_id = 'human_left_frame'
-            t1.transform.translation.x = 1000
-            t1.transform.translation.y = 1000
-            t1.transform.translation.z = 1000
-
-            t2 = TransformStamped()
-            t2.header.stamp = self.get_clock().now().to_msg()
-            t2.header.frame_id = 'head_laser_frame'
-            t2.child_frame_id = 'human_right_frame'
-            t2.transform.translation.x = 1000
-            t2.transform.translation.y = 1000
-            t2.transform.translation.z = 1000
-            response.left_transform = t1
-            response.right_transform = t2
-            return response
+        self.tf_node = HumanTransformPublisher()
+        self.tf_broadcaster = self.tf_node.tf_broadcaster
     
-    def pub_human_transform(self):
+    def onRead(self, bot, reader):
+        print("Port %s received: %s" % (reader.getName(), bot.toString()))
+        pelvis_pose_vec = [bot.get(0).asFloat64(), bot.get(1).asFloat64(), bot.get(2).asFloat64()]
 
-        pelvis_pose = self.service.get_human_position()
-        extremes = self.service.get_human_occupancy()
+        extremes_vec = [bot.get(3).asFloat64(),bot.get(4).asFloat64(),bot.get(5).asFloat64(),bot.get(6).asFloat64()]
 
-        print("Pelvis: " + str(yarp_vector_to_numpy(pelvis_pose)))
-        print("Extremes: " + str(yarp_vector_to_numpy(extremes)))
-        pelvis_pose_vec = yarp_vector_to_numpy(pelvis_pose)
-        extremes_vec = yarp_vector_to_numpy(extremes)
-        if pelvis_pose_vec.any() and pelvis_pose_vec[2] != -1:
-            
+        print(pelvis_pose_vec)
+        print(extremes_vec)
+        t0 = TransformStamped()
+        t0.header.stamp.sec = bot.get(7).asInt64()
+        t0.header.stamp.nanosec = bot.get(8).asInt64()
+
+        if pelvis_pose_vec[2] != -1:
+
             final_vec = numpy.zeros(shape = (4,))
             final_vec[1] = -pelvis_pose_vec[0]-extremes_vec[0]
             final_vec[2] = -pelvis_pose_vec[0]-extremes_vec[1]
@@ -101,18 +43,18 @@ class DetectedHumanFramePublisher(Node):
             final_vec[3] = 0.0
         
             t1 = TransformStamped()
-            t1.header.stamp = self.get_clock().now().to_msg()
-            t1.header.frame_id = 'head_laser_frame'
+            t1.header.stamp = t0.header.stamp
+            t1.header.frame_id = 'realsense'
             t1.child_frame_id = 'human_left_frame'
-            t1.transform.translation.x = final_vec[0]
+            t1.transform.translation.x = final_vec[0]*2
             t1.transform.translation.y = final_vec[1]*2
             t1.transform.translation.z = final_vec[3]
 
             t2 = TransformStamped()
-            t2.header.stamp = self.get_clock().now().to_msg()
-            t2.header.frame_id = 'head_laser_frame'
+            t2.header.stamp = t0.header.stamp
+            t2.header.frame_id = 'realsense'
             t2.child_frame_id = 'human_right_frame'
-            t2.transform.translation.x = final_vec[0]
+            t2.transform.translation.x = final_vec[0]*2
             t2.transform.translation.y = final_vec[2]*2
             t2.transform.translation.z = final_vec[3]
 
@@ -145,12 +87,19 @@ def yarp_vector_to_numpy(yarp_vector):
 def main():
     rclpy.init()
     yarp.Network.init()
-
+    human_data_port = yarp.BufferedPortBottle()
     node = DetectedHumanFramePublisher()
-  
-    print("\nSpinning")
-    rclpy.spin(node)
+    human_data_port.useCallback(node)
+    human_data_port.open("/humanEstimateToTf")
+    yarp.Network.connect("/humanDataPort","/humanEstimateToTf")
 
+
+    input("Press ENTER to quit\n")
+    
+
+    #rclpy.spin(node)
+    human_data_port.interrupt()
+    human_data_port.close()
     rclpy.shutdown()
 
 if __name__ == '__main__':
