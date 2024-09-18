@@ -58,6 +58,8 @@ tmux split-window -h -t $TMUX_NAME
 tmux select-pane -T "Human Pose Estimation"
 tmux send-keys -t $TMUX_NAME "docker exec -it $DOCKER_CONTAINER_NAME bash" Enter
 tmux send-keys -t $TMUX_NAME "cd perception" Enter
+tmux send-keys -t $TMUX_NAME "export HUMAN_X_FILTER_ALPHA=0.3" Enter
+tmux send-keys -t $TMUX_NAME "export HUMAN_Y_FILTER_ALPHA=0.1" Enter
 tmux send-keys -t $TMUX_NAME "python scripts/human_pose_estimation.py" Enter
 
 tmux split-window -h -t $TMUX_NAME
