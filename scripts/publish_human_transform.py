@@ -58,8 +58,20 @@ class DetectedHumanFramePublisher(yarp.BottleCallback):
             t2.transform.translation.y = final_vec[2]*2
             t2.transform.translation.z = final_vec[3]
 
+            t3 = TransformStamped()
+            t3.header.stamp = t0.header.stamp
+            t3.header.frame_id = 'realsense'
+            t3.child_frame_id = 'human_base_frame'
+            t3.transform.translation.x = final_vec[0]*2
+            t3.transform.translation.y = -pelvis_pose_vec[0]*2
+            t3.transform.translation.z = final_vec[3]
+
+            
+
             self.tf_broadcaster.sendTransform(t1)
             self.tf_broadcaster.sendTransform(t2)
+            self.tf_broadcaster.sendTransform(t3)
+
     
 
 
