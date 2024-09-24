@@ -6,6 +6,7 @@ from utils.human_runner import Runner
 from tqdm import tqdm
 import cv2
 from action_rec.hpe.utils.matplotlib_visualizer import MPLPosePrinter
+import copy
 
 
 class HumanPoseEstimator:
@@ -34,7 +35,7 @@ class HumanPoseEstimator:
 
         self.necessary_percentage_visible_joints = necessary_percentage_visible_joints
 
-    def estimate(self, rgb, bbox):
+    def estimate(self, rgb, bbox, yarp_read_time):
 
         x1, y1, x2, y2 = bbox
 
@@ -105,13 +106,13 @@ class HumanPoseEstimator:
         pred3d = reconstruct_absolute(pred2d, pred3d, new_K[None, ...], is_predicted_to_be_in_fov, weak_perspective=False)
 
         # # TODO EXP START show pred2d on bbone
-        # bbone_aux = copy.deepcopy(bbone_in[0])
-        # pred2d = pred2d[0]
-        # is_predicted_to_be_in_fov = is_predicted_to_be_in_fov[0]
-        # for p, is_fov in zip(pred2d, is_predicted_to_be_in_fov):
-        #     bbone_aux = cv2.circle(bbone_aux, (int(p[0]), int(p[1])), 2, (0, 255, 0) if is_fov else (0, 0, 255), 2)
-        # cv2.imshow("2d on bbone", bbone_aux.astype(np.uint8))
-        # cv2.waitKey(1)
+        #bbone_aux = copy.deepcopy(bbone_in[0])
+        #pred2d = pred2d[0]
+        #is_predicted_to_be_in_fov = is_predicted_to_be_in_fov[0]
+        #for p, is_fov in zip(pred2d, is_predicted_to_be_in_fov):
+        #    bbone_aux = cv2.circle(bbone_aux, (int(p[0]), int(p[1])), 2, (0, 255, 0) if is_fov else (0, 0, 255), 2)
+        #    cv2.imshow("2d on bbone", bbone_aux.astype(np.uint8))
+        #cv2.waitKey(1)
         # # TODO EXP END
         # # TODO EXP START show reconstructed 3d on bbone
         # bbone_aux = copy.deepcopy(bbone_in[0])
@@ -132,7 +133,6 @@ class HumanPoseEstimator:
 
         # Go back in original space (without augmentation and homography)
         pred3d = pred3d @ homo_inv
-
         # Get correct skeleton
         pred3d = (pred3d.swapaxes(1, 2) @ self.expand_joints).swapaxes(1, 2)
         if self.skeleton is not None:
@@ -142,22 +142,33 @@ class HumanPoseEstimator:
             edges = None
 
         pred3d = pred3d[0]  # Remove batch dimension
+        pred2d = pred2d[0]
+
+
 
         human_distance = np.sqrt(
             np.sum(np.square(np.array([0, 0, 0]) - np.array(pred3d[0])))) * 2.5
         human_position = pred3d[0, :]
+        human_pixels2 = self.K@human_position
+
         pred3d = pred3d - pred3d[0, :]
 
         # Compute human occupancy
-        pred3d_0 = pred3d - pred3d[0]
+        pred3d_0 = pred3d #- pred3d[0]
         x_min, x_max, z_min, z_max = min(pred3d_0[:, 0]), max(pred3d_0[:, 0]), min(pred3d_0[:, 2]), max(pred3d_0[:, 2])
         human_occupancy = (x_min, x_max, z_min, z_max)
+        index_min = np.argmin(pred3d_0[:, 0])
+        index_max = np.argmax(pred3d_0[:, 0])
+        x_min_pixel, y_min_pixel, x_max_pixel, y_max_pixel = pred2d[0,0],pred2d[0,1],pred2d[index_max,0],pred2d[index_max,1]
+        human_pixels = (x_min_pixel,y_min_pixel,x_max_pixel,y_max_pixel)
 
         return {"pose": pred3d,
                 "edges": edges,
                 "human_distance": human_distance,
                 "human_position": human_position,
-                "human_occupancy": human_occupancy}
+                "human_occupancy": human_occupancy,
+                "human_pixels": human_pixels,
+                "yarp_read_time": yarp_read_time}
 
 
 if __name__ == "__main__":

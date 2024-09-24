@@ -28,6 +28,7 @@ class YarpQueue:
         self.write_default = write_default
 
         self.latest = None
+        self.yarp_read_time = "yarp_read_time"
 
         yarp.Network.init()
 
@@ -81,7 +82,7 @@ class YarpQueue:
         if blocking is None:
             blocking = self.blocking
 
-        msg = {self.read_format: self.read_default}
+        msg = {self.read_format: self.read_default, self.yarp_read_time: yarp.now()}
 
         # TODO if the connection dies and blocking is True the code remained
         #  block to the read call without any timeout. Have to use active wait.
@@ -98,6 +99,8 @@ class YarpQueue:
         else:
             data = self.port.read(False)
 
+        yarp_read_time_now = yarp.now()
+
         if data is not None:
 
             if self.type == 'rgb':
@@ -110,11 +113,12 @@ class YarpQueue:
                     np.uint16)
 
             self.latest = data
-            data = {self.read_format: data}
+            data = {self.read_format: data, self.yarp_read_time: yarp_read_time_now}
         else:
             data = {}
 
         msg.update(data)
+        #msg["yarp_read_time"] = yarp_read_time
 
         return msg
 

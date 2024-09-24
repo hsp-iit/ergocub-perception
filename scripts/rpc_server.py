@@ -28,6 +28,7 @@ class eCubPerceptionServer(eCubPerceptionInterface):
         self.center = [-1, -1, -1]
 
         self.human_occupancy = [-1, -1, -1, -1]
+        self.human_pixels = [-1, -1, -1, -1]
         self.manual = False
 
     ############################################################
@@ -36,9 +37,10 @@ class eCubPerceptionServer(eCubPerceptionInterface):
     def get_human_position(self):
         center = self.asd.read('hpe_to_rpc')['human_position']
 
-        human_position = yarp.Vector(3)
+        human_position = yarp.Vector(4)
         for i in range(3):
             human_position[i] = center[i]
+        human_position[3] = self.asd.read('hpe_to_rpc')['yarp_read_time']
             
         return human_position
 
@@ -112,11 +114,25 @@ class eCubPerceptionServer(eCubPerceptionInterface):
         else:
             human_occupancy = self.asd.read('hpe_to_rpc')['human_occupancy']
 
-        occ = yarp.Vector(4)
+        occ = yarp.Vector(5)
         for i in range(4):
             occ[i] = human_occupancy[i]
+        occ[4] = self.asd.read('hpe_to_rpc')['yarp_read_time']
 
         return occ
+    
+    def get_human_pixels(self):
+        if self.manual:
+            human_pixels = self.human_pixels
+        else:
+            human_pixels = self.asd.read('hpe_to_rpc')['human_pixels']
+            yarp_read_time = self.asd.read('hpe_to_rpc')['yarp_read_time']
+
+        occ = yarp.Vector(4)
+        for i in range(4):
+            occ[i] = human_pixels[i]
+
+        return occ  # TODO RETURN ALSO yarp_read_time
 
 
 def main(): 

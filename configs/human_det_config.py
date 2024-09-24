@@ -32,12 +32,12 @@ class Network(BaseConfig):
 
         out_queues = {
             'hd_to_hpe': PyQueue(ip="localhost", port=50000, queue_name='hd_to_hpe',
-                                 write_format={'rgb': Signals.NOT_OBSERVED, 'bbox': Signals.NOT_OBSERVED}),
+                                 write_format={'rgb': Signals.NOT_OBSERVED, 'bbox': Signals.NOT_OBSERVED, 'yarp_read_time': Signals.NOT_OBSERVED}),
             'visualizer': PyQueue(ip="localhost", port=50000, queue_name='visualizer',
                                   write_format={'bbox': Signals.NOT_OBSERVED, 'fps_hd': Signals.NOT_OBSERVED}),
         }
 
-        max_fps = 20
+        max_fps = 40
 
 
 class HD(BaseConfig):

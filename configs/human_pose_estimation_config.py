@@ -55,9 +55,11 @@ class Network(BaseConfig):
                                  write_format={'pose': Signals.NOT_OBSERVED,
                                                'human_distance': Signals.NOT_OBSERVED}),
             'hpe_to_rpc': PyQueue(ip="localhost", port=50000, queue_name='hpe_to_rpc', write_format={'human_position': np.full(3, -1.),
-                                                                                                     'human_occupancy': np.full(4, -1.)}),}
+                                                                                                     'human_occupancy': np.full(4, -1.),
+                                                                                                     'human_pixels': np.full(4, -1.),
+                                                                                                     'yarp_read_time': 0.})}
 
-    max_fps = 18
+    max_fps = 40
 
 
 base_dir = os.path.join('action_rec', 'hpe', 'weights', 'engines', 'docker')
@@ -75,10 +77,10 @@ class HPE(BaseConfig):
         skeleton = 'smpl+head_30'
 
         # D435i (got from andrea)
-        fx = 612.7910766601562
-        fy = 611.8779296875
-        ppx = 321.7364196777344
-        ppy = 245.0658416748047
+        fx = 382.691528320312
+        fy = 381.886566162109
+        ppx = 317.998718261719
+        ppy = 244.468139648438
 
         width = 640
         height = 480

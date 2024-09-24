@@ -23,6 +23,8 @@ class HumanDetection(Network.node):
         logger.info("Read camera input", recurring=True)
 
         rgb = data['rgb']
+        yarp_read_time = data['yarp_read_time']
+
         if rgb in Signals:
             return {}
 
@@ -37,6 +39,7 @@ class HumanDetection(Network.node):
 
         output['rgb'] = rgb
         output['bbox'] = bbox
+        output['yarp_read_time'] = yarp_read_time
 
         return output
 
