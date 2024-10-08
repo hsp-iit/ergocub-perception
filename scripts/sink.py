@@ -38,7 +38,8 @@ class Sink(Network.node):
         self.edges = Signals.NOT_OBSERVED
         self.is_true = Signals.NOT_OBSERVED
         self.action = Signals.NOT_OBSERVED
-        cv2.namedWindow('Ergocub-Visual-Perception', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Ergocub-Visual-Perception', cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
+        
         super().__init__(**Network.Args.to_dict())
 
     def startup(self):
@@ -80,33 +81,33 @@ class Sink(Network.node):
                               cv2.LINE_AA)
 
         # HUMAN ########################################################################################################
-        fps_hd = data.get('fps_hd', Signals.MISSING_VALUE)
-        if fps_hd is not Signals.MISSING_VALUE:
-            self.fps_hd = fps_hd
-        if self.fps_hd not in Signals:
-            img = cv2.putText(img, f'FPS HD: {int(self.fps_hd)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
-                              cv2.LINE_AA)
+        # fps_hd = data.get('fps_hd', Signals.MISSING_VALUE)
+        # if fps_hd is not Signals.MISSING_VALUE:
+        #     self.fps_hd = fps_hd
+        # if self.fps_hd not in Signals:
+        #     img = cv2.putText(img, f'FPS HD: {int(self.fps_hd)}', (10, 20), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+        #                       cv2.LINE_AA)
 
-        fps_hpe = data.get('fps_hpe', Signals.MISSING_VALUE)
-        if fps_hpe is not Signals.MISSING_VALUE:
-            self.fps_hpe = fps_hpe
-        if self.fps_hpe not in Signals:
-            img = cv2.putText(img, f'FPS HPE: {int(self.fps_hpe)}', (10, 40), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
-                              cv2.LINE_AA)
+        # fps_hpe = data.get('fps_hpe', Signals.MISSING_VALUE)
+        # if fps_hpe is not Signals.MISSING_VALUE:
+        #     self.fps_hpe = fps_hpe
+        # if self.fps_hpe not in Signals:
+        #     img = cv2.putText(img, f'FPS HPE: {int(self.fps_hpe)}', (10, 40), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+        #                       cv2.LINE_AA)
 
-        fps_ar = data.get('fps_ar', Signals.MISSING_VALUE)
-        if fps_ar is not Signals.MISSING_VALUE:
-            self.fps_ar = fps_ar
-        if self.fps_ar not in Signals:
-            img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 60), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
-                              cv2.LINE_AA)
+        # fps_ar = data.get('fps_ar', Signals.MISSING_VALUE)
+        # if fps_ar is not Signals.MISSING_VALUE:
+        #     self.fps_ar = fps_ar
+        # if self.fps_ar not in Signals:
+        #     img = cv2.putText(img, f'FPS AR: {int(self.fps_ar)}', (10, 60), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+        #                       cv2.LINE_AA)
 
-        fps_focus = data.get('fps_focus', Signals.MISSING_VALUE)
-        if fps_focus is not Signals.MISSING_VALUE:
-            self.fps_focus = fps_focus
-        if self.fps_focus not in Signals:
-            img = cv2.putText(img, f'FPS FOCUS: {int(self.fps_focus)}', (10, 80), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
-                              cv2.LINE_AA)
+        # fps_focus = data.get('fps_focus', Signals.MISSING_VALUE)
+        # if fps_focus is not Signals.MISSING_VALUE:
+        #     self.fps_focus = fps_focus
+        # if self.fps_focus not in Signals:
+        #     img = cv2.putText(img, f'FPS FOCUS: {int(self.fps_focus)}', (10, 80), cv2.FONT_ITALIC, 0.7, (0, 0, 255), 2,
+        #                       cv2.LINE_AA)
 
         human_distance = data.get('human_distance', Signals.MISSING_VALUE)
         if human_distance is not Signals.MISSING_VALUE:

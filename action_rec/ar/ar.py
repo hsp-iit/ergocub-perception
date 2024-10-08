@@ -139,7 +139,7 @@ class ActionRecognizer:
                 if len(self.support_set[k]["sk"]) > max_num_support:
                     max_num_support = len(self.support_set[k]["sk"])
             # Write gif
-            size = 100
+            size = 50
             support_gifs = []
             for class_name in self.support_set.keys():
                 sks = np.stack(self.support_set[class_name]["sk"])
@@ -150,12 +150,12 @@ class ActionRecognizer:
                 class_gif = []
                 for i in range(sks.shape[1]):  # Repeat 16 times
                     class_visual = np.zeros((size*2, size*max_num_support))
-                    class_visual = cv2.putText(class_visual, class_name, (30, int(size/2)), cv2.FONT_HERSHEY_SIMPLEX, int(size/100),
-                                               (255, 255, 255), int(size/100), 2)
+                    class_visual = cv2.putText(class_visual, class_name, (30, int(size/2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5,  # scale
+                                               (255, 255, 255), 1, 2)  # tickness, linetype
                     for j in range(sks.shape[0]):
                         class_visual = cv2.putText(class_visual, f"{j}", (int((size*j) + size/2), int(size*(4/5))),
-                                                   cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                                   (255, 255, 255), int(size/100), 2)
+                                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5,  # scale
+                                                   (255, 255, 255), 1, 2)  # tickness, linetype
                         # for point in sks[j][i]:
                         #     class_visual = cv2.circle(class_visual, (int(point[0] + j*size),  # x
                         #                                              int(point[1] + size)), 1, (255, 0, 0))  # y
@@ -175,11 +175,16 @@ class ActionRecognizer:
             support_gifs = np.swapaxes(support_gifs, 0, 1)
             support_gifs = np.reshape(support_gifs, (16, size * n_classes * 2, size * max_num_support))
             support_gifs = [elem.astype(np.uint8) for elem in support_gifs]
+            
+            i = 0
+            for elem in support_gifs:
+                cv2.imwrite(f"ss/{i}.png", elem)
+                i += 1
             # NOTE the following solves the flicckering gif bug of pysimplegui
-            for k in range(len(support_gifs)):
-                if k%2 == 0:
-                    support_gifs[k][support_gifs[k] == 1] = 254
-                    support_gifs[k][support_gifs[k] == 0] = 1
-            imageio.mimsave('SUPPORT_SET.gif', support_gifs, fps=12)
+            # for k in range(len(support_gifs)):
+            #     if k%2 == 0:
+            #         support_gifs[k][support_gifs[k] == 1] = 254
+            #         support_gifs[k][support_gifs[k] == 0] = 1
+            # imageio.mimsave('SUPPORT_SET.gif', support_gifs, fps=12)
 
         return "Support set image save to SUPPORT_SET.gif"
