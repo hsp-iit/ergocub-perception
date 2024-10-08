@@ -78,6 +78,7 @@ class HumanConsole(Network.node):
         else:
             self.window = sg.Window('Few-Shot Console', self.lay_final, resizable=True, finalize=True)
         self.current_ss_frame = 0
+        self.last_ss_update_time = 0
 
     def loop(self, data):
         # EXIT IF NECESSARY
@@ -170,12 +171,15 @@ class HumanConsole(Network.node):
                 self.last_os_thr = val['OS-THR']
                 self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)}) 
         
-        # UPDATE SUPPORT SET
-        if self.lay_support != [[]]:
-            self.window["SUPPORT_SET"].update(filename=f'ss/{self.current_ss_frame}.png')
-            self.current_ss_frame += 1
-            if self.current_ss_frame >= 16:
-                self.current_ss_frame = 0
+        # UPDATE SUPPORT SET every 0.2 seconds
+        current_time = time.time()
+        if current_time - self.last_ss_update_time >= 0.2:
+            if self.lay_support != [[]]:
+                self.window["SUPPORT_SET"].update(filename=f'ss/{self.current_ss_frame}.png')
+                self.current_ss_frame += 1
+                if self.current_ss_frame >= 16:
+                    self.current_ss_frame = 0
+            self.last_ss_update_time = current_time
 
 
     def add_action(self, action_name):

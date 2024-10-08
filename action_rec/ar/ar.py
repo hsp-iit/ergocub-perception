@@ -121,6 +121,21 @@ class ActionRecognizer:
                 self.support_set[action]["features"].append(f)
         return f"Loaded {len(self.support_set)} classes from {load_path}"
 
+
+    def convert_black_to_color(self, image, target_color=(88, 66, 18)):
+        import numpy as np
+        # Ensure the image is in the correct format (H, W, 3)
+        if len(image.shape) == 2:  # If the image is grayscale
+            image = np.stack((image,)*3, axis=-1)
+        
+        # Create a mask for black pixels
+        black_mask = np.all(image == [0, 0, 0], axis=-1)
+        
+        # Apply the target color to black pixels
+        image[black_mask] = target_color
+        
+        return image
+
     def save_ss_image(self):
         import numpy as np
         import cv2
@@ -178,6 +193,7 @@ class ActionRecognizer:
             
             i = 0
             for elem in support_gifs:
+                elem = self.convert_black_to_color(elem)
                 cv2.imwrite(f"ss/{i}.png", elem)
                 i += 1
             # NOTE the following solves the flicckering gif bug of pysimplegui

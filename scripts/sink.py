@@ -39,7 +39,7 @@ class Sink(Network.node):
         self.is_true = Signals.NOT_OBSERVED
         self.action = Signals.NOT_OBSERVED
         cv2.namedWindow('Ergocub-Visual-Perception', cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
-        
+        cv2.setWindowProperty('Ergocub-Visual-Perception', cv2.WND_PROP_TOPMOST, 1)
         super().__init__(**Network.Args.to_dict())
 
     def startup(self):
