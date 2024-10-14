@@ -55,7 +55,7 @@ class HumanConsole(Network.node):
                              [sg.Text("", key="log")]]
         self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
                        [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
-        if os.path.exists('SUPPORT_SET.gif'):
+        if os.path.exists('ss/0.png'):
             self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
         else:
             self.lay_support = [[]]
@@ -77,6 +77,9 @@ class HumanConsole(Network.node):
             self.window = sg.Window('Few-Shot Console', self.lay_final, location=spawn_location, resizable=True, finalize=True)
         else:
             self.window = sg.Window('Few-Shot Console', self.lay_final, resizable=True, finalize=True)
+        self.current_ss_frame = 0
+        self.last_ss_update_time = 0
+
     def loop(self, data):
         # EXIT IF NECESSARY
         event, val = self.window.read(timeout=10)
@@ -168,9 +171,15 @@ class HumanConsole(Network.node):
                 self.last_os_thr = val['OS-THR']
                 self.write("console_to_ar", {"command": ("os-thr", val['OS-THR']/100)}) 
         
-        # UPDATE SUPPORT SET
-        if self.lay_support != [[]]:
-            self.window["SUPPORT_SET"].UpdateAnimation("SUPPORT_SET.gif", time_between_frames=100)
+        # UPDATE SUPPORT SET every 0.2 seconds
+        current_time = time.time()
+        if current_time - self.last_ss_update_time >= 0.2:
+            if self.lay_support != [[]]:
+                self.window["SUPPORT_SET"].update(filename=f'ss/{self.current_ss_frame}.png')
+                self.current_ss_frame += 1
+                if self.current_ss_frame >= 16:
+                    self.current_ss_frame = 0
+            self.last_ss_update_time = current_time
 
 
     def add_action(self, action_name):
