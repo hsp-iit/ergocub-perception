@@ -192,7 +192,7 @@ class ActionRecognizer:
             support_gifs = [elem.astype(np.uint8) for elem in support_gifs]
             
             i = 0
-            os.mkdir("ss")
+            os.mkdir("ss", exist_ok=True)
             for elem in support_gifs:
                 elem = self.convert_black_to_color(elem)
                 cv2.imwrite(f"ss/{i}.png", elem)
