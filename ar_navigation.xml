@@ -1,5 +1,5 @@
 <application>
-<name>fsc</name>
+<name>Action_Recognition_Navigation</name>
 
 <dependencies>
 </dependencies>
@@ -19,7 +19,7 @@
         <tag>camera</tag>
         <name>yarprobotinterface</name>
         <node>ergocub-head</node>
-        <parameters>--config realsense2.xml</parameters>
+        <parameters>--config sensors.xml</parameters>
     </module>
     <module>
         <tag>emotions</tag>
@@ -44,7 +44,14 @@
         <tag>manip</tag>
         <name>/usr/local/src/robot/hsp/ergocub-bimanual/build/command_server</name>
         <node>ergocub-torso</node>
-        <parameters>/Components/Manipulation /ergocub /usr/local/src/robot/robotology-superbuild/src/ergocub-software/urdf/ergoCub/robots/ergoCubSN001/model.urdf /usr/local/src/robot/hsp/ergocub-bimanual/config/ergocub_real_wristless.ini</parameters>
+        <parameters>/Components/Manipulation /ergocub /usr/local/src/robot/robotology-superbuild/src/ergocub-software/urdf/ergoCub/robots/ergoCubSN002/model.urdf /usr/local/src/robot/hsp/ergocub-bimanual/config/ergocub_real_WALKING_wristless.ini</parameters>
+        <depends>calib</depends>
+    </module>
+    <module>
+        <tag>walking</tag>
+        <name>WalkingModule</name>
+        <node>ergocub-torso</node>
+        <parameters>--from /usr/local/src/robot/robotology-superbuild/src/walking-controllers/src/WalkingModule/app/robots/ergoCubSN001/dcm_walking_iFeel_joint_retargeting_navigation_strict.ini</parameters>
         <depends>calib</depends>
     </module>
     <module>
@@ -53,6 +60,34 @@
         <node>ergocub001-lap</node>
         <depends>manip</depends>
     </module>
+    <module>
+        <tag>calib</tag>
+        <name>yarprobotinterface</name>
+        <parameters>--config /home/ecub_docker/ros2_workspace/src/ergocub_navigation/config/yarp/head_imu_ros2.xml</parameters>
+        <node>docker-ros</node>
+    </module>
+    <module>
+        <tag>calib</tag>
+        <name>yarprobotinterface</name>
+        <parameters>--config /home/ecub_docker/ros2_workspace/src/ergocub_navigation/config/yarp/lidar_compressed_ros2.xml</parameters>
+        <node>docker-ros</node>
+    </module>
+    <module>
+        <tag>double_support_interface</tag>
+        <name>/home/ecub_docker/ros2_run.sh</name>
+        <parameters>ergocub_navigation planner_trigger_server</parameters>
+        <node>docker-ros</node>
+        <depends>walking</depends>
+    </module>
+    <module>
+        <tag>navigation</tag>
+        <name>/home/ecub_docker/ros2_run.sh</name>
+        <parameters></parameters>
+        <node>docker-ros</node>
+        <depends>walking</depends>
+    </module>
+
+
 <connection>
     <from>/depthCamera/rgbImage:o</from>
     <to>/depthCamera/rgbImage:r</to>
@@ -63,5 +98,9 @@
     <to>/depthCamera/depthImage:r</to>
     <protocol>fast_tcp+send.portmonitor+file.depth
 image_compression_zlib+recv.portmonitor+file.depthimage_compression_zlib+type.dll</protocol>
+</connection>
+<connection>
+    <from>/bimanualUpperRefs</from>
+    <to>/walking-coordinator/humanState:i</to>
 </connection>
 </application>
