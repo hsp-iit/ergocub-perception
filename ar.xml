@@ -1,0 +1,68 @@
+<application>
+<name>fsc</name>
+
+<dependencies>
+</dependencies>
+    <module>
+        <tag>calib</tag>
+        <name>yarprobotinterface</name>
+        <parameters>--config ergocub.xml --enable_tags "(enable_ros2)"</parameters>
+        <node>ergocub-torso</node>
+    </module>
+    <module>
+        <tag>position</tag>
+        <name>yarpmotorgui</name>
+        <parameters>--robot ergocub --from custom_positions.ini</parameters>
+        <node>ergocub001-lap</node>
+    </module>
+    <module>
+        <tag>camera</tag>
+        <name>yarprobotinterface</name>
+        <node>ergocub-head</node>
+        <parameters>--config realsense2.xml</parameters>
+    </module>
+    <module>
+        <tag>emotions</tag>
+        <name>ergoCubEmotions</name>
+        <node>ergocub-head</node>
+        <parameters>--from config.ini</parameters>
+    </module>
+    <module>
+        <tag>pose-streamer</tag>
+        <name>ergocub-rs-pose</name>
+        <node>ergocub-torso</node>
+        <parameters>/usr/local/src/robot/robotolog-superbuild/src/ergocub-software/ergoCub/robots/$YARP_ROBOT_NAME/model.urdf</parameters>
+        <depends>calib</depends>
+    </module>
+    <module>
+        <tag>gaze-control</tag>
+        <name>ergocub-gaze-control</name>
+        <node>ergocub-torso</node>
+        <parameters>/usr/local/src/robot/hsp/ergocub-gaze-control/config/ecub_config.ini</parameters>
+        <depends>calib</depends>
+    </module>
+    <module>
+        <tag>manip</tag>
+        <name>/usr/local/src/robot/hsp/ergocub-bimanual/build/command_server</name>
+        <node>ergocub-torso</node>
+        <parameters>/Components/Manipulation /ergocub /usr/local/src/robot/robotology-superbuild/src/ergocub-software/urdf/ergoCub/robots/ergoCubSN001/model.urdf /usr/local/src/robot/hsp/ergocub-bimanual/config/ergocub_real_wristless.ini</parameters>
+        <depends>calib</depends>
+    </module>
+    <module>
+        <tag>bt</tag>
+        <name>/usr/local/src/robot/hsp/ergocub-behavior/build/bin/run_bt</name>
+        <node>ergocub001-lap</node>
+        <depends>manip</depends>
+    </module>
+<connection>
+    <from>/depthCamera/rgbImage:o</from>
+    <to>/depthCamera/rgbImage:r</to>
+    <protocol>mjpeg</protocol>
+</connection>
+<connection>
+    <from>/depthCamera/depthImage:o</from>
+    <to>/depthCamera/depthImage:r</to>
+    <protocol>fast_tcp+send.portmonitor+file.depth
+image_compression_zlib+recv.portmonitor+file.depthimage_compression_zlib+type.dll</protocol>
+</connection>
+</application>
