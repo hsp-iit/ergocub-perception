@@ -26,7 +26,7 @@ class Network(BaseConfig):
 
 
 class Input(BaseConfig):
-    camera = WebCam
+    camera = RealSense
 
     class Params:
         rgb_res = (640, 480)

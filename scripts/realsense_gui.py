@@ -17,11 +17,18 @@ props.put('remoteDepthPort', '/depthCamera/depthImage:o')
 props.put('remoteRpcPort', '/depthCamera/rpc:i')
 
 driver = yarp.PolyDriver(props)
+if not driver.isValid():
+    print("[ERROR] PolyDriver non valido. Controlla che il server /depthCamera sia attivo.")
+    exit(1)
 
 yarp.Network.disconnect('/depthCamera/rgbImage:o', '/RealsenseGUI/rgbImage:i')
 yarp.Network.disconnect('/depthCamera/depthImage:o', '/RealsenseGUI/depthImage:i')
 
-iface = driver.viewIFrameGrabberControls()
+#iface = driver.viewIFrameGrabberControls()
+iface = yarp.IFrameGrabberControls()
+if not driver.view(iface):
+    print("[ERROR] L'interfaccia IFrameGrabberControls non è disponibile.")
+    exit(1)
 
 # Define the custom theme
 sg.theme('DarkAmber')

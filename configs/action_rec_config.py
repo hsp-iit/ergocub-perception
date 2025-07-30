@@ -63,8 +63,9 @@ class AR(BaseConfig):
     class Args:
         input_type = input_type  # skeleton or rgb
         device = 'cuda'
-        support_set_path = os.path.join("action_rec", "ar", "saved", "steb_overfitted.pkl")
 
+        support_set_path = os.path.join("action_rec", "ar", "saved", "steb_overfitted.pkl") #Default support set path
+        
         if input_type == "rgb":
             final_ckpt_path = os.path.join(base_dir, "../action_rec/ar", "weights", "raws", "rgb", "5-w-5-s.pth")
         elif input_type == "skeleton":

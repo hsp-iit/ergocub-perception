@@ -34,16 +34,52 @@ class TRTRunner:
         inputs = []
         outputs = []
         bindings = []
-        for binding in engine:
-            size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
-            dtype = trt.nptype(engine.get_binding_dtype(binding))
+        # for binding in engine:
+        #     # size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
+        #     # dtype = trt.nptype(engine.get_binding_dtype(binding))
+        #     #size = trt.volume(engine.get_tensor_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
+        #     shape = engine.get_tensor_shape(binding)
+        #     size = trt.volume(shape)
+        #     dtype = trt.nptype(engine.get_tensor_dtype(binding))
+        #     host_mem = cuda.pagelocked_empty(size, dtype)
+        #     device_mem = cuda.mem_alloc(host_mem.nbytes)  # (256 x 256 x 3 ) x (32 / 4)
+        #     bindings.append(int(device_mem))
+        #     # if engine.binding_is_input(binding):
+        #     index = engine.get_binding_index(binding)
+        #     if engine.binding_is_input(index):
+        #         inputs.append(HostDeviceMem(host_mem, device_mem))
+        #     else:
+        #         outputs.append(HostDeviceMem(host_mem, device_mem))
+
+        # for index in range(engine.get_nb_bindings()):
+        #     binding = engine.get_binding_name(index)
+        #     shape = engine.get_tensor_shape(binding)
+        #     dtype = trt.nptype(engine.get_binding_dtype(index))
+        #     size = trt.volume(shape)
+        #     host_mem = cuda.pagelocked_empty(size, dtype)
+        #     device_mem = cuda.mem_alloc(host_mem.nbytes)
+        #     bindings.append(int(device_mem))
+
+        #     if engine.binding_is_input(index):
+        #         inputs.append(HostDeviceMem(host_mem, device_mem))
+        #     else:
+        #         outputs.append(HostDeviceMem(host_mem, device_mem))
+
+        for i in range(engine.num_io_tensors):
+            name = engine.get_tensor_name(i)
+            shape = engine.get_tensor_shape(name)
+            dtype = trt.nptype(engine.get_tensor_dtype(name))
+            size = trt.volume(shape)
             host_mem = cuda.pagelocked_empty(size, dtype)
-            device_mem = cuda.mem_alloc(host_mem.nbytes)  # (256 x 256 x 3 ) x (32 / 4)
+            device_mem = cuda.mem_alloc(host_mem.nbytes)
             bindings.append(int(device_mem))
-            if engine.binding_is_input(binding):
+
+            if engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:
                 inputs.append(HostDeviceMem(host_mem, device_mem))
             else:
                 outputs.append(HostDeviceMem(host_mem, device_mem))
+
+
 
         # store
         self.stream = cuda.Stream()
@@ -62,24 +98,55 @@ class TRTRunner:
         args = [np.random.rand(*inp.host.shape) for inp in self.inputs]
         self(*args)
 
-    def __call__(self, *args):
+    # def __call__(self, *args):
 
+    #     for i, x in enumerate(args):
+    #         if isinstance(x, np.ndarray):
+    #             x = x.astype(trt.nptype(trt.float32)).ravel()
+    #         np.copyto(self.inputs[i].host, x)
+
+    #     # pc = pc.astype(trt.nptype(trt.float32)).ravel()
+    #     # np.copyto(self.inputs[0].host, pc)
+
+    #     [cuda.memcpy_htod_async(inp.device, inp.host, self.stream) for inp in self.inputs]
+    #     # self.context.execute_async_v2(bindings=self.bindings, stream_handle=self.stream.handle)
+    #     # self.context.execute_async_v3(bindings=self.bindings, stream_handle=self.stream.handle)
+    #     [cuda.memcpy_dtoh_async(out.host, out.device, self.stream) for out in self.outputs]
+    #     self.stream.synchronize()
+
+    #     res = [out.host for out in self.outputs]
+
+    #     return res
+
+    def __call__(self, *args):
         for i, x in enumerate(args):
             if isinstance(x, np.ndarray):
                 x = x.astype(trt.nptype(trt.float32)).ravel()
             np.copyto(self.inputs[i].host, x)
 
-        # pc = pc.astype(trt.nptype(trt.float32)).ravel()
-        # np.copyto(self.inputs[0].host, pc)
+        for inp in self.inputs:
+            cuda.memcpy_htod_async(inp.device, inp.host, self.stream)
 
-        [cuda.memcpy_htod_async(inp.device, inp.host, self.stream) for inp in self.inputs]
-        self.context.execute_async_v2(bindings=self.bindings, stream_handle=self.stream.handle)
-        [cuda.memcpy_dtoh_async(out.host, out.device, self.stream) for out in self.outputs]
+        # Imposta input nella context
+        for i in range(len(self.inputs)):
+            name = self.engine.get_tensor_name(i)
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:
+                self.context.set_tensor_address(name, int(self.inputs[i].device))
+
+        # Imposta output nella context
+        for i in range(len(self.outputs)):
+            name = self.engine.get_tensor_name(i + len(self.inputs))
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.OUTPUT:
+                self.context.set_tensor_address(name, int(self.outputs[i].device))
+
+        self.context.execute_async_v3(self.stream.handle)
+
+        for out in self.outputs:
+            cuda.memcpy_dtoh_async(out.host, out.device, self.stream)
+
         self.stream.synchronize()
+        return [out.host for out in self.outputs]
 
-        res = [out.host for out in self.outputs]
-
-        return res
 
 
 class Refiner:
@@ -96,13 +163,46 @@ class Refiner:
         inputs = []
         outputs = []
         bindings = []
-        for binding in engine:
-            size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
-            dtype = trt.nptype(engine.get_binding_dtype(binding))
+        # for binding in engine:
+        #     # size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
+        #     # dtype = trt.nptype(engine.get_binding_dtype(binding))
+        #     size = trt.volume(engine.get_tensor_shape(binding)) * engine.max_batch_size  # 256 x 256 x 3 ( x 1 )
+        #     dtype = trt.nptype(engine.get_tensor_dtype(binding))
+        #     host_mem = cuda.pagelocked_empty(size, dtype)
+        #     device_mem = cuda.mem_alloc(host_mem.nbytes)  # (256 x 256 x 3 ) x (32 / 4)
+        #     bindings.append(int(device_mem))
+        #     # if engine.binding_is_input(binding):
+        #     index = engine.get_binding_index(binding)
+        #     if engine.binding_is_input(index):
+        #         inputs.append(HostDeviceMem(host_mem, device_mem))
+        #     else:
+        #         outputs.append(HostDeviceMem(host_mem, device_mem))
+
+
+        # for index in range(engine.get_nb_bindings()):
+        #     binding = engine.get_binding_name(index)
+        #     shape = engine.get_tensor_shape(binding)
+        #     dtype = trt.nptype(engine.get_binding_dtype(index))
+        #     size = trt.volume(shape)
+        #     host_mem = cuda.pagelocked_empty(size, dtype)
+        #     device_mem = cuda.mem_alloc(host_mem.nbytes)
+        #     bindings.append(int(device_mem))
+
+        #     if engine.binding_is_input(index):
+        #         inputs.append(HostDeviceMem(host_mem, device_mem))
+        #     else:
+        #         outputs.append(HostDeviceMem(host_mem, device_mem))
+
+        for i in range(engine.num_io_tensors):
+            name = engine.get_tensor_name(i)
+            shape = engine.get_tensor_shape(name)
+            dtype = trt.nptype(engine.get_tensor_dtype(name))
+            size = trt.volume(shape)
             host_mem = cuda.pagelocked_empty(size, dtype)
-            device_mem = cuda.mem_alloc(host_mem.nbytes)  # (256 x 256 x 3 ) x (32 / 4)
+            device_mem = cuda.mem_alloc(host_mem.nbytes)
             bindings.append(int(device_mem))
-            if engine.binding_is_input(binding):
+
+            if engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:
                 inputs.append(HostDeviceMem(host_mem, device_mem))
             else:
                 outputs.append(HostDeviceMem(host_mem, device_mem))
@@ -116,27 +216,58 @@ class Refiner:
         self.outputs = outputs
         self.bindings = bindings
 
-    def __call__(self, points, sdf):
+    # def __call__(self, points, sdf):
 
-        points = points.astype(trt.nptype(trt.float32)).ravel()
-        np.copyto(self.inputs[0].host, points)
+    #     points = points.astype(trt.nptype(trt.float32)).ravel()
+    #     np.copyto(self.inputs[0].host, points)
 
-        i = 1
-        for layer in sdf:
-            for weight in layer:
-                weight = weight.detach().cpu().numpy().astype(trt.nptype(trt.float32)).ravel()
-                np.copyto(self.inputs[i].host, weight)
-                i += 1
+    #     i = 1
+    #     for layer in sdf:
+    #         for weight in layer:
+    #             weight = weight.detach().cpu().numpy().astype(trt.nptype(trt.float32)).ravel()
+    #             np.copyto(self.inputs[i].host, weight)
+    #             i += 1
 
-        [cuda.memcpy_htod_async(inp.device, inp.host, self.stream) for inp in self.inputs]
-        self.context.execute_async_v2(bindings=self.bindings, stream_handle=self.stream.handle)
-        [cuda.memcpy_dtoh_async(out.host, out.device, self.stream) for out in self.outputs]
+    #     [cuda.memcpy_htod_async(inp.device, inp.host, self.stream) for inp in self.inputs]
+    #     self.context.execute_async_v2(bindings=self.bindings, stream_handle=self.stream.handle)
+    #     [cuda.memcpy_dtoh_async(out.host, out.device, self.stream) for out in self.outputs]
+    #     self.stream.synchronize()
+
+    #     res = [out.host for out in self.outputs]
+
+    #     return res[0], res[1]
+
+    def __call__(self, *args):
+        for i, x in enumerate(args):
+            if isinstance(x, np.ndarray):
+                x = x.astype(trt.nptype(trt.float32)).ravel()
+            np.copyto(self.inputs[i].host, x)
+
+        # Copia input host → device
+        for inp in self.inputs:
+            cuda.memcpy_htod_async(inp.device, inp.host, self.stream)
+
+        # Imposta input nella context
+        for i in range(len(self.inputs)):
+            name = self.engine.get_tensor_name(i)
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:
+                self.context.set_tensor_address(name, int(self.inputs[i].device))
+
+        # Imposta output nella context
+        for i in range(len(self.outputs)):
+            name = self.engine.get_tensor_name(i + len(self.inputs))
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.OUTPUT:
+                self.context.set_tensor_address(name, int(self.outputs[i].device))
+
+        # Esegui inferenza
+        self.context.execute_async_v3(self.stream.handle)
+
+        # Copia output device → host
+        for out in self.outputs:
+            cuda.memcpy_dtoh_async(out.host, out.device, self.stream)
+
         self.stream.synchronize()
-
-        res = [out.host for out in self.outputs]
-
-        return res[0], res[1]
-
+        return [out.host for out in self.outputs]
 
 if __name__ == '__main__':
     from configs import server_config

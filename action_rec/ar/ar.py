@@ -192,16 +192,20 @@ class ActionRecognizer:
             support_gifs = [elem.astype(np.uint8) for elem in support_gifs]
             
             i = 0
-            os.mkdir("ss", exist_ok=True)
+            ss_dir = "ss"
+            # if os.path.exists(ss_dir):
+            #     import shutil
+            #     shutil.rmtree(ss_dir)
+            # os.makedirs(ss_dir, mode=0o777)  # Create with full permissions
             for elem in support_gifs:
                 elem = self.convert_black_to_color(elem)
                 cv2.imwrite(f"ss/{i}.png", elem)
                 i += 1
             # NOTE the following solves the flicckering gif bug of pysimplegui
-            # for k in range(len(support_gifs)):
-            #     if k%2 == 0:
-            #         support_gifs[k][support_gifs[k] == 1] = 254
-            #         support_gifs[k][support_gifs[k] == 0] = 1
-            # imageio.mimsave('SUPPORT_SET.gif', support_gifs, fps=12)
+            for k in range(len(support_gifs)):
+                if k%2 == 0:
+                    support_gifs[k][support_gifs[k] == 1] = 254
+                    support_gifs[k][support_gifs[k] == 0] = 1
+            imageio.mimsave('ss/SUPPORT_SET.gif', support_gifs, fps=12)
 
         return "Support set image save to SUPPORT_SET.gif"

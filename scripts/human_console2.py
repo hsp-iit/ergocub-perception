@@ -56,7 +56,7 @@ class HumanConsole(Network.node):
         self.lay_io = [[sg.FileBrowse("Load", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='LOAD', enable_events=True), ],
                        [sg.FileSaveAs("Save", file_types=(("Support Set", "*.pkl"),), initial_folder="./action_rec/ar/saved"), sg.In(size=(25,1), key='SAVE', enable_events=True), ]]
         if os.path.exists('ss/0.png'):
-            self.lay_support = [[sg.Image(r'SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
+            self.lay_support = [[sg.Image(r'ss/SUPPORT_SET.gif', key="SUPPORT_SET", expand_x=True, expand_y=True)]]
         else:
             self.lay_support = [[]]
 
